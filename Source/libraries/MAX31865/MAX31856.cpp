@@ -40,7 +40,6 @@
 
 #include	"MAX31856.h"
 
-
 // Define which pins are connected to the MAX31856.  The DRDY and FAULT outputs
 // from the MAX31856 are not used in this library.
 MAX31856::MAX31856(int sdi, int sdo, int cs, int clk)
