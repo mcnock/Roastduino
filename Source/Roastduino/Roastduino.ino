@@ -1,3 +1,4 @@
+
 // Roastduino v1.0
 // 2016.09.20
 
@@ -37,6 +38,7 @@
 // =========
 #include "MAX31856.h"
 #include "PID_v1.h"
+#include <Chrono.h>
 
 // ===============
 // PIN DEFINITIONS
@@ -45,7 +47,7 @@
 // than that one each I/O pin.  For example, the ATmega328 supports up to 20mA.  So it is possible to power the
 // board using I/O pins for power - so you can turn the board on and off (if you want to).
 // FAULT and DRDY are not used by the library (see above)
-#define TPWR   5
+
 #define SCK    12
 #define SDI    11
 #define CS3    10
@@ -53,9 +55,30 @@
 #define CS1    8
 #define CS0    7
 #define SDO    6
+#define TPWR   5
+#define HTRPID  3
+#define INT_LED    13
 
-#define LED    13
-#define HTR    3
+//capacitive buttons
+#define CP1    22
+#define CP2    24
+#define CP3    26
+#define CP4    28
+
+
+#define PWRPID A4
+#define HTR1 A3
+#define FAN A2
+#define VIB A1
+#define STARTME A0
+  
+#define AmRoasting      1
+#define AmStopped       2
+#define AmCooling       3
+#define AmOverheated    4
+
+#define OVERHEAT 800
+#define BAUD 57600
 
 // ===========
 // DEFINITIONS
@@ -70,42 +93,69 @@
 // GLOBALS
 // =======
 boolean toggle;
+int State;
+boolean StartmeSwitch;
 MAX31856 *temperature0;
 MAX31856 *temperature1;
 MAX31856 *temperature2;
 MAX31856 *temperature3;
 double Setpoint, Input, Output;
-PID myPID(&Input, &Output, &Setpoint, 60, 3, 2, DIRECT);
 int WindowSize = 1000;
-unsigned long windowStartTime;
+unsigned long WindowStartTime;
 
+Chrono RoastTime(Chrono::SECONDS);
+
+PID myPID(&Input, &Output, &Setpoint, 50, 0, 0, DIRECT);
+
+//                          000,001,002,003,004,005,006,007,008,009,010,011,012,013,014,015,016,017,018,019,020
+ int MyMinuteSetpoints[] = {100,205,215,220,230,240,250,272,275,280,292,300,310,320,340,380,430,460,460,460,460};
+ int TempEnd = 440;
 // =====
 // SETUP
 // =====
 void setup() {
+  // Pin Configuration
+  pinMode(HTR1, OUTPUT);
+  pinMode(FAN, OUTPUT);
+  pinMode(VIB, OUTPUT);
+  pinMode(PWRPID, OUTPUT);
+
+  //capacitive buttons   
+  //pinMode( CP1, INPUT); 
+  //pinMode (CP2, INPUT); 
+  //pinMode (CP3, INPUT);    
+  //pinMode (CP4, INPUT);
+  
+  pinMode(STARTME, INPUT_PULLUP);
+  pinMode(TPWR, OUTPUT);
+  pinMode(INT_LED, OUTPUT);
+  pinMode(HTRPID, OUTPUT);
+  pinMode(2, OUTPUT);
+  digitalWrite(2, LOW);
+  digitalWrite(FAN, LOW);
+  digitalWrite(VIB, LOW);
+  digitalWrite(PWRPID,HIGH);
+  digitalWrite(HTR1, HIGH);
+
   // PID Setup
-  windowStartTime = millis();
+  WindowStartTime = millis();
   myPID.SetOutputLimits(0, WindowSize);
   Setpoint = 200;
+  
   myPID.SetMode(AUTOMATIC);
   
   // Display temperatures using the serial port
-  Serial.begin(9600);
+  Serial.begin(BAUD);
   delay(3000);
   Serial.println("Roastduino Console");
   Serial.println("v1.0 2016.09.20");
-
-  // Pin Configuration
-  pinMode(TPWR, OUTPUT);
-  pinMode(LED, OUTPUT);
-  pinMode(HTR, OUTPUT);
-
+    
   // Power up MAX31856
   digitalWrite(TPWR, HIGH);
-
+  
   // Wait for MAX31856 to initialize
   delay(200);
-  
+  RoastTime.stop();
   // Define the pins used to communicate with the MAX31856
   temperature0 = new MAX31856(SDI, SDO, CS0, SCK);
   temperature1 = new MAX31856(SDI, SDO, CS1, SCK);
@@ -134,94 +184,208 @@ void setup() {
 // LOOP
 // ====
 void loop () {
-  float t0, t1, t2, t3, tj;
-  
-  // Display the thermocouple temperature
-  t0 = temperature0->readThermocouple(CELSIUS);
-  Serial.print("T0: ");
-  printTemperature(t0);
-  Serial.print(", ");
-  
-  // Display the thermocouple temperature
-  t1 = temperature1->readThermocouple(CELSIUS);
-  Serial.print("T1: ");
-  printTemperature(t1);
-  Serial.print(", ");
-  
-  // Display the thermocouple temperature
-  t2 = temperature2->readThermocouple(CELSIUS);
-  Serial.print("T2: ");
-  printTemperature(t2);
-  Serial.print(", ");
-  
-//  // Display the thermocouple temperature
-//  t3 = temperature3->readThermocouple(CELSIUS);
-//  Serial.print("T3: ");
-//  printTemperature(t3);
-//  Serial.print(" ");
-//  
-//  // Display the junction (IC) temperature
-//  tj = temperature0->readJunction(CELSIUS);
-//  Serial.print("(jT: ");
-//  printTemperature(tj);
-//  Serial.print("), ");
 
-  Input = t0;
+int newState;
+newState =0;
+float tHeat0, tBean1, tBean2, tFan;
+
+int minuteToStart = 0;
+   // Display the heat temperature
+ 
+  tHeat0 = getTemperature(temperature0->readThermocouple(FAHRENHEIT));
+  tBean1 = temperature1->readThermocouple(FAHRENHEIT);
+  tBean2 = temperature2->readThermocouple(FAHRENHEIT);
+  tFan = temperature3->readThermocouple(FAHRENHEIT);
+  double tBeanAvg = getBeanAvgTemp(tBean1, tBean2);  
+
+  double totalseconds = RoastTime.elapsed();
+  int minutes =  int( totalseconds / 60);
+  int seconds  = (totalseconds - (minutes * 60));
+     
+  boolean val = digitalRead(STARTME); 
+  if (val == LOW)
+  {
+    if (State != AmRoasting )
+    {
+       newState = AmRoasting;  
+       Serial.println("Start Detected!");
+    }
+  }
+  else
+  {
+    if (State != AmStopped)
+    {
+       newState = AmStopped;
+       Serial.println("Stop detected!");
+    }
+  }
+
+  
+ if (tHeat0 > OVERHEAT)
+ {
+     newState = AmOverheated;
+     Serial.println("Overheat Detected!");
+ }
+ else if (tBeanAvg > TempEnd)
+ {
+    newState = AmCooling;
+    Serial.print("Roast done. Cooling starting");
+    Serial.println();
+ }
+ else if (tBeanAvg < 200 && State == AmCooling)
+ {
+    newState = AmStopped;
+    Serial.print("Cooling Complete ");
+    Serial.println();
+ }
+ 
+
+ 
+ if (newState == AmStopped)
+ {
+     RoastTime.stop(); 
+     State = AmStopped; 
+     digitalWrite(HTR1, HIGH);
+     digitalWrite(PWRPID, HIGH); 
+     newState = 0;
+ }
+ else if (newState == AmRoasting)
+ { 
+    State = AmRoasting;
+    RoastTime.restart(minuteToStart * 60); 
+    digitalWrite(HTR1, LOW);
+    digitalWrite(PWRPID, LOW);
+    newState = 0;
+  }
+ else if (newState == AmCooling)
+ { 
+    State = AmCooling;
+    RoastTime.stop(); 
+    digitalWrite(HTR1, HIGH);
+    digitalWrite(PWRPID, HIGH);
+    newState = 0;
+  }
+ else if (newState == AmOverheated)
+ { 
+    State = AmOverheated; 
+    digitalWrite(HTR1, HIGH);
+    digitalWrite(PWRPID, HIGH); 
+    newState = 0;
+  }
+else if (State == AmOverheated )
+ { 
+    State = AmRoasting;
+    digitalWrite(HTR1, LOW);
+    digitalWrite(PWRPID, LOW);
+ 
+ }
+  
+if (State == AmRoasting)
+
+{
+
+
+
+  Input = tBeanAvg;
   myPID.Compute();
-
-  double beanTemperature = getBeanTemperature(t1, t2);  
+  Setpoint = MyMinuteSetpoints[minutes];
   
-  // Display the bean temperature
-  Serial.print("Beans: ");
-  Serial.print(beanTemperature);      
-  Serial.write(176);
-  Serial.print("C");
-  Serial.print(", ");
-
-  if (beanTemperature > 231 && Setpoint > 0)
-    Setpoint = 0;
-  else if (beanTemperature > 200 && Setpoint > 0)
-    Setpoint = 340;
-  else if (beanTemperature > 180 && Setpoint > 0)
-    Setpoint = 300;
-  else if (beanTemperature > 150 && Setpoint > 0)
-    Setpoint = 280;
-  
-  Serial.print("Setpoint: ");
-  Serial.print(Setpoint);
-  Serial.write(176);
-  Serial.print("C (");
-  Serial.print(Output / WindowSize * 100);
-  Serial.print("% duty) ");
-
-  /************************************************
+    /***********************************************
   * turn the output pin on/off based on pid output
   ************************************************/
+  
   unsigned long now = millis();
-  if(now - windowStartTime > WindowSize)
+  if(now - WindowStartTime > WindowSize)
   { 
     //time to shift the Relay Window
-    windowStartTime += WindowSize;
+    WindowStartTime += WindowSize;
   }
   
-  if(Output > now - windowStartTime) 
+  if(Output > now - WindowStartTime) 
   {
-    digitalWrite(LED, HIGH);
-    digitalWrite(HTR, HIGH);
-    Serial.print("ON");
+    if (State == AmRoasting) 
+    {
+        digitalWrite(HTRPID, HIGH);
+        
+    }
+    else
+    {
+       digitalWrite(HTRPID, LOW);
+    }
+    
   }
   else 
   { 
-    digitalWrite(LED, LOW);
-    digitalWrite(HTR, LOW);
-    Serial.print("OFF");
+       digitalWrite(HTRPID, LOW);
+       
   }
-  
-  Serial.println();
+}
+else
+{
+      digitalWrite(HTRPID, LOW);
+
 }
 
+   int duty = Output / WindowSize * 100;
+   double err = Setpoint - tBeanAvg;
+
+   Serial.print (getState(State));  
+   Serial.print("Time: "); 
+   if (minutes < 10) Serial.print("0");
+   Serial.print(minutes);
+   Serial.print(":"); 
+   if (seconds < 10) Serial.print("0");
+   Serial.print(seconds);
+
+   Serial.print(" Target: ");
+   if (Setpoint < 100) Serial.print(" ");
+   if (Setpoint < 10) Serial.print(" ");
+   Serial.print(Setpoint, 0); 
+   
+   Serial.print("F beanT: ");
+   if (tBeanAvg < 100) Serial.print(" ");
+   if (tBeanAvg < 10) Serial.print(" ");
+   Serial.print(tBeanAvg, 0);
+   
+   Serial.print("F Err: "); 
+   if (err < 100 &&  err > -100) Serial.print(" ");
+   if (err < 10 && err > -10) Serial.print(" ");
+   if (err > 0) Serial.print (" ");
+   Serial.print(err, 1);
+
+   Serial.print("F (");
+   if (tBean1 < 100) Serial.print(" ");
+   if (tBean1 < 10) Serial.print(" ");
+   Serial.print(tBean1, 0);
+   Serial.print("F, "); 
+   if (tBean2 < 100) Serial.print(" ");
+   if (tBean2 < 10) Serial.print(" ");
+   Serial.print(tBean2, 0);
+   Serial.print("F)");  
+   
+   Serial.print(" HeatT: "); 
+   if (tHeat0 < 100) Serial.print(" ");
+   if (tHeat0 < 10) Serial.print(" ");
+   Serial.print(tHeat0, 0);
+   
+   
+   Serial.print(" FanT: "); 
+   if (tFan < 100) Serial.print(" ");
+   if (tFan < 10) Serial.print(" ");
+   Serial.print(tFan, 0);
+
+    
+   Serial.print("F Duty: "); 
+   if (duty < 100) Serial.print(" ");
+   if (duty < 10) Serial.print(" ");
+   Serial.print(duty);
+   Serial.print("%"); 
+   Serial.println();
+}
+
+
 // Print the temperature, or the type of fault
-void printTemperature(double temperature) {
+void PrT(double temperature) {
   switch ((int) temperature) {
     case FAULT_OPEN:
       Serial.print("OPEN");
@@ -258,12 +422,30 @@ double getTemperature(double temperature) {
   }
 }
 
-double getBeanTemperature(double t1, double t2) {
+double getBeanAvgTemp(double t1, double t2) {
   if (getTemperature(t1) != -1 && getTemperature(t2) != -1)
     return (t1 + t2) / 2;
   return -1;
 }
 
 
-
+char getState(int state) {
+  switch (state) {
+    case AmRoasting:
+      return "Roasting ";
+      break;
+    case AmStopped:
+      return "Stopped  ";
+      break;
+    case AmCooling:
+      return "Cooling  ";
+      break;
+    case AmOverheated:
+      return "To Hot   ";
+      break;
+    default:
+      return " not ";
+      break;
+  }
+}
 
