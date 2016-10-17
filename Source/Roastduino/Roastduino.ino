@@ -1,36 +1,9 @@
 
+
 // Roastduino v1.0
 // 2016.09.20
 
-// This is sample Arduino code for the Maxim MAX31856 thermocouple IC
-// http://datasheets.maximintegrated.com/en/ds/MAX31856.pdf
-//
-// Library Implementation Details
-// ==============================
-// DRDY and FAULT lines are not used in this driver. DRDY is useful for low-power mode so samples are only taken when
-// needed; this driver assumes power isn't an issue.  The FAULT line can be used to generate an interrupt in the host
-// processor when a fault occurs.  This library reads the fault register every time a reading is taken, and will
-// return a fault error if there is one.  The MAX31856 has sophisticated usage scenarios involving FAULT.  For
-// example, low and high temperature limits can be set, and the FAULT line triggers when these temperatures are
-// breached. This is beyond the scope of this sample library.  The assumption is that most applications will be
-// polling for temperature readings - but it is good to know these features are supported by the hardware.
-//
-// The MAX31856 differs from earlier thermocouple IC's in that it has registers that must be configured before
-// readings can be taken.  This makes it very flexible and powerful, but one concern is power loss to the IC.  The IC
-// should be as close to the cold junction as possible, which might mean there is a cable connecting the breakout
-// board to the host processor.  If this cable is disconnected and reconnected (MAX31856 loses power) then the
-// registers must be reinitialized.  This library detects this condition and will automatically reconfigure the
-// registers.  This simplifies the software running on the host.
-//
-// A lot of configuration options appear in the .H file.  Of particular note is the line frequency filtering, which
-// defaults to 60Hz (USA and others).  If your line voltage is 50Hz you should set CR0_NOISE_FILTER_50HZ.
-//
-// This library handles the full range of temperatures, including negative temperatures.
-//
-// When connecting the thermocouple, remember the 2 wires are polarized.  If temperatures go up when you expect
-// them to go down just reverse the wires.  No damage will be done to the MAX31856.
-//
-// Change History:
+// 
 // 2016.09.20        Initial Version
 
 // =========
@@ -38,15 +11,11 @@
 // =========
 #include "MAX31856.h"
 #include "PID_v1.h"
-#include <Chrono.h>
+#include "Chrono.h"
 
 // ===============
 // PIN DEFINITIONS
 // ===============
-// The power requirement for the board is less than 2mA.  Most microcontrollers can source or sink a lot more
-// than that one each I/O pin.  For example, the ATmega328 supports up to 20mA.  So it is possible to power the
-// board using I/O pins for power - so you can turn the board on and off (if you want to).
-// FAULT and DRDY are not used by the library (see above)
 
 #define SCK    12
 #define SDI    11
@@ -76,6 +45,7 @@
 #define AmStopped       2
 #define AmCooling       3
 #define AmOverheated    4
+#define AmReadyToStart  5
 
 #define OVERHEAT 800
 #define BAUD 57600
@@ -92,7 +62,7 @@
 // =======
 // GLOBALS
 // =======
-boolean toggle;
+boolean ;
 int State;
 boolean StartmeSwitch;
 MAX31856 *temperature0;
@@ -105,11 +75,15 @@ unsigned long WindowStartTime;
 
 Chrono RoastTime(Chrono::SECONDS);
 
-PID myPID(&Input, &Output, &Setpoint, 50, 0, 0, DIRECT);
+PID myPID(&Input, &Output, &Setpoint, 70, 0, 0, DIRECT);
 
 //                          000,001,002,003,004,005,006,007,008,009,010,011,012,013,014,015,016,017,018,019,020
- int MyMinuteSetpoints[] = {100,205,215,220,230,240,250,272,275,280,292,300,310,320,340,380,430,460,460,460,460};
- int TempEnd = 440;
+// int MyMinuteSetpoints[] = {100,205,215,220,230,240,250,272,275,280,292,300,310,320,340,380,430,460,460,460,460};
+ //                       200,200,300,400,500     
+ int MyFiveSetpoints[] = {70,200,333,380,430,470};
+ int TempEnd = 460;
+ int TimeTarget = 12;
+ int TimeMax = 16;
 // =====
 // SETUP
 // =====
@@ -132,8 +106,8 @@ void setup() {
   pinMode(HTRPID, OUTPUT);
   pinMode(2, OUTPUT);
   digitalWrite(2, LOW);
-  digitalWrite(FAN, LOW);
-  digitalWrite(VIB, LOW);
+  digitalWrite(FAN, HIGH);
+  digitalWrite(VIB, HIGH);
   digitalWrite(PWRPID,HIGH);
   digitalWrite(HTR1, HIGH);
 
@@ -178,6 +152,9 @@ void setup() {
   
   // Wait for the first sample to be taken
   delay(200);
+
+  //RoastTime.restart(0);
+  //State = AmReadyToStart;
 }
 
 // ====
@@ -198,14 +175,13 @@ int minuteToStart = 0;
   tFan = temperature3->readThermocouple(FAHRENHEIT);
   double tBeanAvg = getBeanAvgTemp(tBean1, tBean2);  
 
-  double totalseconds = RoastTime.elapsed();
-  int minutes =  int( totalseconds / 60);
-  int seconds  = (totalseconds - (minutes * 60));
+  double roastMinutes = ((double)RoastTime.elapsed())/60;
      
   boolean val = digitalRead(STARTME); 
   if (val == LOW)
   {
-    if (State != AmRoasting )
+    digitalWrite(INT_LED, HIGH);
+    if (State == AmReadyToStart)
     {
        newState = AmRoasting;  
        Serial.println("Start Detected!");
@@ -213,11 +189,18 @@ int minuteToStart = 0;
   }
   else
   {
-    if (State != AmStopped)
+    digitalWrite(INT_LED, LOW);
+    if (State != AmStopped && State != AmReadyToStart)
     {
        newState = AmStopped;
        Serial.println("Stop detected!");
     }
+    else
+    {
+       State = AmReadyToStart;
+    
+    }
+    
   }
 
   
@@ -226,33 +209,56 @@ int minuteToStart = 0;
      newState = AmOverheated;
      Serial.println("Overheat Detected!");
  }
- else if (tBeanAvg > TempEnd)
+ else if (tBeanAvg > TempEnd && State == AmRoasting)
  {
     newState = AmCooling;
-    Serial.print("Roast done. Cooling starting");
+    Serial.print("Roast Temp Reached. Cooling starting");
     Serial.println();
+    
  }
  else if (tBeanAvg < 200 && State == AmCooling)
  {
     newState = AmStopped;
     Serial.print("Cooling Complete ");
     Serial.println();
+    
+ }
+ else if (roastMinutes > TimeMax)
+ {
+    newState = AmCooling;
+    Serial.print("Max time reached. Cooling starting");
+ 
+    Serial.println();
+    
  }
  
-
  
  if (newState == AmStopped)
  {
-     RoastTime.stop(); 
+  //   RoastTime.stop(); 
      State = AmStopped; 
      digitalWrite(HTR1, HIGH);
      digitalWrite(PWRPID, HIGH); 
+     digitalWrite(FAN, HIGH);
+     digitalWrite(VIB, HIGH);
+     delay(1000);
      newState = 0;
  }
  else if (newState == AmRoasting)
  { 
     State = AmRoasting;
+    Serial.print("Starting Fans and Vibration - and waiting 5 seconds");
+   
+    Serial.println();
+    digitalWrite(FAN, LOW);
+    digitalWrite(VIB, LOW);
+    
+    delay(5000);
+    Serial.print("Starting Heaters ");
+    Serial.println();
+    
     RoastTime.restart(minuteToStart * 60); 
+
     digitalWrite(HTR1, LOW);
     digitalWrite(PWRPID, LOW);
     newState = 0;
@@ -263,6 +269,7 @@ int minuteToStart = 0;
     RoastTime.stop(); 
     digitalWrite(HTR1, HIGH);
     digitalWrite(PWRPID, HIGH);
+    delay(1000);
     newState = 0;
   }
  else if (newState == AmOverheated)
@@ -270,6 +277,7 @@ int minuteToStart = 0;
     State = AmOverheated; 
     digitalWrite(HTR1, HIGH);
     digitalWrite(PWRPID, HIGH); 
+    delay(1000);
     newState = 0;
   }
 else if (State == AmOverheated )
@@ -277,18 +285,21 @@ else if (State == AmOverheated )
     State = AmRoasting;
     digitalWrite(HTR1, LOW);
     digitalWrite(PWRPID, LOW);
- 
+   
  }
+
+
   
 if (State == AmRoasting)
 
 {
 
-
-
   Input = tBeanAvg;
+  Setpoint =  calcSetpoint(roastMinutes);
+
+  
+  
   myPID.Compute();
-  Setpoint = MyMinuteSetpoints[minutes];
   
     /***********************************************
   * turn the output pin on/off based on pid output
@@ -328,16 +339,15 @@ else
 
    int duty = Output / WindowSize * 100;
    double err = Setpoint - tBeanAvg;
-
-   Serial.print (getState(State));  
+     
+   
+   printState(State);  
    Serial.print("Time: "); 
-   if (minutes < 10) Serial.print("0");
-   Serial.print(minutes);
-   Serial.print(":"); 
-   if (seconds < 10) Serial.print("0");
-   Serial.print(seconds);
-
-   Serial.print(" Target: ");
+   if (roastMinutes < 10) Serial.print("0");
+   Serial.print(roastMinutes);
+   Serial.print (" (");
+   Serial.print (TimeTarget);
+   Serial.print(") Target: ");
    if (Setpoint < 100) Serial.print(" ");
    if (Setpoint < 10) Serial.print(" ");
    Serial.print(Setpoint, 0); 
@@ -346,8 +356,9 @@ else
    if (tBeanAvg < 100) Serial.print(" ");
    if (tBeanAvg < 10) Serial.print(" ");
    Serial.print(tBeanAvg, 0);
-   
-   Serial.print("F Err: "); 
+   Serial.print (" (");
+   Serial.print (TempEnd);
+   Serial.print(") F Err: "); 
    if (err < 100 &&  err > -100) Serial.print(" ");
    if (err < 10 && err > -10) Serial.print(" ");
    if (err > 0) Serial.print (" ");
@@ -424,27 +435,66 @@ double getTemperature(double temperature) {
 
 double getBeanAvgTemp(double t1, double t2) {
   if (getTemperature(t1) != -1 && getTemperature(t2) != -1)
-    return (t1 + t2) / 2;
+  return (t1 + t2) / 2;
   return -1;
 }
 
 
-char getState(int state) {
+double calcSetpoint(double roastminutes) {
+// int MyFiveSetpoints[] = {100,300,350,430,460};
+// int TempEnd = 440;
+// int TimeEnd = 10;
+     double setpoint = 0;
+     double MinutesPerSpan = ((double)TimeTarget)/6;
+     int spIndex = roastminutes/MinutesPerSpan;
+     double r = roastminutes/MinutesPerSpan - spIndex;
+    // Serial.print("MinutesPerSpan:");
+   //  Serial.print(MinutesPerSpan);
+   //  Serial.print (" spIndex:");
+   //  Serial.print (spIndex);
+     
+  //   Serial.print (" r:");
+  //   Serial.print (r);
+        
+     if (spIndex < 5)
+     {
+    //    Serial.print ("  ");
+     //   Serial.print (MyFiveSetpoints[spIndex]);
+     //   Serial.print ("+");
+    //    Serial.print (((MyFiveSetpoints[spIndex + 1] - MyFiveSetpoints[spIndex]) * r));
+    //    Serial.print ("  ");
+    //    Serial.print (MyFiveSetpoints[spIndex + 1]);
+    //    Serial.print ("  ");
+        setpoint = MyFiveSetpoints[spIndex] + ((MyFiveSetpoints[spIndex + 1] - MyFiveSetpoints[spIndex]) * r);
+     }
+     else 
+     {
+         setpoint = MyFiveSetpoints[5];
+      
+     }
+     return setpoint;
+}
+
+
+ void printState(int state) {
   switch (state) {
     case AmRoasting:
-      return "Roasting ";
+      Serial.print ("AmRoasting ");
       break;
     case AmStopped:
-      return "Stopped  ";
+      Serial.print( "AmStopped  ");
       break;
     case AmCooling:
-      return "Cooling  ";
+      Serial.print ("AmCooling  ");
       break;
     case AmOverheated:
-      return "To Hot   ";
+      Serial.print ("To Hot     ");
       break;
+    case AmReadyToStart:
+      Serial.print ("AmReadyTo ");
+      break;  
     default:
-      return " not ";
+      Serial.print ("unknown   ");
       break;
   }
 }
