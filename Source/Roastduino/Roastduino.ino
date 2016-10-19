@@ -1,3 +1,4 @@
+#include "Average.h"
 
 
 // Roastduino v1.0
@@ -27,7 +28,8 @@
 #define TPWR   5
 #define HTRPID  3
 #define INT_LED    13
-
+#define CurFan    7
+#define CurHeat    6
 //capacitive buttons
 #define CP1    22
 #define CP2    24
@@ -35,11 +37,11 @@
 #define CP4    28
 
 
-#define PWRPID A4
-#define HTR1 A3
-#define FAN A2
-#define VIB A1
-#define STARTME A0
+#define PWRPID 53
+#define HTR1 51
+#define FAN 49
+#define VIB 47
+#define STARTME 4
   
 #define AmRoasting      1
 #define AmStopped       2
@@ -84,6 +86,8 @@ PID myPID(&Input, &Output, &Setpoint, 70, 0, 0, DIRECT);
  int TempEnd = 460;
  int TimeTarget = 12;
  int TimeMax = 16;
+Average<float> AvgFan(50);
+Average<float> AvgHeat(50);
 // =====
 // SETUP
 // =====
@@ -105,6 +109,11 @@ void setup() {
   pinMode(INT_LED, OUTPUT);
   pinMode(HTRPID, OUTPUT);
   pinMode(2, OUTPUT);
+  
+  
+  //analogReference(INTERNAL1V1); 
+
+  
   digitalWrite(2, LOW);
   digitalWrite(FAN, HIGH);
   digitalWrite(VIB, HIGH);
@@ -165,6 +174,36 @@ void loop () {
 int newState;
 newState =0;
 float tHeat0, tBean1, tBean2, tFan;
+
+double currentFan = (((double)(analogRead(CurFan) - 512) * 5))/185;
+double currentHeat = (((double)(analogRead(CurHeat) - 512) * 5))/100;
+
+AvgFan.push(currentFan);
+if (currentHeat > 0)
+{AvgHeat.push(currentHeat);}
+else
+{AvgHeat.push(-currentHeat);}
+
+
+  
+
+currentFan = AvgFan.mean() * 1.1;
+currentHeat = AvgHeat.mean() * 1.1;
+
+Serial.print("FanAmps:");
+   if (currentFan < 100 && currentFan > -100) Serial.print(" ");
+   if (currentFan < 10 && currentFan > -10) Serial.print(" ");
+   if (currentFan > 0) Serial.print (" ");
+Serial.print(currentFan,1);
+Serial.print("  ");
+
+Serial.print("HeatAmps:");
+   if (currentHeat < 100 &&  currentHeat > -100) Serial.print(" ");
+   if (currentHeat < 10 && currentHeat > -10) Serial.print(" ");
+   if (currentHeat > 0) Serial.print (" ");
+Serial.print(currentHeat,1);
+Serial.print("  ");
+
 
 int minuteToStart = 0;
    // Display the heat temperature
@@ -237,11 +276,15 @@ int minuteToStart = 0;
  {
   //   RoastTime.stop(); 
      State = AmStopped; 
+    Serial.print("Stopping heat - and waiting 10 seconds ");
+   
+    Serial.println();
+
      digitalWrite(HTR1, HIGH);
      digitalWrite(PWRPID, HIGH); 
+     delay(5000);
      digitalWrite(FAN, HIGH);
      digitalWrite(VIB, HIGH);
-     delay(1000);
      newState = 0;
  }
  else if (newState == AmRoasting)
