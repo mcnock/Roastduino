@@ -24,9 +24,9 @@ PID::PID(double* Input, double* Output, double* Setpoint,
     myOutput = Output;
     myInput = Input;
     mySetpoint = Setpoint;
-	inAuto = false;
+	  inAuto = false;
 	
-	PID::SetOutputLimits(0, 255);				//default output limit corresponds to 
+	  PID::SetOutputLimits(0, 255);				//default output limit corresponds to 
 												//the arduino pwm limits
 
     SampleTime = 100;							//default Controller Sample Time is 0.1 seconds
@@ -51,16 +51,18 @@ bool PID::Compute()
    unsigned long timeChange = (now - lastTime);
    if(timeChange>=SampleTime)
    {
+    //for me, the output is degrees away from setpoint x 100
       /*Compute all the working error variables*/
 	    double input = *myInput;
       double error = *mySetpoint - input;
-      ITerm+= (ki * error);
-      if(ITerm > outMax) ITerm= outMax;
-      else if(ITerm < outMin) ITerm= outMin;
-      double dInput = (input - lastInput);
+      //ITerm+= (ki * error);
+      //if(ITerm > outMax) ITerm= outMax;
+      //else if(ITerm < outMin) ITerm= outMin;
+      //double dInput = (input - lastInput);
       /*Compute PID Output*/
-      double output = kp * error + ITerm- kd * dInput;
-	    if(output > outMax) output = outMax;
+      //double output = kp * error + ITerm- kd * dInput;
+	       double output = kp * error ;
+     if(output > outMax) output = outMax;
         else if(output < outMin) output = outMin;
 	    *myOutput = output;
       /*Remember some variables for next time*/
@@ -68,7 +70,7 @@ bool PID::Compute()
       lastTime = now;
 	  return true;
    }
-   else return false;
+    else return false;
 }
 
 
