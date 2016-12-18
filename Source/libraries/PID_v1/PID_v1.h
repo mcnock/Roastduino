@@ -4,15 +4,13 @@
 
 class PID
 {
-
-
   public:
 
   //Constants used in some of the functions below
   #define AUTOMATIC	1
   #define MANUAL	0
-  #define DIRECT  0
-  #define REVERSE  1
+  #define DIRECT 	0
+  #define REVERSE	1
 
   //commonly used functions **************************************************************************
     PID(double*, double*, double*,        // * constructor.  links the PID to the Input, Output, and 
@@ -77,4 +75,3 @@ class PID
 	bool inAuto;
 };
 #endif
-
