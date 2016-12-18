@@ -1,11 +1,10 @@
 #include "libraries\Time-master\Time.h"
 #include "libraries\Time-master\TimeLib.h"
-
-#include "libraries\TFTLCD-Library-master\Adafruit_TFTLCD.h"
-#include "libraries\Touch-Screen-Library-master\TouchScreen.h"
-#include "libraries\max6675.h"
-#include "libraries\Adafruit-GFX-Library-master\Adafruit_GFX.h"
-#include "libraries\Adafruit-GFX-Library-master\gfxfont.h"
+#include <Adafruit_TFTLCD.h>
+#include <TouchScreen.h>
+#include "libraries\MAX6675\max6675.h"
+#include <Adafruit_GFX.h>
+#include <gfxfont.h>
 //#include <SPI.h>
 #include <EEPROM.h>
 #include <Wire.h>
