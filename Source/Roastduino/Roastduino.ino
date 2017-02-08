@@ -955,7 +955,7 @@ void LoadORSaveToHistory(boolean Load) {
     address++;
     EEPROM.write(address, (TimeLastEndOfRoast * 10));
   }
-  //312 - 318 & 319 to 325
+  //312 - 318 & 319 to 325  
   address = (number * 100) + 12;
   if (!Load) {
     for (int X = 0; X < SetPointCount; X++) {
