@@ -98,7 +98,7 @@
 #define AMOVERHEATEDCOIL    4
 #define AMREADYTOSTART      5
 #define AMOVERHEATEDFAN     6
-#define COOLINGTEST         7
+#define AMFANONLY           7
 
 #define PROFILELINE 0
 #define REALTIMELINE 1
@@ -1052,7 +1052,7 @@ void  displayState(int state) {
     case AMOVERHEATEDFAN:
       tft.println ("To Hot Fan            ");
       break;
-    case COOLINGTEST:
+    case AMFANONLY:
       tft.println ("Cooling Test           ");
       break;
  
