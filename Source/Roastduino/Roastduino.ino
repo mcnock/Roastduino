@@ -65,8 +65,10 @@
 #define TSD4p    12
 #define TCS4p    13
 
-#define PIDSSDp  2
+#define PIDSSD1p  2
+#define PIDSSD2p  3
 #define CPLEDp   4
+//annalog
 #define VOLT5p  5
 #define CURFANp   7
 #define CURHEATp  6
@@ -77,8 +79,7 @@
 #define CP3p    34
 #define CP4p    36
 
-#define HTRRELAY2p   37
-#define HTRRELAYp    35
+
 #define FANRELAYp    33
 #define VIBRELAYp    31
 
@@ -99,7 +100,6 @@
 #define AMROASTING          1
 #define AMSTOPPED           2
 #define AMAUTOCOOLING       3
-#define AMREADYTOSTART      5
 #define AMOVERHEATEDCOIL    4
 #define AMOVERHEATEDFAN     6
 #define COOLINGTEST         7
