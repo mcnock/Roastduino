@@ -95,9 +95,10 @@
 #define AMROASTING          1
 #define AMSTOPPED           2
 #define AMAUTOCOOLING       3
-#define AMOVERHEATEDCOIL    4
 #define AMREADYTOSTART      5
+#define AMOVERHEATEDCOIL    4
 #define AMOVERHEATEDFAN     6
+#define COOLINGTEST         7
 #define AMFANONLY           7
 
 #define PROFILELINE 0
@@ -320,43 +321,24 @@ void loop () {
     if (digitalRead(CP1p) == HIGH) {
       //CP1 is roast 
       capButGoneHigh = CP1p;
-      if (State == AMREADYTOSTART or State == AMSTOPPED) {
+      if (State == AMSTOPPED || State == AMFANONLY ) {
         newState = AMROASTING;
         Serial.println("Start Detected!");
       }
-      else if (State == AMROASTING ) {
+      else if (State == AMOVERHEATEDCOIL|| State == AMOVERHEATEDFAN ) {
         Serial.println("Stop detected!");
         if (tBeanAvg < TEMPCOOLINGDONE) {
-          newState = AMSTOPPED;
+           newState = AMSTOPPED;
         }
         else {
           Serial.println("Still warm.  Going to cooling!");
           newState = AMAUTOCOOLING;
         }
-      }
-      else if (State != AMAUTOCOOLING) {
-        Serial.println("Gointo am readyh to start");
-        State = AMREADYTOSTART;
       }
       
     }
     else if ( digitalRead(CP2p) == HIGH) {
       capButGoneHigh = CP2p;
-      //2 is roast off
-      Serial.println("here");
-      if (State == AMROASTING ) {
-        Serial.println("Stop detected!");
-        if (tBeanAvg < TEMPCOOLINGDONE) {
-          newState = AMSTOPPED;
-        }
-        else {
-          Serial.println("Still warm.  Going to cooling!");
-          newState = AMAUTOCOOLING;
-        }
-      }
-      else if (State != AMAUTOCOOLING) {
-        State = AMREADYTOSTART;
-      }
     }
     else if ( digitalRead(CP3p) == HIGH)
     { capButGoneHigh = CP3p;
@@ -365,6 +347,11 @@ void loop () {
     }
     else if ( digitalRead(CP4p) == HIGH)
     { capButGoneHigh = CP4p;
+      if (State == AMOVERHEATEDCOIL|| State == AMOVERHEATEDFAN)
+      {
+          newState = AMROASTING;
+      }
+
       graphProfile();
       Serial.println("cp4");
     }
@@ -1056,9 +1043,6 @@ void  displayState(int state) {
       tft.println ("Cooling Test           ");
       break;
  
-    case AMREADYTOSTART:
-      tft.println ("AmReadyToRoast    ");
-      break;
     default:
       tft.println ("unknown   ");
       break;
