@@ -65,7 +65,8 @@
 #define TSD4p    12
 #define TCS4p    13
 
-#define PIDSSDp  2
+#define PIDSSD2p  2
+#define PIDSSD1p  3
 #define CPLEDp   4
 #define VOLT5p  5
 #define CURFANp   7
@@ -77,29 +78,27 @@
 #define CP3p    34
 #define CP4p    36
 
-#define HTRRELAY2p   37
-#define HTRRELAYp    35
 #define FANRELAYp    33
 #define VIBRELAYp    31
 
 #define INTEGRAL_EP 0
 #define GAIN_EP 2
 #define TEMPLASTENDOFROAST_EP 3
-//these EEPROM memoary are also used
-//MySetpointsEprom[6];   {4,5,6,7,8,9}
-//MySpanMinutesEprom[6];   {10,11,12,13,14,15}
 #define PROFILETIMESTAMP_EP 16 
 //17,18,19
 
-#define OVERHEAT        800
+#define OVERHEATCOIL    800
+#define OVERHEATFAN     300
 #define BAUD            9600
 #define TEMPCOOLINGDONE 150
 
-#define AMROASTING      1
-#define AMSTOPPED       2
-#define AMCOOLING       3
-#define AMOVERHEATED    4
-#define AMREADYTOSTART  5
+#define AMROASTING          1
+#define AMSTOPPED           2
+#define AMAUTOCOOLING       3
+#define AMOVERHEATEDCOIL    4
+#define AMREADYTOSTART      5
+#define AMOVERHEATEDFAN     6
+#define COOLINGTEST         7
 
 #define PROFILELINE 0
 #define REALTIMELINE 1
@@ -202,14 +201,14 @@ int myLastGraph[320];
 // =====================================================================================================================================================================
 void setup() {
   // Pin Configuration
-  pinMode(HTRRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
-  pinMode(VIBRELAYp, OUTPUT); pinMode(HTRRELAY2p, OUTPUT);
+  pinMode(FANRELAYp, OUTPUT);
+  pinMode(VIBRELAYp, OUTPUT); 
   pinMode(TFT_RSTp, INPUT_PULLUP);
-  pinMode(PIDSSDp, OUTPUT);
+  pinMode(PIDSSD2p, OUTPUT);
+  pinMode(PIDSSD1p, OUTPUT);
 
   //set relays to high - cause that means off
   digitalWrite(FANRELAYp, HIGH); digitalWrite(VIBRELAYp, HIGH);
-  digitalWrite(HTRRELAY2p, HIGH); digitalWrite(HTRRELAYp, HIGH);
   Serial.begin(BAUD);
   delay(1000);
 
@@ -319,6 +318,7 @@ void loop () {
   int capButGoneHigh = 0;
   if (CapButActive == 0) {
     if (digitalRead(CP1p) == HIGH) {
+      //CP1 is roast 
       capButGoneHigh = CP1p;
       if (State == AMREADYTOSTART or State == AMSTOPPED) {
         newState = AMROASTING;
@@ -331,10 +331,10 @@ void loop () {
         }
         else {
           Serial.println("Still warm.  Going to cooling!");
-          newState = AMCOOLING;
+          newState = AMAUTOCOOLING;
         }
       }
-      else if (State != AMCOOLING) {
+      else if (State != AMAUTOCOOLING) {
         Serial.println("Gointo am readyh to start");
         State = AMREADYTOSTART;
       }
@@ -342,6 +342,7 @@ void loop () {
     }
     else if ( digitalRead(CP2p) == HIGH) {
       capButGoneHigh = CP2p;
+      //2 is roast off
       Serial.println("here");
       if (State == AMROASTING ) {
         Serial.println("Stop detected!");
@@ -350,10 +351,10 @@ void loop () {
         }
         else {
           Serial.println("Still warm.  Going to cooling!");
-          newState = AMCOOLING;
+          newState = AMAUTOCOOLING;
         }
       }
-      else if (State != AMCOOLING) {
+      else if (State != AMAUTOCOOLING) {
         State = AMREADYTOSTART;
       }
     }
@@ -388,25 +389,29 @@ void loop () {
   //**************************************************************************************************
   //DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE
   //*****************************************************************************************************
-  if (TCoil > OVERHEAT) {
-    newState = AMOVERHEATED;
-    Serial.println("Overheat Detected!");
+  if (TCoil > OVERHEATCOIL) {
+    newState = AMOVERHEATEDCOIL;
+    Serial.println("Overheat Coil Detected!");
+  }
+  else if (TFan > OVERHEATFAN) {
+    newState = AMOVERHEATEDFAN;
+    Serial.println("Overheat Fan Detected!");
   }
   else if (TBeanAvgRoll.mean() > TempEnd && State == AMROASTING) {
-    newState = AMCOOLING;
+    newState = AMAUTOCOOLING;
     Serial.print("Roast Temp Reached. Cooling starting End:");
     Serial.print(TempEnd);
     Serial.print("  Tempavg");
     Serial.print(TBeanAvgRoll.mean());
     Serial.println();
   }
-  else if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE && State == AMCOOLING) {
+  else if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE && State == AMAUTOCOOLING) {
     newState = AMSTOPPED;
     Serial.print("Cooling Complete ");
     Serial.println();
   }
   else if (roastMinutes > TimeScreenLeft && State == AMROASTING) {
-    newState = AMCOOLING;
+    newState = AMAUTOCOOLING;
     Serial.println("Max time reached. Cooling starting");
   }
   // **************************************************************************************************************************************************************
@@ -414,14 +419,14 @@ void loop () {
   // **************************************************************************************************************************************************************
   
   if (newState == AMSTOPPED) {
-    if (State != AMCOOLING) {
+    if (State != AMAUTOCOOLING) {
       Serial.print("Stopping heat - and waiting 10 seconds ");
     }
     Serial.println("here");
     State = AMSTOPPED;
     //    lcd.home();
     //    lcd.print("WaitToStop");
-    digitalWrite(HTRRELAYp, HIGH); digitalWrite(HTRRELAY2p, HIGH);
+    digitalWrite(PIDSSD1p, LOW); digitalWrite(PIDSSD2p, LOW);
     delay(5000);
     digitalWrite(FANRELAYp, HIGH); digitalWrite(VIBRELAYp, HIGH);
     newState = -2;
@@ -437,29 +442,29 @@ void loop () {
     Serial.println("2 Starting Heaters ");
     RoastTime.restart(minuteToStart * 60);
     roastMinutes = ((double)RoastTime.elapsed()) / 60;
-    digitalWrite(HTRRELAYp, LOW);  digitalWrite(HTRRELAY2p, LOW);
+    digitalWrite(PIDSSD1p, HIGH);
     newState = -2;
   }
-  else if (newState == AMCOOLING) {
-    State = AMCOOLING;
+  else if (newState == AMAUTOCOOLING) {
+    State = AMAUTOCOOLING;
     TempLastEndOfRoast = TBeanAvgRoll.mean();
     TimeLastEndOfRoast = roastMinutes;
     RoastTime.stop();
-    digitalWrite(HTRRELAYp, HIGH);    digitalWrite(HTRRELAY2p, HIGH);
+    digitalWrite(PIDSSD2p, LOW);digitalWrite(PIDSSD1p, LOW);
     LoadORSaveToHistory(false);
     delay(1000);   
     newState = -2;
   }
-  else if (newState == AMOVERHEATED) {
-    State = AMOVERHEATED;
-    digitalWrite(HTRRELAYp, HIGH); digitalWrite(HTRRELAY2p, HIGH);
+  else if (newState == AMOVERHEATEDCOIL) {
+    State = AMOVERHEATEDCOIL;
+    digitalWrite(PIDSSD2p, LOW);digitalWrite(PIDSSD1p, LOW);
     delay(1000);
     newState = -2;
   }
-  else if (State == AMOVERHEATED ) {
+  else if (State == AMOVERHEATEDCOIL ) {
     State = AMROASTING;
     newState = -2;
-    digitalWrite(HTRRELAYp, LOW); digitalWrite(HTRRELAY2p, LOW);
+    digitalWrite(PIDSSD2p, HIGH); 
   }
 
 
@@ -496,11 +501,11 @@ void loop () {
     }
     if (duty == 0 or ((now - PIDWindowStartTime) >  (duty * PIDWindowSize))) {
       //Serial.println ("set off");
-      digitalWrite(PIDSSDp, LOW);
+      digitalWrite(PIDSSD2p, LOW);
     } else { //we allow it to go high once per window
       if (PIDNewWindow == true && duty > 0) {
         //Serial.println ("sid set on");
-        digitalWrite(PIDSSDp, HIGH);
+        digitalWrite(PIDSSD2p, HIGH);
         PIDNewWindow = false;
       }
       else {
@@ -510,7 +515,7 @@ void loop () {
   }
   else {
     //Serial.println("not roastine is off");
-    digitalWrite(PIDSSDp, LOW);
+    digitalWrite(PIDSSD2p, LOW);
   }
 
   //********************************************************************************************************************************
@@ -1038,12 +1043,19 @@ void  displayState(int state) {
     case AMSTOPPED:
       tft.println( "AmStopped        ");
       break;
-    case AMCOOLING:
-      tft.setTextColor(WHITE, BLUE); tft.println( "AmCooling        ");
+    case AMAUTOCOOLING:
+      tft.setTextColor(WHITE, BLUE); tft.println( "Auto Cooling        ");
       break;
-    case AMOVERHEATED:
-      tft.println ("To Hot            ");
+    case AMOVERHEATEDCOIL:
+      tft.println ("To Hot Coil            ");
       break;
+    case AMOVERHEATEDFAN:
+      tft.println ("To Hot Fan            ");
+      break;
+    case COOLINGTEST:
+      tft.println ("Cooling Test           ");
+      break;
+ 
     case AMREADYTOSTART:
       tft.println ("AmReadyToRoast    ");
       break;
