@@ -1,3 +1,7 @@
+//#include <arduino2.h>
+
+#include <EEPROM.h>
+
 #include "libraries\Time-master\Time.h"
 #include "libraries\Time-master\TimeLib.h"
 #include <Adafruit_TFTLCD.h>
@@ -47,14 +51,14 @@
 // This is calibration data for the raw touch data to the screen coordinates
 //#define TS_MINX 150
 //#define TS_MINY 120
-//#define TS_MAXX 920
+//#def   ine TS_MAXX 920
 //#define TS_MAXY 940
 
 #define MINPRESSURE 10
 #define MAXPRESSURE 1000
 
 //THERMOCOUPLES
-#define SDIp    11
+//#define SDIp    11
 #define TSD1p    5
 #define TCS1p    6
 #define TSCKp    7
@@ -67,11 +71,14 @@
 
 #define PIDSSD1p  2
 #define PIDSSD2p  3
-#define CPLEDp   4
+#define Buzzerp   4
+#define LEDp      52
 //annalog
-#define VOLT5p  5
-#define CURFANp   7
-#define CURHEATp  6
+#define CURFANap    A7
+#define CURHEAT2ap  A6
+#define CURHEAT1ap  A5
+#define VOLT5ap     A4
+#
 
 //capacitive buttons
 #define CP1p    30
@@ -79,9 +86,8 @@
 #define CP3p    34
 #define CP4p    36
 
-
-#define FANRELAYp    33
 #define VIBRELAYp    31
+#define FANRELAYp    33
 
 #define INTEGRAL_EP 0
 #define TEMPSCREENTOP_EP 1
@@ -89,28 +95,29 @@
 #define TEMPLASTENDOFROAST_EP 3
 //these EEPROM memoary are also used
 //MySetpointsEprom[6];   {4,5,6,7,8,9}
-//MySpanMinutesEprom[6];   {10,11,12,13,14,15}
+//MySpanM  inutesEprom[6];   {10,11,12,13,14,15}
 #define PROFILETIMESTAMP_EP 16
 //17,18,19
 
-#define OVERHEATFAN     900
-#define OVERHEATCOIL    250
-#define BAUD            9600
-#define TEMPCOOLINGDONE 150
+#define OVERHEATFAN     250
+#define OVERHEATCOIL    900
+#define BAUD            115200
+#define TEMPCOOLINGDONE 170
 
 #define AMROASTING          1
 #define AMSTOPPED           2
 #define AMAUTOCOOLING       3
 #define AMOVERHEATEDCOIL    4
-#define AMOVERHEATEDFAN     6
-#define COOLINGTEST         7
-#define AMFANONLY           7
+#define AMOVERHEATEDFAN     5
+#define AMFANONLY           6
+#define STATECHANGED        8
 
 #define PROFILELINE 0
 #define REALTIMELINE 1
 #define dummy 2
 
-
+#define RELAYON    LOW
+#define RELAYOFF  HIGH
 // ===========
 // DEFINITIONS
 // ===========
@@ -142,7 +149,6 @@ int IntegralDX = 0;
 int IntegralDY = 0;
 long unsigned IntegralLastTime = 0;
 long unsigned IntegralSum = 0;
-int PIDWindowSize = 2000;
 unsigned long PIDWindowStartTime;
 boolean PIDNewWindow;
 
@@ -177,21 +183,26 @@ int ErrI = 0;
 unsigned long TempScreenTop = 455;
 long IYscale;
 
-unsigned long LoopsPerSecond;
+int LoopsPerSecond;
 
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
 int SecondTimerValue = 1000;
 Chrono LcdUdateTime(Chrono::MILLIS);
-int LcdUpdateTimeValue = 3000;
 Chrono PIDIntegralUdateTime(Chrono::MILLIS);
-int PIDIntegralUdateTimeValue = 3000;
+
 
 int CapButActive = 0;
 
 Average<float> AvgFan(10);
-Average<float> AvgHeat(25);
-Average<int> TBeanAvgRoll(5);
+Average<float> AvgHeat1(60);
+Average<float> AvgHeat2(60);
+Average<int> TBeanAvgRoll(4  );
+int OVERHEATFANCount;
+int OVERHEATCOILCount;
+int TempReachedCount;
+int TempSpikeCount;
+int Readingskipped;
 
 int PixelsPerMin;
 int LastX[2];
@@ -200,8 +211,13 @@ int LineColor[2];
 int myLastGraph[320];
 
 
-float TCoil, TBean1, TBean2, TFan;
-double MaxVoltage, CurrentFan, CurrentHeat;
+int TCoil;
+int TBean1;
+int TBean2;
+int TFan;
+double MaxVoltage, CurrentFan, CurrentHeat1, CurrentHeat2;
+
+char buf[5];
 
 
 //PROGRAM
@@ -211,12 +227,20 @@ double MaxVoltage, CurrentFan, CurrentHeat;
 // =====================================================================================================================================================================
 void setup() {
   // Pin Configuration
-  pinMode(VIBRELAYp, OUTPUT);
+  pinMode(VIBRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
   pinMode(TFT_RSTp, INPUT_PULLUP);
   pinMode(PIDSSD1p, OUTPUT); pinMode(PIDSSD2p, OUTPUT);
+  pinMode(Buzzerp, OUTPUT); pinMode(LEDp, OUTPUT);
+  digitalWrite(Buzzerp, HIGH);
+
+  pinMode(VOLT5ap, INPUT); pinMode(CURFANap, INPUT);
+  //define CURFANap    7///#define CURHEAT2ap  6
+#define CURHEAT1ap  5
+#define VOLT5ap     4
+
 
   //set relays to high - cause that means off
-  digitalWrite(FANRELAYp, HIGH); digitalWrite(VIBRELAYp, HIGH);
+  digitalWrite(FANRELAYp, RELAYOFF); digitalWrite(VIBRELAYp, RELAYOFF);
   Serial.begin(BAUD);
   delay(1000);
 
@@ -224,7 +248,7 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 10;
   if (Integral > 1) Integral = 0.1 ;
-  Serial.print("read Gain:"); Serial.print(Gain); Serial.print(" Integral:");  Serial.println(Integral);
+  Serial.print("read Gain:"); Serial.print(Gain); Serial.print(" Integral:"); Serial.println(Integral);
 
   EEPROM.get(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
   Serial.print("Read profile time stamp:"); Serial.println(MyProfileTimeStamp);
@@ -233,7 +257,6 @@ void setup() {
     EEPROM.put(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
     Serial.print("Saving time stamp:"); Serial.println(MyProfileTimeStamp);
   }
-
   TempLastEndOfRoast = ReadTempEprom (TEMPLASTENDOFROAST_EP, 0);
   for (int X = 1; X < SetPointCount; X++) {
     MySpanMinutes[X]  =  ReadIntEprom(MySpanMinutesEprom[X], X , 12, MySpanMinutes[X]);
@@ -262,6 +285,7 @@ void setup() {
   }
 
   tft.begin(identifier);
+
   graphProfile();
 
   State = AMSTOPPED;
@@ -276,24 +300,22 @@ void loop () {
   int newState = 0;
   int minuteToStart = 0;
   int tBeanAvg = 0;
-  // boolean switchVal;
   boolean bNewSecond = false;
   double roastMinutes = ((double)RoastTime.elapsed()) / 60;
+  //Serial.println(roastMinutes);
   if (SecondTimer.elapsed() > SecondTimerValue) {
-    bNewSecond = true;
-    //Serial.print("LoopsPerSec:"); Serial.println(LoopsPerSecond);
+    bNewSecond = true;// Serial.print("LoopsPerSec:");Serial.println(LoopsPerSecond);
     LoopsPerSecond = 0;
     SecondTimer.restart(0);
   }
-  else
-  {
+  else {
     LoopsPerSecond ++;
   }
 
   TSPoint p = ts.getPoint();
   if (p.z > MINPRESSURE && p.z < MAXPRESSURE)
   {
-    //Serial.print("touch x:");Serial.print (p.x); Serial.println(" y:"); Serial.println(p.y);
+    //Serial.print("touch x:");Serial.print (p.x);Serial.println(" y:");Serial.println(p.y);
     int x = 0; int y = 0;
     //        A        B
     x = map(p.y, 80, 880, 0, tft.width());
@@ -310,172 +332,240 @@ void loop () {
   //**********************************************************************************************************************************
   //read temperatures and amps             read temperatures and amps                read temperatures and amps              read temperatures and amps
   //********************************************************************************************************************************
-  if (bNewSecond) {
-    MaxVoltage = (((double)analogRead(VOLT5p)) / 1024) * 5;
-    CurrentFan = (((double)(analogRead(CURFANp) - 512) * MaxVoltage)) / 185;
-    AvgFan.push(CurrentFan);
-    CurrentFan = AvgFan.mean();
-    TCoil  = getTemperature(thermocouple1.readFahrenheit(), 1);
-    TFan   = getTemperature(thermocouple4.readFahrenheit(), 4); // getTemperature(temperature3->readThermocouple(FAHRENHEIT));
+  float tempraw;
+  int tempread;
+  int maxVread = 512;
+  if (bNewSecond) { //we speed up by doing this stuff once per second
+    maxVread = analogRead(VOLT5ap);
+    MaxVoltage = (((double)maxVread) / 1024) * 5;
+    // the center of the max voltage is 0
+    tempread = analogRead(CURFANap);
+    //Serial.print("volt:");Serial.print(maxVread);Serial.print("fan:");Serial.println(tempread);
+    //185 millamps per volt
+    CurrentFan = (((double)(tempread - (maxVread / 2) ) * 5)) / 125;
+    if (CurrentFan < 0) {
+      CurrentFan = 0;
+    }
+    AvgFan.push(CurrentFan); CurrentFan = AvgFan.mean();
+    TCoil =  getCleanTemp(thermocouple1.readFahrenheit(), 1);
+    //Serial.print("Coil teamp:");Serial.println(TCoil);
+    TFan =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
+    TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
+    TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
+    tBeanAvg = getBeanAvgTemp(TBean1, TBean2);
+
+    //Serial.print(TBean1);Serial.print (TBean2); Serial.print(TCoil); Serial.println(TFan);
+    double r = 1;
+
+    if (TBeanAvgRoll.getCount() > 100) {
+      r = tBeanAvg / TBeanAvgRoll.mean();
+    }
+    else
+    {
+        Readingskipped++;
+    }
+
+    if (r > .7 && r < 1.2) {
+      TBeanAvgRoll.push(tBeanAvg);
+    }
+    else
+    {
+      Serial.println("out of range:");
+      Serial.print("TBean2:"); Serial.print(TBean2); Serial.print(" TBean1:"); Serial.print(TBean1);
+      Serial.print(" avg:"); Serial.print(TBeanAvgRoll.mean()); Serial.print(" TCoil:");
+      Serial.print(TCoil); Serial.print(" TFan:"); Serial.println(TFan);
+
+    }
+
   }
-  CurrentHeat = (((double)(analogRead(CURHEATp) - 512) * MaxVoltage)) / 100;
-  AvgHeat.push(CurrentHeat * CurrentHeat);
-  CurrentHeat = sqrt( AvgHeat.mean());
-  TBean1 = getTemperature(thermocouple2.readFahrenheit(), 2);
-  TBean2 = getTemperature(thermocouple3.readFahrenheit(), 3);
-  tBeanAvg = getBeanAvgTemp(TBean1, TBean2);
-  TBeanAvgRoll.push(tBeanAvg);
+  CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - 512) * 5)) / 100; AvgHeat1.push(CurrentHeat1 * CurrentHeat1);
+  CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - 512) * 5)) / 100; AvgHeat2.push(CurrentHeat2 * CurrentHeat2);
+  CurrentHeat1 = sqrt( AvgHeat1.mean());
+  CurrentHeat2 = sqrt( AvgHeat2.mean());
+  if (State == AMROASTING) {
+
+    //Serial.print("TBean2:"); Serial.print(TBean2); Serial.print(" TBean1:"); Serial.print(TBean1);
+    //Serial.print(" avg:"); Serial.print(TBeanAvgRoll.mean()); Serial.print(" TCoil:");
+    //Serial.print(TCoil); Serial.print(" TFan:"); Serial.println(TFan);
+  }
+
+
   //*******************************************************************************************************************************************************
   //Input buttons                Input buttons                Input buttons                Input buttons                Input buttons
   //*******************************************************************************************************************************************************
-  //find and active button
-  int capButGoneHigh = 0;
-  if (CapButActive == 0) {
-    if (digitalRead(CP1p) == HIGH) {
-      capButGoneHigh = CP1p;
-      if (State == AMSTOPPED || State == AMFANONLY ) {
-        newState = AMROASTING;
-        Serial.println("Start Detected!");
-      }
-      else if (State == AMOVERHEATEDCOIL || State == AMOVERHEATEDFAN ) {
-        Serial.println("Stop detected!");
-        if (tBeanAvg < TEMPCOOLINGDONE) {
-          newState = AMSTOPPED;
-        }
-        else {
-          Serial.println("Still warm.  Going to cooling!");
-          newState = AMAUTOCOOLING;
-        }
-      }
-
-    }
-    else if ( digitalRead(CP2p) == HIGH) {
-      capButGoneHigh = CP2p;
-    }
-    else if ( digitalRead(CP3p) == HIGH)
-    { capButGoneHigh = CP3p;
-      if ( State == AMSTOPPED) {
-        newState = AMFANONLY;
-      }
-      else if (State == AMFANONLY) {
-        newState = AMSTOPPED;
-      }
-    }
-    else if ( digitalRead(CP4p) == HIGH)
-    { capButGoneHigh = CP4p;
-      if (State == AMOVERHEATEDCOIL || State == AMOVERHEATEDFAN)
-      {
-        newState = AMROASTING;
-      }
-
-      graphProfile();
-      Serial.println("cp4");
-    }
-    if (capButGoneHigh > 0) {
-      digitalWrite(CPLEDp, HIGH);
-      Serial.print ("Button pressed:" );
-      Serial.println (capButGoneHigh);
-      CapButActive =  capButGoneHigh;
-    }
-  }
-  else
-  {
-    if    (digitalRead( CapButActive) == LOW) {
-      digitalWrite(CPLEDp, LOW);
-      Serial.print ("Button releasewd:" );
-      Serial.println (CapButActive);
+  //look for pressed buttons being released
+  if (CapButActive > 0 ) {
+    if (digitalRead(CapButActive) == LOW) {
+      digitalWrite(Buzzerp, HIGH); digitalWrite(LEDp, LOW);
+      Serial.print ("Cap Button released:" ); Serial.println (CapButActive);
       CapButActive = 0;
     }
   }
+  //find newly pressed  button
+  //int capButGoneHigh = 0;
+
+  boolean capbuttonpressed = false;
+  if (CapButActive == 0 ) {
+    if (digitalRead(CP1p) == HIGH) {
+      CapButActive = CP1p;
+    }
+    else if ( digitalRead(CP2p) == HIGH) {
+      CapButActive = CP2p;
+    }
+    else if ( digitalRead(CP3p) == HIGH) {
+      CapButActive = CP3p;
+    }
+    else if ( digitalRead(CP4p) == HIGH) {
+      CapButActive = CP4p;
+    }
+
+    if (CapButActive > 0) {
+      capbuttonpressed = true;
+      digitalWrite(Buzzerp, LOW); digitalWrite(LEDp, HIGH);
+      Serial.print ("Cap Button pressed:" ); Serial.println (CapButActive);
+    }
+  }
+
 
   //**************************************************************************************************
   //DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE
   //*****************************************************************************************************
-  if (TCoil > OVERHEATCOIL) {
-    newState = AMOVERHEATEDCOIL;
-    Serial.println("Overheat Detected!");
+
+
+  //look at button inputs
+  if (capbuttonpressed) {
+    Serial.print ("Doing button work:" ); Serial.println (CapButActive);
+    switch (CapButActive) {
+      case CP1p:
+        if (State == AMSTOPPED || State == AMFANONLY  ) {
+          newState = AMROASTING;
+          Serial.println("Start Detected!");
+        }
+        else  if (State == AMOVERHEATEDCOIL || State == AMOVERHEATEDFAN || State == AMAUTOCOOLING ) {
+          newState = AMROASTING;
+          Serial.println("ReStart Detected!");
+        }
+        else {
+          newState = AMSTOPPED;
+        }
+        break;
+      case CP2p:
+        break;
+      case CP3p:
+        if ( State == AMSTOPPED) {
+          Serial.println("Fan On Detected!");
+          newState = AMFANONLY;
+        }
+        else if (State == AMFANONLY) {
+          Serial.println("Fan Off Detected!");
+          newState = AMSTOPPED;
+        }
+        else {
+          Serial.println("Fan on off detected by state not right to turn on or off");
+        }
+        break;
+      case CP4p:
+        if (State == AMOVERHEATEDCOIL || State == AMOVERHEATEDFAN) {
+          Serial.println("Manually Resetting overheat");
+          newState = AMROASTING;
+        }
+        graphProfile();
+        Serial.println("cp4");
+        break;
+      default:
+        break;
+    }
   }
-  else if (TFan > OVERHEATFAN) {
-    newState = AMOVERHEATEDFAN;
-    Serial.println("Overheat Detected!");
+
+  //look at temp inputs
+  if (State == AMROASTING && TCoil > OVERHEATCOIL) {
+    OVERHEATCOILCount++;
+    Serial.print("Overheat coil Detected! count:"); Serial.println(OVERHEATCOILCount);
+    if (OVERHEATCOILCount > 10) {
+      newState = AMOVERHEATEDCOIL;
+    }
   }
-  else if (TBeanAvgRoll.mean() > TempEnd && State == AMROASTING) {
-    newState = AMAUTOCOOLING;
-    Serial.print("Roast Temp Reached. Cooling starting End:");
-    Serial.print(TempEnd);
-    Serial.print("  Tempavg");
-    Serial.print(TBeanAvgRoll.mean());
-    Serial.println();
+  else if (State == AMROASTING && TFan > OVERHEATFAN) {
+    OVERHEATFANCount ++;
+    Serial.print("Overheat fan Detected! count:"); Serial.println(OVERHEATFANCount);
+    if (OVERHEATFANCount > 10) {
+      newState = AMOVERHEATEDFAN;
+    }
   }
-  else if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE && State == AMAUTOCOOLING) {
-    newState = AMSTOPPED;
-    Serial.print("Cooling Complete ");
-    Serial.println();
+  else {
+    OVERHEATFANCount = 0;  //reset counts whenever we see neither overheat condition
+    OVERHEATCOILCount = 0;
+    if (State == AMROASTING && TBeanAvgRoll.mean() > TempEnd ) {
+      TempReachedCount ++;
+      if (TempReachedCount > 10) {
+        newState = AMAUTOCOOLING;
+        Serial.print("Roast Temp Reached. Cooling starting End:"); Serial.print(TempEnd); Serial.print("  Tempavg"); Serial.println(TBeanAvgRoll.mean());
+      }
+    }
+    else if (State == AMAUTOCOOLING && TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
+      newState = AMSTOPPED;
+      Serial.println("Auto Cooling Complete ");
+    }
+    else if (State == AMROASTING && roastMinutes > TimeScreenLeft ) {
+      newState = AMAUTOCOOLING;
+      Serial.println("Max time reached. Cooling starting");
+    }
+    else {
+      TempReachedCount = 0;
+    }
   }
-  else if (roastMinutes > TimeScreenLeft && State == AMROASTING) {
-    newState = AMAUTOCOOLING;
-    Serial.println("Max time reached. Cooling starting");
-  }
+
+
   // **************************************************************************************************************************************************************
   //APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE
   // **************************************************************************************************************************************************************
-
   if (newState == AMSTOPPED) {
-    if (State != AMAUTOCOOLING) {
-      Serial.print("Stopping heat - and waiting 10 seconds ");
-    }
-    Serial.println("here");
-    State = AMSTOPPED;
     digitalWrite(PIDSSD1p, LOW); digitalWrite(PIDSSD2p, LOW);
-    delay(5000);
-    digitalWrite(FANRELAYp, HIGH); digitalWrite(VIBRELAYp, HIGH);
-    newState = -2;
+    if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE  && TFan < TEMPCOOLINGDONE ) {
+      State = AMSTOPPED;
+      digitalWrite(FANRELAYp, RELAYOFF); digitalWrite(VIBRELAYp, RELAYOFF);
+      RoastTime.stop();
+    }
+    else {
+      newState = AMAUTOCOOLING;
+      State = AMAUTOCOOLING;
+    }
   }
   else if (newState == AMROASTING) {
-    State = AMROASTING;
-    digitalWrite(FANRELAYp, LOW); digitalWrite(VIBRELAYp, LOW);
-
-    if (!AMOVERHEATEDFAN && !AMOVERHEATEDCOIL)
-    {
+    digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
+    if (State == AMSTOPPED || State == AMFANONLY) {
       StartLinebyTimeAndTemp(0, 0, REALTIMELINE , YELLOW);
-
       Serial.println("Starting Fans and Vibration - and waiting 5 seconds");
-      delay(1000);
+      delay(2000);
+      Readingskipped = 0;
       StartLinebyTimeAndTemp(0, 0, REALTIMELINE , YELLOW);
       graphProfile();
-      delay(1000);
+      delay(2000);
       Serial.println("2 Starting Heaters ");
       RoastTime.restart(minuteToStart * 60);
       roastMinutes = ((double)RoastTime.elapsed()) / 60;
-
     }
-    digitalWrite(PIDSSD1p, HIGH); digitalWrite(PIDSSD2p, HIGH);
-    newState = -2;
+    State = AMROASTING;
   }
   else if (newState == AMAUTOCOOLING) {
     State = AMAUTOCOOLING;
     TempLastEndOfRoast = TBeanAvgRoll.mean();
     TimeLastEndOfRoast = roastMinutes;
-    RoastTime.stop();
     digitalWrite(PIDSSD1p, LOW); digitalWrite(PIDSSD2p, LOW);
     LoadORSaveToHistory(false);
     delay(1000);
-    newState = -2;
   }
   else if (newState == AMFANONLY) {
     State = AMFANONLY;
-    digitalWrite(FANRELAYp, LOW); digitalWrite(VIBRELAYp, LOW);
-    newState = -2;
+    digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
   }
   else if (newState == AMOVERHEATEDCOIL) {
     State = AMOVERHEATEDCOIL;
     digitalWrite(PIDSSD1p, LOW); digitalWrite(PIDSSD2p, LOW);
     delay(1000);
-    newState = -2;
   }
   else if (State == AMOVERHEATEDFAN) {
     State = AMOVERHEATEDFAN;
-    newState = -2;
     digitalWrite(PIDSSD1p, LOW); digitalWrite(PIDSSD2p, LOW);
   }
 
@@ -486,6 +576,9 @@ void loop () {
   int err = 0;
   double duty = 0;
   double setpoint = 0;
+  int PIDIntegralUdateTimeValue = 3000;
+  int PIDWindowSize = 2000;  //pid window size should vary based on duty cycle. 10 millsec and 50% would to 20 millisecond.  10% would be 100 milliseconds.  01 % would be 1 seconds
+  //but we run 9 times per second, so shortest on off is 1 cycles or ~ 100 millseconds.   50% means .2 seconds, 10% means 1 seconds  .05% means 2 seconds
   if (State == AMROASTING) {
     setpoint =  calcSetpoint(roastMinutes);
     err = setpoint - TBeanAvgRoll.mean();  //negative if temp is over setpoint
@@ -493,80 +586,113 @@ void loop () {
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) {
         IntegralSum =  IntegralSum + double(err);
         ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
-        //Serial.print("Isum:"); Serial.print(IntegralSum);Serial.print("ErrI:");    Serial.println(ErrI);
+        //Serial.print("Isum:");Serial.print(IntegralSum);Serial.print("ErrI:");    Serial.println(ErrI);
         PIDIntegralUdateTime.restart(0);
       }
     }
-    else {
+    else { //clear out the integral corrected after each set point.  Not sure we need this but it seem to keep integral for being overdominant.
       PIDIntegralUdateTime.restart(0);
       IntegralSum = 0;
       IntegralLastTime = 0;
       ErrI = 0;
     }
-    duty =  ((double)(err + ErrI) / (double)Gain)    ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
-    //Serial.print("sp:"); Serial.print(setpoint); Serial.print(" err:"), Serial.print(err); Serial.print("duty:"); Serial.print(duty); Serial.print (" Gain:"); Serial.println (Gain);
+    duty =  ((double)(err + ErrI) / (double)Gain)    ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty decrease during pid window - we kill heater.  If duty increases during window we may miss the turn on.
+    //Serial.print("sp:");Serial.print(setpoint);Serial.print(" err:"), Serial.print(err);Serial.print("duty:");Serial.print(duty);Serial.print (" Gain:");Serial.println (Gain);
     //100% means never set low.  0% means set low right away
     long now = millis();
-    if (now - PIDWindowStartTime > PIDWindowSize) {
+    if (now - PIDWindowStartTime > PIDWindowSize) { //keep checking if we need to start a new PID window
       PIDWindowStartTime = now;
       PIDNewWindow = true;
     }
-    if (duty == 0 or ((now - PIDWindowStartTime) >  (duty * PIDWindowSize))) {
-      //Serial.println ("set off");
+
+    int PIDToControl = PIDSSD2p;
+
+    if (duty <= 0) {
       digitalWrite(PIDSSD2p, LOW);
-    } else { //we allow it to go high once per window
-      if (PIDNewWindow == true && duty > 0) {
-        //Serial.println ("sid set on");
-        digitalWrite(PIDSSD2p, HIGH);
-        PIDNewWindow = false;
-      }
-      else {
-        //Serial.println("is on");
-      }
+      //  PIDToControl = PIDSSD1p;
+      //  duty = 1 + duty;
     }
+    else  if (PIDNewWindow == true) {
+      //Serial.println ("sid set on");
+      digitalWrite(PIDToControl, HIGH);
+      PIDNewWindow = false;
+    }
+    else if  ((now - PIDWindowStartTime) >  (duty * PIDWindowSize)) {
+      //Serial.println ("set off");
+      digitalWrite(PIDToControl, LOW);
+    }
+    else {
+      //Serial.println("is on");
+      digitalWrite(PIDToControl, HIGH);
+    }
+    digitalWrite(PIDSSD1p, HIGH);
+
   }
   else {
     //Serial.println("not roastine is off");
-    digitalWrite(PIDSSD2p, LOW);
+    digitalWrite(PIDSSD1p, LOW); digitalWrite(PIDSSD2p, LOW);
   }
 
   //********************************************************************************************************************************
   //LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY
   //*******************************************************************************************************************************
+  //its slow to update the TFT
 
-
-  if (newState == -2) {
-    Serial.println("newstate");
-
+  if (newState > 0) {
+    Serial.println("newstate detected  Will update tft immediately");
     displayState(State);  newState = 0;
   }
   if (bNewSecond == true) {
+    //Serial.println("update per second");
     UpdateGraphA(roastMinutes, duty, setpoint, err, ErrI);
-    if (State == AMROASTING) {
-      AddLinebyTimeAndTemp(roastMinutes, tBeanAvg, 1);
-    }
+    AddLinebyTimeAndTemp(roastMinutes, TBeanAvgRoll.mean(), 1);
   }
-  if (LcdUdateTime.elapsed() > LcdUpdateTimeValue) {
-    UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat, TFan, CurrentFan, MaxVoltage);
+  if (LcdUdateTime.elapsed() > 3000) {
+    //Serial.print("slow update. once per:");Serial.println(3000);Serial.println(" millseconds");
+    // void UpdateGraphB(int temp1, int temp2, int tempCoil, double ampHeater1, double ampHeater2, int tempFan, double ampFan, double volts)
+    //   Serial.print("TBean2:");Serial.print(TBean2);Serial.print("TBean1:");Serial.print (TBean1);Serial.print("TCoil:"); Serial.print(TCoil); Serial.print("TFan:");Serial.println(TFan);
+    UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
     LcdUdateTime.restart(0);
   }
+
 }
+
+//----------------------------------------------------------------------------------------------------------------------------------------------------
+// END LOOP        END LOOP          END LOOP          END LOOP          END LOOP          END LOOP          END LOOP          END LOOP
+//----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 // FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 // Get the temperature
-double getTemperature(double temperature, int myID) {
-  //Serial.print (myID);Serial.print (" temp:"); Serial.println(temperature);
+int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
+    Readingskipped++;
+    Serial.print (myID); Serial.print (" temp:"); Serial.println(temperature);
     return -1;
   }
+  else if (temperature > 1000) {
+    Readingskipped++;
+    Serial.print (myID); Serial.print (" high spike:"); Serial.println(temperature);
+    return -1;
+  }
+
   else {
+
+
+
     switch ((int) temperature) {
       case 32:
+        Readingskipped++;
+        Serial.print (myID); Serial.print (" temp:"); Serial.println(temperature);
         return -1;
         break;
       default:
-        return temperature;
+        int r = temperature;
+        //  Serial.print (myID);Serial.print (" temp return:");Serial.println(r);
+        return r;
         break;
     }
   }
@@ -629,7 +755,7 @@ void graphProfile() {
 
   IYscale = ((TempScreenTop) * (TempScreenTop) * (TempScreenTop)) / 240;
   //IYscale = IYscale * 1000;
-  Serial.print("IYscale:"); Serial.print(TempScreenTop); Serial.print("  "); Serial.println(IYscale);
+  //Serial.print("IYscale:");Serial.print(TempScreenTop);Serial.print("  ");Serial.println(IYscale);
   //draw grid
   int color = tft.color565(125, 125, 125);
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
@@ -683,7 +809,7 @@ void graphProfile() {
 
     for (int Y = MySpanAccumulatedMinutes[X - 1] ; Y < MySpanAccumulatedMinutes[X]; Y++) {
       MyMinuteSetpoints[Y] =  MyBaseSetpoints[X - 1] + ((MyBaseSetpoints[X] - MyBaseSetpoints[X - 1]) * (double)(Y - MySpanAccumulatedMinutes[X - 1]) / (double)MySpanMinutes[X]);
-      Serial.print("minutesp:"); Serial.print(Y); Serial.print("  "); Serial.println(MyMinuteSetpoints[Y]);
+      //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
       //Serial.print (MyBaseSetpoints[X]);Serial.print (" - ");Serial.print (MyBaseSetpoints[X-1]);Serial.print (" - ");Serial.print ( Y );Serial.print (" - ");Serial.println ( MyMinuteSetpoints[Y]);
     }
     MySetpointsX[X] = MySpanAccumulatedMinutes[X] * PixelsPerMin;
@@ -697,12 +823,12 @@ void graphProfile() {
   //create setpoint array for last segment
   for (int Y = MySpanAccumulatedMinutes[SetPointCount - 1] ; Y <=     TimeScreenLeft; Y++) {
     MyMinuteSetpoints[Y] = MyBaseSetpoints[SetPointCount - 1] ;
-    Serial.print("minutesp:"); Serial.print(Y); Serial.print("  "); Serial.println(MyMinuteSetpoints[Y]);
+    //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
   }
 
 
   TempEnd = MyBaseSetpoints[SetPointCount - 2];
-  Serial.print ("TempEnd:");  Serial.println (TempEnd);
+  //Serial.print ("TempEnd:");Serial.println (TempEnd);
   tft.setCursor(tft.width() / 2, Y(TempEnd) - 10);  tft.println(TempEnd);
   tft.drawFastHLine(((tft.width() / 2) + 20)    ,  Y(TempEnd), tft.width(), BLUE);
   tft.drawFastVLine(PixelsPerMin * MySpanAccumulatedMinutes[SetPointCount - 2], 0, tft.height() / 2, BLUE);
@@ -857,6 +983,8 @@ void ProcessTouch(int Xtouch, int Ytouch)
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 int Y(int temp)
 {
 
@@ -864,6 +992,18 @@ int Y(int temp)
   return (240 -  ((double)temp * (double)temp * double(temp)) / IYscale);
 }
 
+void tftPrintDouble(double num)
+{
+  //tft.println("  ");
+  tft.println(num, 1);
+}
+void tftPrintInt3(int num)
+{
+  //  Serial.print("print:");Serial.println(num);
+  sprintf(buf, "x% 5d", num);
+  tft.println(buf);
+  // Serial.print("printbuf:");Serial.println(num);
+}
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, double errI) {
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
@@ -871,7 +1011,7 @@ void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, do
   // tft.setCursor(40 ,row); tft.println("F:"); tft.setCursor(50 , row); tft.println(TempEnd);
   // tft.setCursor(100 , row); tft.println("Last:"); tft.setCursor(130 , row); tft.println(TempLastEndOfRoast);
   row = 20;
-  tft.setCursor(40 , row); tft.print("Tavg:"); tft.setCursor(75 , row); tft.print(TBeanAvgRoll.mean());
+  tft.setCursor(40 , row); tft.print("Tavg:"); tft.setCursor(75 , row); tftPrintDouble(TBeanAvgRoll.mean());
   tft.setCursor(120 , row); tft.print("sp:"); tft.setCursor(134 , row); tft.println(setpoint);
   row = 35;
   tft.setCursor(40 , row); tft.print("Time:");   tft.setCursor(75 , row); tft.println(roastMinutes);
@@ -901,39 +1041,47 @@ void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, do
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void UpdateGraphB(int temp1, int temp2, int tempHeater, double ampHeater, int tempFan, double ampFan, double volts)
+void UpdateGraphB(int temp2, int temp1, int tempCoil, double ampHeater1, double ampHeater2, int tempFan     , double ampFan, double volts)
 {
-
-
+  //Serial.print("TBean2:");Serial.print(temp2);Serial.print("TBean1:");Serial.print (temp1);Serial.print("TCoil:"); Serial.print(tempCoil); Serial.print("TFan:");Serial.println(tempFan);
   if (AdjustmentSetpoint > 0 ) return;
+  
 
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
-  int row = 150;
-  tft.setCursor(150 , row); tft.println("T1:"); tft.setCursor(190 , row); tft.println(temp1);
-  tft.setCursor(240 , row); tft.println("T2"); tft.setCursor(270 , row); tft.println(temp2);
+  int row = 135;
+  tft.setCursor(150 , row); tft.println("Tvg:"); tft.setCursor(190 , row); tftPrintInt3(TBeanAvgRoll.mean()); 
+  tft.setCursor(240 , row); tft.println("Skip"); tft.setCursor(270 , row); tftPrintInt3(Readingskipped);
+  
+  row = 150;
+  tft.setCursor(150 , row); tft.println("T1:"); tft.setCursor(190 , row); tftPrintInt3(temp1);
+  tft.setCursor(240 , row); tft.println("T2"); tft.setCursor(270 , row); tftPrintInt3(temp2);
   row = 165;
-  tft.setCursor(150 , row); tft.println("Fan T:"); tft.setCursor(190 , row); tft.println(tempFan);
-  tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tft.println(ampFan);
+  tft.setCursor(150 , row); tft.println("Fan  T:"); tft.setCursor(190 , row); tftPrintInt3(tempFan);
+  tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tftPrintDouble(ampFan);
   row = 180;
   tft.setCursor(050 , row); tft.println("G:"); tft.setCursor(60 , row); tft.println(Gain); tft.setCursor(100 , row); tft.println("U D");
   GainX =  60; GainY = 180;
   GainUX = 102; GainUY = 55;
   GainDX = 114; GainDY = 55;
-
-  tft.setCursor(150 , row); tft.println("Heat T:"); tft.setCursor(190 , row); tft.println(tempHeater);
-  tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tft.println(ampHeater);
+  tft.setCursor(150 , row); tft.println("Heat T:"); tft.setCursor(190 , row); tftPrintInt3(tempCoil);
+  tft.setCursor(240 , row); tft.println("Amp1:"); tft.setCursor(270 , row); tftPrintDouble(ampHeater1);
   row = 195;
-  tft.setCursor(050 , row); tft.println("I:"); tft.setCursor(60 , row); tft.println(Integral) ; tft.setCursor(100 , row); tft.println("U D");
+  tft.setCursor(050 , row); tft.println("I:"); tft.setCursor(60 , row);
+  tft.println(Integral) ; tft.setCursor(100 , row); tft.println("U D");
   IntegralX  = 60; IntegralY  = 195;
   IntegralUX = 102; IntegralUY = 38;
   IntegralDX = 114; IntegralDY = 38;
   tft.setCursor(150 , row); tft.println("Volts:"); tft.setCursor(190 , row); tft.println(volts);
+  tft.setCursor(240 , row); tft.println("Amp2:"); tft.setCursor(270 , row); tftPrintDouble(ampHeater2);
+  row = 210;
+  tft.setCursor(050 , row); tft.println("ps:"); tft.setCursor(60 , row); tftPrintInt3(LoopsPerSecond) ;
+
   // tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tft.println(ampHeater);
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void StartLinebyTimeAndTemp(double timemins, int temp, int i, int color)
 {
-  // Serial.print ("StartLineTandT i:");  Serial.print (i); Serial.print(" color:"); Serial.println(color);
+  // Serial.print ("StartLineTandT i:");Serial.print (i);Serial.print(" color:");Serial.println(color);
   LastX[i] = (PixelsPerMin * timemins);
   if (temp > 0) {
     LastY[i] = Y(temp);
@@ -954,8 +1102,8 @@ void DrawPointByTimeAndTemp(double timemins, int temp, int i)
 {
   int newX = (PixelsPerMin * timemins);
   int newY = Y(temp);
-  //Serial.print ("AddLineTandT i:");  Serial.print (i);Serial.print(" color:"); Serial.println(LineColor[i]);
-  //Serial.print ("AddLineTandT i:");  Serial.print (i);Serial.print(" time:"); Serial.print(timemins);Serial.print(" temp:"); Serial.println(temp);
+  //Serial.print ("AddLineTandT i:");Serial.print (i);Serial.print(" color:");Serial.println(LineColor[i]);
+  //Serial.print ("AddLineTandT i:");Serial.print (i);Serial.print(" time:");Serial.print(timemins);Serial.print(" temp:");Serial.println(temp);
 
   tft.drawPixel(newX, newY, LineColor[i]);
 }
@@ -963,8 +1111,8 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int i)
 {
   int newX = (PixelsPerMin * timemins);
   int newY = Y(temp);
-  //Serial.print ("AddLineTandT i:");  Serial.print (i);Serial.print(" color:"); Serial.println(LineColor[i]);
-  //Serial.print ("AddLineTandT i:");  Serial.print (i);Serial.print(" time:"); Serial.print(timemins);Serial.print(" temp:"); Serial.println(temp);
+  //Serial.print ("AddLineTandT i:");Serial.print (i);Serial.print(" color:");Serial.println(LineColor[i]);
+  // Serial.print ("AddLineTandT i:");Serial.print (i);Serial.print(" time:");Serial.print(timemins);Serial.print(" temp:");Serial.println(temp);
   tft.drawLine(LastX[i], LastY[i], newX, newY, LineColor[i]);
   LastX[i] = newX;
   LastY[i] = newY;
@@ -1040,7 +1188,7 @@ void DrawREALTIMELINEFromArray(int color) {
   LastY[1] = 240;
   for (int X = 0; X < 320; X++) {
     if (myLastGraph[X] > 0 ) {
-      //  Serial.print ("DrawRealTime "); Serial.print(" color:"); Serial.println(color);
+      //  Serial.print ("DrawRealTime ");Serial.print(" color:");Serial.println(color);
       tft.drawLine(LastX[1], LastY[1] , X, myLastGraph[X], color);
       BoldLine(LastX[1], LastY[1] , X, myLastGraph[X], color);
       LastX[1] = X;
@@ -1084,7 +1232,7 @@ void  displayState(int state) {
       break;
 
     default:
-      tft.println ("unknown   ");
+      tft.println ("unkState   ");
       break;
   }
 }
