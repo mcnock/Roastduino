@@ -354,7 +354,7 @@ void loop () {
 
     //Serial.print(TBean1);Serial.print (TBean2); Serial.print(TCoil); Serial.println(TFan);
     double newtempratiotoaverage;
-    if (TBeanAvgRoll.getCount() > 10) {
+    if (TBeanAvgRoll.getCount() > 1) {
       newtempratiotoaverage = TBeanAvg / TBeanAvgRoll.mean();
     }
     else {
