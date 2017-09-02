@@ -199,12 +199,14 @@ int TempReachedCount;
 int TempSpikeCount;
 int Readingskipped;
 
-int PixelsPerMin;
+long PixelsPerMin;
+
+int DUMMY;
 
 //used when drawing lines. We support up to 3 lines (see line ID constants)
-int LastXforLineID[2];
-int LastYforLineID[2];
-int LineColorforLineID[2];
+uint16_t LastXforLineID[3];
+uint16_t LastYforLineID[3];
+uint16_t LineColorforLineID[3];
 int myLastGraph[320];
 
 
@@ -262,7 +264,9 @@ void setup() {
     MySpanMinutes[X]  =  ReadIntEprom(MySpanMinutesEprom[X], X , 12, MySpanMinutes[X]);
     MyBaseSetpoints[X] = ReadTempEprom(MySetpointsEprom[X] , MyBaseSetpoints[X]);
   }
-
+  Serial.println (LastXforLineID[2]);
+  PixelsPerMin =  (int)(320 / TimeScreenLeft);
+  Serial.println (LastXforLineID[2]);
   TempScreenTop = ReadIntEprom(TEMPSCREENTOP_EP, 100, 500, 460);
   TempScreenTop = 450;
   Serial.print("  tempscreentop:"); Serial.println(TempScreenTop);
@@ -533,7 +537,7 @@ void loop () {
       Serial.println("Starting Fans and Vibration - and waiting 5 seconds");
       delay(2000);
       Readingskipped = 0;
-      StartLinebyTimeAndTemp(0, 0, AVGLINEID , GREEN);
+      StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
       StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , YELLOW);
       graphProfile();
       delay(2000);
@@ -611,13 +615,14 @@ void loop () {
     if ((PIDWindowStartTime == 0) || (now - PIDWindowStartTime > PIDWindowSize)) { //keep checking if we need to start a new PID window
       PIDWindowStartTime = now;
       PIDNewWindow = true;
+      Serial.println("new pid window");
     }
 
     if ((PIDNewWindow == true && Duty > 0) || ( (now - PIDWindowStartTime) <=  (Duty * PIDWindowSize))) {
       //Serial.println ("ssd 1 is on");
       digitalWrite(PIDSSD1p, HIGH);
       if (SSD1OnTime == 0) {
-        //Serial.println ("start ssd1 on 5 sec timer");
+        Serial.println ("start ssd1on  timer");
         SSD1OnTime = now;
       }
       else if ((now - SSD1OnTime) > 5000) {
@@ -633,7 +638,7 @@ void loop () {
       //Serial.println ("ssd 2 is off");
       digitalWrite(PIDSSD2p, LOW);
       if (SSD2OffTime == 0) {
-        //Serial.println ("ssd 1 off 5 sec timer started")
+        Serial.println ("ssd 1 off 5 sec timer started");
         SSD2OffTime = now;
       }
       else if ((now - SSD2OffTime) > 5000) {
@@ -760,7 +765,7 @@ double calcSetpoint(double roastminutes) {
 void graphProfile() {
   tft.setRotation(3);
   tft.fillScreen(BLACK);
-  PixelsPerMin = 320 / TimeScreenLeft;
+  
 
   IYscale = ((TempScreenTop) * (TempScreenTop) * (TempScreenTop)) / 240;
   //IYscale = IYscale * 1000;
@@ -1087,9 +1092,9 @@ void UpdateGraphB(int temp2, int temp1, int tempCoil, double ampHeater1, double 
   // tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tft.println(ampHeater);
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, int color)
+void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color)
 {
-  // Serial.print ("StartLineTandT i:");Serial.print (i);Serial.print(" color:");Serial.println(color);
+  Serial.print ("StartLineTandT id:");Serial.print (lineID);Serial.print(" color:");Serial.println(color);
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   if (temp > 0) {
     LastYforLineID[lineID] = Y(temp);
@@ -1117,15 +1122,15 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, int color)
 //}
 void AddLinebyTimeAndTemp(double timemins, int temp, int lineID)
 {
-  int newX = (PixelsPerMin * timemins);
+  uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = Y(temp);
-  //Serial.print ("AddLineTandT i:");Serial.print (i);Serial.print(" color:");Serial.println(LineColorforLineID[i]);
-  // Serial.print ("AddLineTandT i:");Serial.print (i);Serial.print(" time:");Serial.print(timemins);Serial.print(" temp:");Serial.println(temp);
+  //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
+  //Serial.print ("newX:");Serial.print (newX); Serial.print ("pixelspermin:");Serial.print (PixelsPerMin); Serial.print(" newY:");Serial.println(newY);
   tft.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
   LastXforLineID[lineID] = newX;
   LastYforLineID[lineID] = newY;
   if (lineID == ROLLAVGLINEID) {
-    //BoldLine(LastXforLineID[lineID], LastYforLineID[lineID] + 1, newX, newY + 1, LineColorforLineID[lineID]);
+    BoldLine(LastXforLineID[lineID], LastYforLineID[lineID] + 1, newX, newY + 1, LineColorforLineID[lineID]);
     myLastGraph[newX] = newY;
   }
 }
