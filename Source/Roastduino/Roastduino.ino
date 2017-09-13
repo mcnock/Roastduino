@@ -301,7 +301,7 @@ void setup() {
 }
 
 // **************************************************************************************************************************************************************
-// LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
+// LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
 void loop () {
 
@@ -311,7 +311,7 @@ void loop () {
   boolean bNewSecond = false;
   double roastMinutes = ((double)RoastTime.elapsed()) / 60;
   //Serial.println(roastMinutes);
-  if (SecondTimer.elapsed() > 500) {
+  if (SecondTimer.elapsed() > 1000) {
     bNewSecond = true;// Serial.print("LoopsPerSec:");Serial.println(LoopsPerSecond);
     LoopsPerSecond = 0;
     SecondTimer.restart(0);
@@ -337,23 +337,31 @@ void loop () {
   }
 
   //**********************************************************************************************************************************
-  //read temperatures and amps             read temperatures and amps                read temperatures and amps              read temperatures and amps
+  //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
   //********************************************************************************************************************************
   float tempraw;
-  int tempread;
+ 
+//we read current all the time since
+ int tempread;
+    
+  MaxVread = analogRead(VOLT5ap);
+  MaxVoltage = (((double)MaxVread) / 1024) * 5;
+  // the center of the max voltage is 0
+  tempread = analogRead(CURFANap);
+  //Serial.print("volt:");Serial.print(maxVread);Serial.print("fan:");Serial.println(tempread);
+  //185 millamps per volt
+  CurrentFan = (((double)(tempread - (MaxVread / 2) ) * 5)) / 125;
+  if (CurrentFan < 0) {
+    CurrentFan = 0;
+  }
+  AvgFanCurrent.push(CurrentFan); CurrentFan = AvgFanCurrent.mean();
+  CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
+  CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
+  CurrentHeat1 = sqrt( AvgCoil1Amp.mean());
+  CurrentHeat2 = sqrt( AvgCoil2Amp.mean());
 
-  if (bNewSecond) { //we speed up by doing this stuff once per second
-    MaxVread = analogRead(VOLT5ap);
-    MaxVoltage = (((double)MaxVread) / 1024) * 5;
-    // the center of the max voltage is 0
-    tempread = analogRead(CURFANap);
-    //Serial.print("volt:");Serial.print(maxVread);Serial.print("fan:");Serial.println(tempread);
-    //185 millamps per volt
-    CurrentFan = (((double)(tempread - (MaxVread / 2) ) * 5)) / 125;
-    if (CurrentFan < 0) {
-      CurrentFan = 0;
-    }
-    AvgFanCurrent.push(CurrentFan); CurrentFan = AvgFanCurrent.mean();
+ 
+  if (bNewSecond) { //we speed up by reading temps once per second.  they are very slow.
     TCoil =  getCleanTemp(thermocouple1.readFahrenheit(), 1);
     //Serial.print("Coil teamp:");Serial.println(TCoil);
     TFan =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
@@ -383,19 +391,10 @@ void loop () {
 
     }
   }
-  CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
-  CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
-  CurrentHeat1 = sqrt( AvgCoil1Amp.mean());
-  CurrentHeat2 = sqrt( AvgCoil2Amp.mean());
-  //if (State == AMROASTING) {
-  //Serial.print("TBean2:"); Serial.print(TBean2); Serial.print(" TBean1:"); Serial.print(TBean1);
-  //Serial.print(" avg:"); Serial.print(TBeanAvgRoll.mean()); Serial.print(" TCoil:");
-  //Serial.print(TCoil); Serial.print(" TFan:"); Serial.println(TFan);
-  //}
-
+ 
 
   //*******************************************************************************************************************************************************
-  //Input buttons                Input buttons                Input buttons                Input buttons                Input buttons
+  //Input buttons      C          Input buttons        C        Input buttons       C         Input buttons      C          Input buttons
   //*******************************************************************************************************************************************************
   //look for pressed buttons being released
   if (CapButActive > 0 ) {
@@ -432,7 +431,7 @@ void loop () {
 
 
   //**************************************************************************************************
-  //DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE       DETERIM NEW STATE
+  //DETERIM NEW STATE   D    DETERIM NEW STATE   D    DETERIM NEW STATE  D     DETERIM NEW STATE  D     DETERIM NEW STATE
   //*****************************************************************************************************
 
 
@@ -521,7 +520,7 @@ void loop () {
 
 
   // **************************************************************************************************************************************************************
-  //APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE           APPLY NEW STATE
+  //APPLY NEW STATE     E      APPLY NEW STATE      E     APPLY NEW STATE   E        APPLY NEW STATE      E     APPLY NEW STATE   E        APPLY NEW STATE           APPLY NEW STATE
   // **************************************************************************************************************************************************************
   if (newState == AMSTOPPED) {
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
@@ -576,14 +575,14 @@ void loop () {
 
 
   //***************************************************************************************************************************************************************
-  // CALCULATING PID VALUES         CALCULATING PID VALUES         CALCULATING PID VALUES         CALCULATING PID VALUES         CALCULATING PID VALUES
+  // CALCULATING PID VALUES     F    CALCULATING PID VALUES     F    CALCULATING PID VALUES    F     CALCULATING PID VALUES    F     CALCULATING PID VALUES
   //*************************************************************************************************************************************************************
   int err = 0;
   //pid window size should vary based on duty cycle. 10 millsec and 50% would to 20 millisecond.  10% would be 100 milliseconds.  01 % would be 1 seconds
   //but we run 9 times per second, so shortest on off is 1 cycles or ~ 100 millseconds.   50% means .2 seconds, 10% means 1 seconds  .05% means 2 seconds
   Duty = 0;
   Setpoint = 0;
-  
+
   if (State == AMROASTING) {
     //CALC THE ERR AND INTEGRAL
     Setpoint =  calcSetpoint(roastMinutes);
@@ -616,8 +615,8 @@ void loop () {
       PIDNewWindow = true;
       Serial.println("new pid window");
     }
-    boolean AmInOnPortionOfWindow =(PIDNewWindow == true && Duty > 0) ||  ((now - PIDWindowStartTime) <=  (Duty * PIDWindowSize));
-  if (AmInOnPortionOfWindow  ) {
+    boolean AmInOnPortionOfWindow = (PIDNewWindow == true && Duty > 0) ||  ((now - PIDWindowStartTime) <=  (Duty * PIDWindowSize));
+    if (AmInOnPortionOfWindow  ) {
       //note when it was turned on.  If it was just turned on, it is our management relay
       if (SSR1_OnTime == 0) {
         //if pid 1 is not on, turn it on
@@ -638,7 +637,7 @@ void loop () {
       }
 
     }
-    else{ //we are in the OffPortion of the Window
+    else { //we are in the OffPortion of the Window
       if (ManagingSSR == 2) {
         //if pid 2 is managing relay - turn it off and begin tracking how long it has been off
         SSR2_OffTime = now;
@@ -658,14 +657,14 @@ void loop () {
       PIDNewWindow = false;
     }
   }
-  else { 
+  else {
     //Serial.println("not roastine is off");
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
     SSR1_OnTime = 0; SSR2_OffTime = 0;
   }
 
   //********************************************************************************************************************************
-  //LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY         LCD AND GRAPH DISPLAY
+  //LCD AND GRAPH DISPLAY    G     LCD AND GRAPH DISPLAY   G      LCD AND GRAPH DISPLAY    G     LCD AND GRAPH DISPLAY    G     LCD AND GRAPH DISPLAY
   //*******************************************************************************************************************************
   //its slow to update th
 
@@ -673,8 +672,9 @@ void loop () {
     Serial.println("newstate detected  Will update tft immediately");
     displayState(State);  newState = 0;
   }
-  if (bNewSecond == true) {
-    Serial.println("update per second");
+  //we update the area when we get new temps
+  if (bNewSecond) {
+    Serial.println("update after reach new temp");
     UpdateGraphA(roastMinutes, Duty, Setpoint, err, ErrI);
     AddLinebyTimeAndTemp(roastMinutes, TBeanAvg, AVGLINEID);
     AddLinebyTimeAndTemp(roastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
@@ -690,7 +690,7 @@ void loop () {
 }
 
 //----------------------------------------------------------------------------------------------------------------------------------------------------
-//      END LOOP        END LOOP          END LOOP          END LOOP          END LOOP          END LOOP          END LOOP          END LOOP
+//      END LOOP  H      END LOOP      H    END LOOP    H      END LOOP    H      END LOOP   H       END LOOP     H     END LOOP    H      END LOOP
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -1036,7 +1036,7 @@ void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, do
   // tft.setCursor(40 ,row); tft.println("F:"); tft.setCursor(50 , row); tft.println(TempEnd);
   // tft.setCursor(100 , row); tft.println("Last:"); tft.setCursor(130 , row); tft.println(TempLastEndOfRoast);
   row = 20;
-  tft.setCursor(40 , row); tft.print("sp:"); tft.setCursor(75 , row); tft.println(setpoint);
+  tft.setCursor(40 , row); tft.print("sp:"); tft.setCursor(75 , row); tft.println(setpoint); tft.setCursor(100 , row); tft.print("SSD:"); tft.setCursor(130 , row); tft.println(ManagingSSR);
   row = 35;
   tft.setCursor(40 , row); tft.print("Time:");   tft.setCursor(75 , row); tft.println(roastMinutes);
   row = 50;
