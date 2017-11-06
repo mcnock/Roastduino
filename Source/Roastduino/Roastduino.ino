@@ -1,15 +1,15 @@
-
-#include "libraries\Time-master\Time.h"
-#include "libraries\Time-master\TimeLib.h"
-#include "libraries\TFTLCD\Adafruit_TFTLCD.h"
-#include "libraries\MAX6675\max6675.h"
-#include "libraries\TFTLCD\Adafruit_GFX.h"
-#include "libraries\TFTLCD\gfxfont.h"
+#include <Time.h>
+#include <TimeLib.h>
+#include <Adafruit_TFTLCD.h>
+#include <max6675.h>
+#include  <Adafruit_GFX.h>
+#include <gfxfont.h>
 #include "libraries\Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include "Chrono.h"
 #include "TouchScreen.h"
+#include "B_MyTypes.h"
 
 // ===========
 //  DEFINES
@@ -111,6 +111,7 @@
 #define SETPOINTLINEID 0
 #define ROLLAVGLINEID 1
 #define AVGLINEID 2
+#define COILLINEID 3
 
 #define RELAYON    LOW
 #define RELAYOFF  HIGH
@@ -156,8 +157,6 @@ int PIDWindowSize ;
 int ManagingSSR ;
 
 
-
-
 int MySetpointsX[6];
 int MySetpointsY[6];
 int MySpanAccumulatedMinutes[6];
@@ -168,16 +167,34 @@ int MySpanMinutes[] =      {  0,   4,   2,   7,    1,   1}; //actual values read
 int MyBaseSetpoints[] =     {120, 390, 430, 450,  470, 500}; //actual values read from eeprom
 unsigned long MyProfileTimeStamp;
 int SetPointCount = 6;
-int TempEnd = 450; //actual value is set in program
+
+double TempRoastDone = 0;
+
+double TempYMax = 650; //actual value is set in program
+double PixelYSplit = 100;
+double TempYSplit = 400;
+double PixelYSplit2 = 200;
+double TempYSplit2 = 440;
+
+  //we have 240 units...
+  //240-120 is for < 400 >> 400/120  3.333 degrees per pixel
+  //120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
+double TempPerPixL = TempYSplit/PixelYSplit;
+double TempPerPixM = (TempYSplit2 - TempYSplit)/(PixelYSplit2 - PixelYSplit);
+double TempPerPixH = (TempYMax - TempYSplit2)/(240.00 - PixelYSplit2);
+  
+
 int TimeScreenLeft = 14;
 int TempLastEndOfRoast;
 double TimeLastEndOfRoast;
+
+
 int AdjustmentDisplayTop = 140;
 int AdjustmentSetpoint = 0;
 
 
 
-unsigned long TempScreenTop = 455;
+unsigned long TempScreenTop = 450;
 long IYscale;
 
 int LoopsPerSecond;
@@ -204,6 +221,18 @@ int Readingskipped;
 
 long PixelsPerMin;
 
+long MenuShowing;
+
+buttondef* myButtonMenu1 = 0;
+int myButtonMenu1Count = 0;
+
+buttondef* myButtonMenu2 = 0;
+int myButtonMenu2Count = 0;
+
+int MenuShowingXmin;
+int MenuShowingYmin;
+int MenuShowingXmax;
+int MenuShowingYmax;
 int DUMMY;
 
 //used when drawing lines. We support up to 3 lines (see line ID constants)
@@ -221,7 +250,8 @@ double MaxVoltage, MaxVread, CurrentFan, CurrentHeat1, CurrentHeat2;
 int TBeanAvg;
 
 char Buf5[5];
-
+char Buf6[6];
+char Buf7[7];
 
 boolean Flasher;
 //PROGRAM
@@ -267,9 +297,13 @@ void setup() {
   }
   Serial.println (LastXforLineID[2]);
   PixelsPerMin =  (int)(320 / TimeScreenLeft);
+  
+  
+  
+  
   Serial.println (LastXforLineID[2]);
-  TempScreenTop = ReadIntEprom(TEMPSCREENTOP_EP, 100, 500, 460);
-  TempScreenTop = 450;
+  //TempScreenTop = ReadIntEprom(TEMPSCREENTOP_EP, 100, 500, 460);
+ //TempScreenTop  = 450;
   Serial.print("  tempscreentop:"); Serial.println(TempScreenTop);
 
   tft.reset();

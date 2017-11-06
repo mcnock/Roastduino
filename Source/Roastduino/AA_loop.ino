@@ -1,4 +1,4 @@
-#include "libraries\TFTLCD-Library-master\Adafruit_TFTLCD.h"
+
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
@@ -61,7 +61,7 @@ void theloop () {
     //lower A to increase report X pixes at left side of screen 3 ~ 3px
     //lower D to increase report X pixel at right side of scrreen
     //        C       D
-    y = map(p.x, 140, 890, 0, tft.height());
+    y = map(p.x, 130, 890, 0, tft.height());
     //lower D to increase Reporter Y Pixels at top of screen 5 ~ 1px
     //lower C to increase reportd Y pixels at bottom of screen 2 ~ 1px
     //Serial.print ("x:");Serial.print (x);Serial.print (" y:");Serial.println (y);
@@ -228,11 +228,11 @@ void theloop () {
   else {
     OVERHEATFANCount = 0;  //reset counts whenever we see neither overheat condition
     OVERHEATCOILCount = 0;
-    if (State == AMROASTING && TBeanAvgRoll.mean() > TempEnd ) {
+    if (State == AMROASTING && TBeanAvgRoll.mean() > TempRoastDone ) {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
         newState = AMAUTOCOOLING;
-        Serial.print("Roast Temp Reached. Cooling starting End:"); Serial.print(TempEnd); Serial.print("  Tempavg"); Serial.println(TBeanAvgRoll.mean());
+        Serial.print("Roast Temp Reached. Cooling starting End:"); Serial.print(TempRoastDone); Serial.print("  Tempavg"); Serial.println(TBeanAvgRoll.mean());
       }
     }
     else if (State == AMAUTOCOOLING && TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
@@ -273,6 +273,7 @@ void theloop () {
       Readingskipped = 0;
       StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
       StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , YELLOW);
+      StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
       graphProfile();
       delay(2000);
       Serial.println("2 Starting Heaters ");
@@ -387,12 +388,15 @@ void theloop () {
     displayState(State); 
     UpdateGraphA(roastMinutes, Duty, Setpoint, err, ErrI);
     AddLinebyTimeAndTemp(roastMinutes, TBeanAvg, AVGLINEID);
-    AddLinebyTimeAndTemp(roastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+  
   }
+  
   if (LcdUdateTime.elapsed() > 3000) {
     //Serial.print("slow update. once per:");Serial.println(3000);Serial.println(" millseconds");
     // void UpdateGraphB(int temp1, int temp2, int tempCoil, double ampHeater1, double ampHeater2, int tempFan, double ampFan, double volts)
     //   Serial.print("TBean2:");Serial.print(TBean2);Serial.print("TBean1:");Serial.print (TBean1);Serial.print("TCoil:"); Serial.print(TCoil); Serial.print("TFan:");Serial.println(TFan);
+    AddLinebyTimeAndTemp(roastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+    AddLinebyTimeAndTemp(roastMinutes, TCoil, COILLINEID);
     UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
     LcdUdateTime.restart(0);
   }
