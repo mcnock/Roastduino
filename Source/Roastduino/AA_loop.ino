@@ -5,10 +5,10 @@
 void theloop () {
 
   //per loop variables
-  int newState = 0;
+  
   int minuteToStart = 0;
   boolean bNewSecond = false;
-  double roastMinutes = ((double)RoastTime.elapsed()) / 60;
+  RoastMinutes = ((double)RoastTime.elapsed()) / 60;
   //Serial.println(roastMinutes);
   if (FlashTimer.elapsed() > 100) {
       if (Flasher == false){
@@ -46,26 +46,12 @@ void theloop () {
      }
   }
   else {
-      LoopsPerSecond ++;
-      
+      LoopsPerSecond ++;      
   }
        
-
   TSPoint p = ts.getPoint();
-  if (p.z > MINTOUCHPRESSURE && p.z < MAXTOUCHPRESSURE)
-  {
-    //Serial.print("touch x:");Serial.print (p.x);Serial.println(" y:");Serial.println(p.y);
-    int x = 0; int y = 0;
-    //        A        B
-    x = map(p.y, 80, 880, 0, tft.width());
-    //lower A to increase report X pixes at left side of screen 3 ~ 3px
-    //lower D to increase report X pixel at right side of scrreen
-    //        C       D
-    y = map(p.x, 130, 890, 0, tft.height());
-    //lower D to increase Reporter Y Pixels at top of screen 5 ~ 1px
-    //lower C to increase reportd Y pixels at bottom of screen 2 ~ 1px
-    //Serial.print ("x:");Serial.print (x);Serial.print (" y:");Serial.println (y);
-    ProcessTouch(x, y);
+  if (p.z > MINTOUCHPRESSURE && p.z < MAXTOUCHPRESSURE){
+     ProcessRawTouch (p);
   }
 
   //**********************************************************************************************************************************
@@ -101,7 +87,7 @@ void theloop () {
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
     TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
 
-    //Serial.print(TBean1);Serial.print (TBean2); Serial.print(TCoil); Serial.println(TFan);
+    //Serial.print(TBean1);Serial.print (TBean2);Serial.print(TCoil);Serial.println(TFan);
     double newtempratiotoaverage;
     if (TBeanAvgRoll.getCount() > 1) {
       newtempratiotoaverage = TBeanAvg / TBeanAvgRoll.mean();
@@ -111,15 +97,15 @@ void theloop () {
       Readingskipped++;
     }
 
-    if    ( (newtempratiotoaverage > .7 &&  newtempratiotoaverage < 1.2)  || TBeanAvgRoll.mean() < 200  || roastMinutes < 1 )  {
+    if    ( (newtempratiotoaverage > .7 &&  newtempratiotoaverage < 1.2)  || TBeanAvgRoll.mean() < 200  || RoastMinutes < 1 )  {
       TBeanAvgRoll.push(TBeanAvg);
     }
     else {
       Readingskipped++;
       Serial.println("out of range:");
-      Serial.print("TBean2:"); Serial.print(TBean2); Serial.print(" TBean1:"); Serial.print(TBean1);
-      Serial.print(" avg:"); Serial.print(TBeanAvgRoll.mean()); Serial.print(" TCoil:");
-      Serial.print(TCoil); Serial.print(" TFan:"); Serial.println(TFan);
+      Serial.print("TBean2:");Serial.print(TBean2);Serial.print(" TBean1:");Serial.print(TBean1);
+      Serial.print(" avg:");Serial.print(TBeanAvgRoll.mean());Serial.print(" TCoil:");
+      Serial.print(TCoil);Serial.print(" TFan:");Serial.println(TFan);
 
     }
   }
@@ -131,7 +117,7 @@ void theloop () {
   //look for pressed buttons being released
   if (CapButActive > 0 ) {
     if (digitalRead(CapButActive) == LOW) {
-      Serial.print ("Cap Button released:" ); Serial.println (CapButActive);
+      Serial.print ("Cap Button released:" );Serial.println (CapButActive);
       CapButActive = 0;
     }
   }
@@ -155,7 +141,7 @@ void theloop () {
 
     if (CapButActive > 0) {
       capbuttonpressed = true;
-      Serial.print ("Cap Button pressed:" ); Serial.println (CapButActive);
+      Serial.print ("Cap Button pressed:" );Serial.println (CapButActive);
     }
   }
 
@@ -167,7 +153,7 @@ void theloop () {
 
   //look at button inputs
   if (capbuttonpressed) {
-    Serial.print ("Doing button work:" ); Serial.println (CapButActive);
+    Serial.print ("Doing button work:" );Serial.println (CapButActive);
     switch (CapButActive) {
       case CP1p:
         if (State == AMSTOPPED || State == AMFANONLY  ) {
@@ -213,14 +199,14 @@ void theloop () {
   //look at temp inputs
   if (State == AMROASTING && TCoil > OVERHEATCOIL) {
     OVERHEATCOILCount++;
-    Serial.print("Overheat coil Detected! count:"); Serial.println(OVERHEATCOILCount);
+    Serial.print("Overheat coil Detected! count:");Serial.println(OVERHEATCOILCount);
     if (OVERHEATCOILCount > 20) {
       newState = AMOVERHEATEDCOIL;
     }
   }
   else if (State == AMROASTING && TFan > OVERHEATFAN) {
     OVERHEATFANCount ++;
-    Serial.print("Overheat fan Detected! count:"); Serial.println(OVERHEATFANCount);
+    Serial.print("Overheat fan Detected! count:");Serial.println(OVERHEATFANCount);
     if (OVERHEATFANCount > 20) {
       newState = AMOVERHEATEDFAN;
     }
@@ -232,14 +218,14 @@ void theloop () {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
         newState = AMAUTOCOOLING;
-        Serial.print("Roast Temp Reached. Cooling starting End:"); Serial.print(TempRoastDone); Serial.print("  Tempavg"); Serial.println(TBeanAvgRoll.mean());
+        Serial.print("Roast Temp Reached. Cooling starting End:");Serial.print(TempRoastDone);Serial.print("  Tempavg");Serial.println(TBeanAvgRoll.mean());
       }
     }
     else if (State == AMAUTOCOOLING && TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
       newState = AMSTOPPED;
       Serial.println("Auto Cooling Complete ");
     }
-    else if (State == AMROASTING && roastMinutes > TimeScreenLeft ) {
+    else if (State == AMROASTING && RoastMinutes > TimeScreenLeft ) {
       newState = AMAUTOCOOLING;
       Serial.println("Max time reached. Cooling starting");
     }
@@ -278,14 +264,14 @@ void theloop () {
       delay(2000);
       Serial.println("2 Starting Heaters ");
       RoastTime.restart(minuteToStart * 60);
-      roastMinutes = ((double)RoastTime.elapsed()) / 60;
+      RoastMinutes = ((double)RoastTime.elapsed()) / 60;
     }
     State = AMROASTING;
   }
   else if (newState == AMAUTOCOOLING) {
     State = AMAUTOCOOLING;
     TempLastEndOfRoast = TBeanAvgRoll.mean();
-    TimeLastEndOfRoast = roastMinutes;
+    TimeLastEndOfRoast = RoastMinutes;
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
     LoadORSaveToHistory(false);
     delay(1000);
@@ -308,7 +294,7 @@ void theloop () {
   //***************************************************************************************************************************************************************
   // CALCULATING PID VALUES     F    CALCULATING PID VALUES     F    CALCULATING PID VALUES    F     CALCULATING PID VALUES    F     CALCULATING PID VALUES
   //*************************************************************************************************************************************************************
-  int err = 0;
+  Err = 0;
   //pid window size should vary based on duty cycle. 10 millsec and 50% would to 20 millisecond.  10% would be 100 milliseconds.  01 % would be 1 seconds
   //but we run 9 times per second, so shortest on off is 1 cycles or ~ 100 millseconds.   50% means .2 seconds, 10% means 1 seconds  .05% means 2 seconds
   Duty = 0;
@@ -316,13 +302,13 @@ void theloop () {
 
   if (State == AMROASTING) {
     //CALC THE ERR AND INTEGRAL
-    Setpoint =  calcSetpoint(roastMinutes);
-    err = Setpoint - TBeanAvgRoll.mean();  //negative if temp is over setpoint
+    Setpoint =  calcSetpoint(RoastMinutes);
+    Err = Setpoint - TBeanAvgRoll.mean();  //negative if temp is over setpoint
     //if (bNewSecond) { Serial.print(" new calc of err:");Serial.println(err);    };     
     PIDIntegralUdateTimeValue = 5000;
-    if (roastMinutes > MySpanAccumulatedMinutes[2] ) { //only calc intergral error if we are above the 1st setup
+    if (RoastMinutes > MySpanAccumulatedMinutes[2] ) { //only calc intergral error if we are above the 1st setup
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err     
-        IntegralSum =  IntegralSum + double(err);
+        IntegralSum =  IntegralSum + double(Err);
         ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
         Serial.print("Isum:");Serial.print(IntegralSum);Serial.print("ErrI:");    Serial.println(ErrI);
         PIDIntegralUdateTime.restart(0);
@@ -336,7 +322,7 @@ void theloop () {
     }
 
     
-    Duty = ((double)(err + ErrI) / (double)Gain) ;   
+    Duty = ((double)(Err + ErrI) / (double)Gain) ;   
     //APPLY THE ERROR WITH THE PID WINDOW
     PIDWindowSize = 1000;
     unsigned long now = millis();
@@ -386,18 +372,25 @@ void theloop () {
   if    (bNewSecond) {
   //  Serial.println("update after reach new temp");
     displayState(State); 
-    UpdateGraphA(roastMinutes, Duty, Setpoint, err, ErrI);
-    AddLinebyTimeAndTemp(roastMinutes, TBeanAvg, AVGLINEID);
+ 
+    UpdateGraphA();
+ 
+    AddLinebyTimeAndTemp(RoastMinutes, TBeanAvg, AVGLINEID);
   
   }
   
   if (LcdUdateTime.elapsed() > 3000) {
     //Serial.print("slow update. once per:");Serial.println(3000);Serial.println(" millseconds");
     // void UpdateGraphB(int temp1, int temp2, int tempCoil, double ampHeater1, double ampHeater2, int tempFan, double ampFan, double volts)
-    //   Serial.print("TBean2:");Serial.print(TBean2);Serial.print("TBean1:");Serial.print (TBean1);Serial.print("TCoil:"); Serial.print(TCoil); Serial.print("TFan:");Serial.println(TFan);
-    AddLinebyTimeAndTemp(roastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
-    AddLinebyTimeAndTemp(roastMinutes, TCoil, COILLINEID);
-    UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
+    //   Serial.print("TBean2:");Serial.print(TBean2);Serial.print("TBean1:");Serial.print (TBean1);Serial.print("TCoil:");Serial.print(TCoil);Serial.print("TFan:");Serial.println(TFan);
+    AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+    AddLinebyTimeAndTemp(RoastMinutes, TCoil, COILLINEID);
+    
+    //UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
+    
+    UpdateGraphB();
+    
+    UpdateGraphC();
     LcdUdateTime.restart(0);
   }
 

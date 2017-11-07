@@ -44,14 +44,13 @@
 #define XM A2  // must be an analog pin, use "An" notation!
 #define YP A1  // xx must be an analog pin, use "An" notation!
 #define XP A0   // can be a digital pin
+
 // This is calibration data for the raw touch data to the screen coordinates
-//#define TS_MINX 150
-//#define TS_MINY 120
-//#def   ine TS_MAXX 920
-//#define TS_MAXY 940
 
 #define MINTOUCHPRESSURE 10
 #define MAXTOUCHPRESSURE 1000
+
+
 
 //THERMOCOUPLES
 //#define SDIp    11
@@ -97,7 +96,7 @@
 
 #define OVERHEATFAN     250
 #define OVERHEATCOIL    1100
-#define BAUD            115200
+#define BAUD            57600
 #define TEMPCOOLINGDONE 170
 
 #define AMROASTING          1
@@ -125,31 +124,46 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 // GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS
 // ======================================================================================================================================================================================
 int State;
+int newState;
 MAX6675 thermocouple1(TSCKp, TCS1p,  TSD1p);
 MAX6675 thermocouple2(TSCKp, TCS2p,  TSD2p);
 MAX6675 thermocouple3(TSCKp, TCS3p,  TSD3p);
 MAX6675 thermocouple4(TSCKp, TCS4p,  TSD4p);
 //global variablers for temp control
 int Gain = 10; //read from eeprom
-int GainX = 0;
-int GainY = 0;
-int GainUX = 0;
-int GainUY = 0;
-int GainDX = 0;
-int GainDY = 0;
+
+
+
+int TGainCurrentX = 0;
+int TGainCurrentY = 0;
+int TGainIncreaseX = 0;
+int TGainIncreaseY = 0;
+int TGainDecreaseX = 0;
+int TGainDecreaseY = 0;
+int TGainSize = 5;
 double Integral = 0.1;  //read from eeprom
-int IntegralX = 0;
-int IntegralY = 0;
-int IntegralUX = 0;
-int IntegralUY = 0;
-int IntegralDX = 0;
-int IntegralDY = 0;
+
+
+int TIntegralCurrentX = 0;
+int TIntegralCurrentY = 0;
+int TIntegralIncreaseX = 0;
+int TIntegralIncreaseY = 0;
+int TIntegralDecreaseX = 0;
+int TIntegralDecreaseY = 0;
+
+rect TouchExtent;
+rect MappedExtent;
+int Ts_minx = 0 ;
+int Ts_miny = 0 ;
+int Ts_maxx = 0 ;
+int Ts_maxy = 0 ;
 
 long unsigned IntegralLastTime = 0;
 long unsigned IntegralSum = 0;
 unsigned long PIDWindowStartTime;
 boolean PIDNewWindow;
 int ErrI = 0;
+int Err = 0;
 double Duty ;
 double Setpoint ;
 int PIDIntegralUdateTimeValue ;
@@ -221,18 +235,20 @@ int Readingskipped;
 
 long PixelsPerMin;
 
-long MenuShowing;
+
+buttondef* myButtonControl = 0;
+int myButtonControlCount = 0;
+rect myButtonControlrect;
 
 buttondef* myButtonMenu1 = 0;
 int myButtonMenu1Count = 0;
+rect myButtonMenu1rect;
 
 buttondef* myButtonMenu2 = 0;
 int myButtonMenu2Count = 0;
+rect myButtonMenu2rect;
+boolean Menu2Showing;
 
-int MenuShowingXmin;
-int MenuShowingYmin;
-int MenuShowingXmax;
-int MenuShowingYmax;
 int DUMMY;
 
 //used when drawing lines. We support up to 3 lines (see line ID constants)
@@ -242,6 +258,8 @@ uint16_t LineColorforLineID[3];
 int myLastGraph[320];
 
 
+
+double RoastMinutes;
 int TCoil;
 int TBean1;
 int TBean2;
@@ -281,14 +299,14 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 10;
   if (Integral > 1) Integral = 0.1 ;
-  Serial.print("read Gain:"); Serial.print(Gain); Serial.print(" Integral:"); Serial.println(Integral);
+//Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
 
   EEPROM.get(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
-  Serial.print("Read profile time stamp:"); Serial.println(MyProfileTimeStamp);
+//Serial.print("Read profile time stamp:");Serial.println(MyProfileTimeStamp);
   if (MyProfileTimeStamp == 0)   {
     MyProfileTimeStamp = millis();
     EEPROM.put(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
-    Serial.print("Saving time stamp:"); Serial.println(MyProfileTimeStamp);
+  //Serial.print("Saving time stamp:");Serial.println(MyProfileTimeStamp);
   }
   TempLastEndOfRoast = ReadTempEprom (TEMPLASTENDOFROAST_EP, 0);
   for (int X = 1; X < SetPointCount; X++) {
@@ -304,7 +322,7 @@ void setup() {
   Serial.println (LastXforLineID[2]);
   //TempScreenTop = ReadIntEprom(TEMPSCREENTOP_EP, 100, 500, 460);
  //TempScreenTop  = 450;
-  Serial.print("  tempscreentop:"); Serial.println(TempScreenTop);
+  Serial.print("  tempscreentop:");Serial.println(TempScreenTop);
 
   tft.reset();
   uint16_t identifier = tft.readID();

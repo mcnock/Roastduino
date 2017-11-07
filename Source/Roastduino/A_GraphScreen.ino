@@ -7,10 +7,10 @@
 void graphProfile() {
   
   tft.setRotation(3);
-  
+  PixelsPerMin =  (int)(320 / TimeScreenLeft);
   tft.fillScreen(BLACK);
 
-
+  //draw x scale
   int color = tft.color565(125, 125, 125);
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
   tft.drawFastVLine(3 * PixelsPerMin , 0, tft.height(), color);
@@ -24,7 +24,7 @@ void graphProfile() {
   tft.drawFastVLine(12 * PixelsPerMin , 0, tft.height(), color);
   tft.setCursor((15 * PixelsPerMin)-12, 230); tft.println("15");
 
-
+  //draw y scale
   tft.drawFastHLine(0,  Y(100), tft.width(), color);
   tft.setCursor(2 , Y(100) - 4); tft.println("100");
   tft.drawFastHLine(0,  Y(200), tft.width(), color);
@@ -48,13 +48,7 @@ void graphProfile() {
   tft.drawFastHLine(0,  Y(600), tft.width(), color);
   tft.setCursor(2 , Y(600)-4); tft.println("600");
 
-  //draw steamp
- // tft.setCursor(200, 0); tft.print("TS:");
- // tft.setCursor(220, 0); tft.print(day(MyProfileTimeStamp)); tft.print("/"); tft.print(month(MyProfileTimeStamp)); tft.print(" ");
- // tft.print(hour(MyProfileTimeStamp)); tft.print(":"); tft.println(minute(MyProfileTimeStamp));
-
-
-
+  
   //the first setpoint is the left y axis
   //the last setpoint is the right y axis
   //so we have setpoint - 1 spans on the graph
@@ -63,12 +57,14 @@ void graphProfile() {
   MySpanAccumulatedMinutes[0] = 0;
 
 
+
+  //draw line
   for (int X = 1; X < SetPointCount; X++) {
     MySpanAccumulatedMinutes[X] = MySpanAccumulatedMinutes[X - 1] + MySpanMinutes[X];
     for (int Y = MySpanAccumulatedMinutes[X - 1] ; Y < MySpanAccumulatedMinutes[X]; Y++) {
       MyMinuteSetpoints[Y] =  MyBaseSetpoints[X - 1] + ((MyBaseSetpoints[X] - MyBaseSetpoints[X - 1]) * (double)(Y - MySpanAccumulatedMinutes[X - 1]) / (double)MySpanMinutes[X]);
-      //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
-      //Serial.print (MyBaseSetpoints[X]);Serial.print (" - ");Serial.print (MyBaseSetpoints[X-1]);Serial.print (" - ");Serial.print ( Y );Serial.print (" - ");Serial.println ( MyMinuteSetpoints[Y]);
+      Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
+      Serial.print (MyBaseSetpoints[X]);Serial.print (" - ");Serial.print (MyBaseSetpoints[X-1]);Serial.print (" - ");Serial.print ( Y );Serial.print (" - ");Serial.println ( MyMinuteSetpoints[Y]);
     }
     MySetpointsX[X] = MySpanAccumulatedMinutes[X] * PixelsPerMin;
     MySetpointsY[X] = 240 - Y(MyBaseSetpoints[X]);
@@ -77,13 +73,14 @@ void graphProfile() {
     tft.drawFastVLine(MySpanAccumulatedMinutes[X] * PixelsPerMin, Y(MyBaseSetpoints[X] + 10), 20, WHITE);
   }
 
+
   //create setpoint array for last segment
   for (int Y = MySpanAccumulatedMinutes[SetPointCount - 1] ; Y <=     TimeScreenLeft; Y++) {
     MyMinuteSetpoints[Y] = MyBaseSetpoints[SetPointCount - 1] ;
     //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
   }
 
-
+  //draw end
   TempRoastDone = MyBaseSetpoints[SetPointCount - 2];
   Serial.print ("TempRoastDone:");Serial.println (TempRoastDone);
   tft.setCursor((tft.width() / 2),Y(TempRoastDone) - 10);tft.println("SP:"); tft.setCursor((tft.width() / 2) + 24,Y(TempRoastDone) - 10); tft.println(TempRoastDone);
@@ -103,8 +100,14 @@ void graphProfile() {
   
   if (AdjustmentSetpoint > 0){
     DrawAdjustMentBoxes(AdjustmentSetpoint);}
-
-  DrawMenu1();
+  
+  DrawControlButtons();
+  if (Menu2Showing){
+    DrawMenu2();
+  }
+  else{
+    DrawMenu1();
+  }
 }
 
 
@@ -199,76 +202,103 @@ void tftPrintIntTo5Char(int num)
   // Serial.print("printbuf:");Serial.println(num);
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, double errI) {
+//void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, double errI) {
+//   UpdateGraphA(roastMinutes, Duty, Setpoint, err, ErrI);
+ 
+void UpdateGraphA() {
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
   int rowheight = 11;
-  int row = 10;
+  int row = 20;
+  int col = 40;
   // tft.setCursor(40 ,row); tft.println("F:"); tft.setCursor(50 , row); tft.println(TempEnd);
   // tft.setCursor(100 , row); tft.println("Last:"); tft.setCursor(130 , row); tft.println(TempLastEndOfRoast);
+  
+  tft.setCursor(col , row); tft.print("Time:");   tft.setCursor(col + 35 , row); tft.println(RoastMinutes);
   row = row + rowheight;
-  tft.setCursor(40 , row); tft.print("sp:"); tft.setCursor(75 , row); tft.println(setpoint); tft.setCursor(100 , row); tft.print("SSD:");
-  tft.setCursor(130 , row); tft.println(ManagingSSR);
-
-  row = row + rowheight;
-  tft.setCursor(40 , row); tft.print("Time:");   tft.setCursor(75 , row); tft.println(roastMinutes);
-  row = row + rowheight;
-  if (duty > 1) {
-    tft.setCursor(40 , row); tft.println("Duty:"); tft.setCursor(70 , row); tftPrintDouble7(1.00);
+  if (Duty > 1) {
+    tft.setCursor(col , row); tft.println("Duty:"); tft.setCursor(col + 30 , row); tftPrintDouble7(1.00);
   }
   else {
-    tft.setCursor(40 , row); tft.println("Duty:"); tft.setCursor(70 , row); tftPrintDouble7(duty);
+    tft.setCursor(col , row); tft.println("Duty:"); tft.setCursor(col + 30 , row); tftPrintDouble7(Duty);
   }
   row = row + rowheight;
-  tft.setCursor(40 , row); tft.print("Err:"); tft.setCursor(70 , row);   tftPrintDouble7(-err);
+  tft.setCursor(col + 10 , row); tft.print("Err:"); tft.setCursor(col + 30 , row);   tftPrintDouble7(-Err);
+  
   row = row + rowheight;
-  tft.setCursor(40 , row); tft.print("IEr:"); tft.setCursor(70 , row);   tftPrintDouble7(-errI);
+  tft.setCursor(col + 10 , row); tft.print("IEr:"); tft.setCursor(col + 30 , row);   tftPrintDouble7(-ErrI);
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void UpdateGraphB(int temp2, int temp1, int tempCoil, double ampHeater1, double ampHeater2, int tempFan     , double ampFan, double volts)
-{
+//void UpdateGraphB(int temp2, int temp1, int tempCoil, double ampHeater1, double ampHeater2, int tempFan     , double ampFan, double volts)
 
-  if (MenuShowing == 2) return;
-  //Serial.print("TBean2:");Serial.print(temp2);Serial.print("TBean1:");Serial.print (temp1);Serial.print("TCoil:"); Serial.print(tempCoil); Serial.print("TFan:");Serial.println(tempFan);
+void UpdateGraphB()
+{
+  if (Menu2Showing) {return;}
+//UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
+    
+  //Serial.print("TBean2:");Serial.print(temp2);Serial.print("TBean1:");Serial.print (temp1);Serial.print("TCoil:");Serial.print(tempCoil);Serial.print("TFan:");Serial.println(tempFan);
   if (AdjustmentSetpoint > 0 ) return;
   
   int rowheight = 11;
 
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
   int row = 150 ;
-  tft.setCursor(150 , row); tft.println("Tvg:"); tft.setCursor(190 , row); tftPrintIntTo5Char(TBeanAvgRoll.mean());
-  tft.setCursor(240 , row); tft.println("Skip"); tft.setCursor(270 , row); tftPrintIntTo5Char(Readingskipped);
+  int col = 150 ;
+  
+  tft.setCursor(col , row); tft.println("Tvg:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TBeanAvgRoll.mean());
+     tft.setCursor(col + 90 , row); tft.println("Skip"); tft.setCursor(col + 120 , row); tftPrintIntTo5Char(Readingskipped);
 
   row = row + rowheight; ;
-  tft.setCursor(150 , row); tft.println("T1:"); tft.setCursor(190 , row);  tft.println("   "); tft.setCursor(190 , row); tftPrintIntTo5Char(temp1);
-  tft.setCursor(240 , row); tft.println("T2"); tft.setCursor(270 , row);   tft.println("   "); tft.setCursor(270 , row); tftPrintIntTo5Char(temp2);
+  tft.setCursor(col , row); tft.println("T1:"); tft.setCursor(col + 40 , row);  tft.println("   "); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TBean1);
+      tft.setCursor(col + 90 , row); tft.println("T2"); tft.setCursor(col + 120 , row);   tft.println("   "); tft.setCursor(col + 120 , row); tftPrintIntTo5Char(TBean2);
+  
   row = row + rowheight;
-  tft.setCursor(150 , row); tft.println("Fan  T:"); tft.setCursor(190 , row); tftPrintIntTo5Char(tempFan);
-  tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tftPrintDouble5b(ampFan);
+  tft.setCursor(col , row); tft.println("Fan  T:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TFan);
+      tft.setCursor(col + 90 , row); tft.println("Amp:"); tft.setCursor(col + 120 , row); tftPrintDouble5b(CurrentFan);
+  
   row = row + rowheight;
-  tft.setCursor(050 , row); tft.println("G:"); tft.setCursor(60 , row); tft.println(Gain); tft.setCursor(100 , row); tft.println("U D");
-  GainX =  60; GainY = 180;
-  GainUX = 102; GainUY = 65;
-  GainDX = 114; GainDY = 65;
-  tft.setCursor(150 , row); tft.println("Heat T:"); tft.setCursor(190 , row); tftPrintIntTo5Char(tempCoil);
-  tft.setCursor(240 , row); tft.println("Amp1:"); tft.setCursor(270 , row); tftPrintDouble5b(ampHeater1);
-  row = row + rowheight;;
-  tft.setCursor(050 , row); tft.println("I:"); tft.setCursor(60 , row);
-  tft.println(Integral) ; tft.setCursor(100 , row); tft.println("U D");
-  IntegralX  = 60; IntegralY  = 195;
-  IntegralUX = 102; IntegralUY = 55;
-  IntegralDX = 114; IntegralDY = 55;
-  tft.setCursor(150 , row); tft.println("Volts:"); tft.setCursor(190 , row); tft.println(volts);
-  tft.setCursor(240 , row); tft.println("Amp2:"); tft.setCursor(270 , row); tftPrintDouble5b(ampHeater2);
-  row = row + rowheight;;
-  tft.setCursor(050 , row); tft.println("ps:"); tft.setCursor(60 , row); tftPrintIntTo5Char(LoopsPerSecond) ;
+  
+  tft.setCursor(col , row); tft.println("Heat T:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TCoil); tft.setCursor(col + 90 , row); tft.println("Amp1:"); tft.setCursor(col + 120 , row); tftPrintDouble5b(CurrentHeat1);
 
-  // tft.setCursor(240 , row); tft.println("Amp:"); tft.setCursor(270 , row); tft.println(ampHeater);
+  row = row + rowheight;;
+  
+  tft.setCursor(col , row); tft.println("Volts:"); tft.setCursor(col + 40 , row); tft.println(MaxVoltage);
+     tft.setCursor(col + 90 , row); tft.println("Amp2:"); tft.setCursor(col + 120 , row); tftPrintDouble5b(CurrentHeat2);
+  
+  
 }
+void UpdateGraphC()
+{
+if (AdjustmentSetpoint > 0 ) return;  
+  
+  int rowheight = 11;
+
+  tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
+  int row = 180 ;
+  int colr = 50 ;
+  
+  
+  TGainCurrentX =  colr + 10; TGainCurrentY = row; TGainIncreaseX = colr + 50; TGainIncreaseY = row; //65 TGainDecreaseX = colr + 70; TGainDecreaseY = row;
+  
+  tft.setCursor(colr , row); tft.println("G:"); tft.setCursor(TGainCurrentX , TGainCurrentY); tft.println(Gain); 
+     tft.setCursor(TGainIncreaseX, TGainIncreaseY); tft.print("U"); tft.setCursor(TGainDecreaseX  , TGainDecreaseY); tft.println("D");
+  
+  
+  row = row + rowheight;;
+  TIntegralCurrentX  = colr + 10; TIntegralCurrentY  = row;  TIntegralIncreaseX = colr + 50 ; TIntegralIncreaseY = row; TIntegralDecreaseX = colr + 70; TIntegralDecreaseY = row;  
+  tft.setCursor(colr , row); tft.println("I:"); tft.setCursor(TIntegralCurrentX , TIntegralCurrentY); tft.println(Integral) ; 
+     tft.setCursor(TIntegralIncreaseX  , TIntegralIncreaseY); tft.println("U"); tft.setCursor(TIntegralDecreaseX , TIntegralDecreaseY); tft.println("D");
+  
+  
+  row = row + rowheight;;
+  tft.setCursor(colr , row); tft.println("ps:"); tft.setCursor(colr + 10 , row); tftPrintIntTo5Char(LoopsPerSecond) ;
+
+}
+
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color)
 {
-  Serial.print ("StartLineTandT id:"); Serial.print (lineID); Serial.print(" color:"); Serial.println(color);
+  Serial.print ("StartLineTandT id:");Serial.print (lineID);Serial.print(" color:");Serial.println(color);
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   if (temp > 0) {
     LastYforLineID[lineID] = Y(temp);
@@ -289,7 +319,7 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID)
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = Y(temp);
   //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
-  //Serial.print ("newX:");Serial.print (newX); Serial.print ("pixelspermin:");Serial.print (PixelsPerMin); Serial.print(" newY:");Serial.println(newY);
+  //Serial.print ("newX:");Serial.print (newX);Serial.print ("pixelspermin:");Serial.print (PixelsPerMin);Serial.print(" newY:");Serial.println(newY);
   tft.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
   LastXforLineID[lineID] = newX;
   LastYforLineID[lineID] = newY;
@@ -323,30 +353,32 @@ void DrawLinebyTimeAndTemp(double timemins1, int temp1, double timemins2, int te
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void  displayState(int state) {
-  tft.setCursor(40, 0);
+  tft.setCursor(30, 0);
   tft.setTextSize(2);
   tft.setTextColor(WHITE, BLACK);
   switch (state) {
     case AMROASTING:
-      tft.setTextColor(WHITE, RED); tft.println("*AmRoasting*");
+      tft.setTextColor(WHITE, RED); 
+      tft.println("Roasting");
       break;
     case AMSTOPPED:
-      tft.println( "AmStopped        ");
+      tft.println("Stopped ");
       break;
     case AMAUTOCOOLING:
-      tft.setTextColor(WHITE, BLUE); tft.println( "AmCooling        ");
+      tft.setTextColor(WHITE, BLUE); 
+      tft.println( "Cooling ");
       break;
     case AMOVERHEATEDCOIL:
-      tft.println ("To Hot Coil            ");
+      tft.println ("HotCoil ");
       break;
     case AMOVERHEATEDFAN:
-      tft.println ("To Hot Fan            ");
+      tft.println ("HotFan ");
       break;
     case AMFANONLY:
-      tft.println ("Fan only            ");
+      tft.println ("FanOnly");
       break;
     default:
-      tft.println ("unkState   ");
+      tft.println ("unk    ");
       break;
   }
 }

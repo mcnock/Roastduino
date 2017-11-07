@@ -6,17 +6,17 @@
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
     Readingskipped++;
-    //Serial.print (myID); Serial.print ("nan temp:"); Serial.println(temperature);
+    //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature > 1000) {
     Readingskipped++;
-    Serial.print (myID); Serial.print ("too high temp:"); Serial.println(temperature);
+  //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature < 40) {
     Readingskipped++;
-    Serial.print (myID); Serial.print ("too low temp:"); Serial.println(temperature);
+  //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
     return -1;
   }
   else {
