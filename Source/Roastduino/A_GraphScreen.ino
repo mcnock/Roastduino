@@ -111,8 +111,7 @@ void graphProfile() {
 }
 
 
-int Y(int temp)
-{
+int Y(int temp){
   if (temp <= TempYSplit) {  
      return (240 - ((double)temp/TempPerPixL));
   }
@@ -127,8 +126,7 @@ int Y(int temp)
   
 }
 
-void tftPrintDouble5b(double num )
-{
+void tftPrintDouble5b(double num ){
   
     //+11.1
     //12345
@@ -142,8 +140,7 @@ void tftPrintDouble5b(double num )
     }
     tft.println(Buf5); 
 }
-void tftPrintDouble5(double num )
-{
+void tftPrintDouble5(double num ){
   
     //+1.11
     //12345
@@ -157,8 +154,7 @@ void tftPrintDouble5(double num )
     }
     tft.println(Buf5); 
 }
-void tftPrintDouble6(double num )
-{
+void tftPrintDouble6(double num ){
   
     //+11.11
     //123456
@@ -172,8 +168,7 @@ void tftPrintDouble6(double num )
     }
     tft.println(Buf6); 
 }
-void tftPrintDouble7(double num )
-{
+void tftPrintDouble7(double num ){
     //+111.11
     //1234567
     
@@ -187,15 +182,12 @@ void tftPrintDouble7(double num )
     }
     tft.println(Buf7);
 }
-void tftPrintDouble(double num )
-{
+void tftPrintDouble(double num ){
     
     tft.println(num,1);
     
 }
-
-void tftPrintIntTo5Char(int num)
-{
+void tftPrintIntTo5Char(int num){
   //  Serial.print("print:");Serial.println(num);
   sprintf(Buf5, "% 5d", num);
   tft.println(Buf5);
@@ -227,27 +219,18 @@ void UpdateGraphA() {
   row = row + rowheight;
   tft.setCursor(col + 10 , row); tft.print("IEr:"); tft.setCursor(col + 30 , row);   tftPrintDouble7(-ErrI);
 }
-
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//void UpdateGraphB(int temp2, int temp1, int tempCoil, double ampHeater1, double ampHeater2, int tempFan     , double ampFan, double volts)
-
-void UpdateGraphB()
-{
+void UpdateGraphB(){
   if (Menu2Showing) {return;}
-//UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
-    
-  //Serial.print("TBean2:");Serial.print(temp2);Serial.print("TBean1:");Serial.print (temp1);Serial.print("TCoil:");Serial.print(tempCoil);Serial.print("TFan:");Serial.println(tempFan);
   if (AdjustmentSetpoint > 0 ) return;
   
   int rowheight = 11;
 
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
-  int row = 150 ;
-  int col = 150 ;
+  int row = 160 ;
+  int col = 135 ;
   
   tft.setCursor(col , row); tft.println("Tvg:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TBeanAvgRoll.mean());
-     tft.setCursor(col + 90 , row); tft.println("Skip"); tft.setCursor(col + 120 , row); tftPrintIntTo5Char(Readingskipped);
-
+  
   row = row + rowheight; ;
   tft.setCursor(col , row); tft.println("T1:"); tft.setCursor(col + 40 , row);  tft.println("   "); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TBean1);
       tft.setCursor(col + 90 , row); tft.println("T2"); tft.setCursor(col + 120 , row);   tft.println("   "); tft.setCursor(col + 120 , row); tftPrintIntTo5Char(TBean2);
@@ -267,18 +250,17 @@ void UpdateGraphB()
   
   
 }
-void UpdateGraphC()
-{
+void UpdateGraphC(){
 if (AdjustmentSetpoint > 0 ) return;  
   
   int rowheight = 11;
 
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
   int row = 180 ;
-  int colr = 50 ;
+  int colr = 40 ;
   
   
-  TGainCurrentX =  colr + 10; TGainCurrentY = row; TGainIncreaseX = colr + 50; TGainIncreaseY = row; //65 TGainDecreaseX = colr + 70; TGainDecreaseY = row;
+  TGainCurrentX =  colr + 10; TGainCurrentY = row; TGainIncreaseX = colr + 50; TGainIncreaseY = row; TGainDecreaseX = colr + 70; TGainDecreaseY = row;
   
   tft.setCursor(colr , row); tft.println("G:"); tft.setCursor(TGainCurrentX , TGainCurrentY); tft.println(Gain); 
      tft.setCursor(TGainIncreaseX, TGainIncreaseY); tft.print("U"); tft.setCursor(TGainDecreaseX  , TGainDecreaseY); tft.println("D");
@@ -291,13 +273,13 @@ if (AdjustmentSetpoint > 0 ) return;
   
   
   row = row + rowheight;;
-  tft.setCursor(colr , row); tft.println("ps:"); tft.setCursor(colr + 10 , row); tftPrintIntTo5Char(LoopsPerSecond) ;
+  tft.setCursor(colr - 10 , row); tft.println("ps:"); tft.setCursor(colr  , row); tftPrintIntTo5Char(LoopsPerSecond) ;
+      tft.setCursor(colr +  35 , row); tft.print("Skp"); tft.setCursor(colr + 50 , row); tft.println(Readingskipped);
 
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color)
-{
+void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color){
   Serial.print ("StartLineTandT id:");Serial.print (lineID);Serial.print(" color:");Serial.println(color);
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   if (temp > 0) {
@@ -314,8 +296,7 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
   }
 }
 
-void AddLinebyTimeAndTemp(double timemins, int temp, int lineID)
-{
+void AddLinebyTimeAndTemp(double timemins, int temp, int lineID){
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = Y(temp);
   //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
