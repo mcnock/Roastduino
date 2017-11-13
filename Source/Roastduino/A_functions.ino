@@ -2,6 +2,13 @@
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 // FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
+
+void SerialprintRect(rect &rect){
+    Serial.print("xmin:"); Serial.print(rect.xmin); Serial.print(" ymin:"); Serial.print(rect.ymin); Serial.print(" xmax:");Serial.print(rect.xmax);Serial.print(" ymax:");Serial.println(rect.ymax);
+}
+void SerialprintPoint(point &point){
+    Serial.print("x:"); Serial.print(point.x); Serial.print(" y:"); Serial.print(point.y); 
+}
 // Get the temperature
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
@@ -21,7 +28,7 @@ int getCleanTemp(double temperature, int myID) {
   }
   else {
     int r = temperature;
-    //  Serial.print (myID);Serial.print ("clean temp returned:");Serial.println(r);
+    //Serial.print (myID);Serial.print ("clean temp returned:");Serial.println(r);
     return r;
   }
 }
@@ -70,66 +77,5 @@ double calcSetpoint(double roastminutes) {
   double r = (roastminutes - (int)roastminutes);
   setpoint = MyMinuteSetpoints[(int)roastminutes] + ((MyMinuteSetpoints[int(roastminutes) + 1] - MyMinuteSetpoints[(int)roastminutes]) * r);
   return setpoint;
-}
-
-void LoadORSaveToHistory(boolean Load) {
-  int number = 1;
-  //300 to 306
-  int address = number * 100;
-  if (!Load) {
-    unsigned long timestamp = millis();
-    EEPROM.put(address, timestamp);
-    address = address + 4;
-    EEPROM.write(address, TempLastEndOfRoast);
-    address++;
-    EEPROM.write(address, (TimeLastEndOfRoast * 10));
-  }
-  //312 - 318 & 319 to 325
-  address = (number * 100) + 12;
-  if (!Load) {
-    for (int X = 0; X < SetPointCount; X++) {
-      address++;
-      EEPROM.write(address, MySpanMinutes[X]);
-      SaveTempEprom(address + SetPointCount, MyBaseSetpoints[X]);
-    }
-  }
-  else {
-    for (int X = 0; X < SetPointCount; X++) {
-      address++;
-      MySpanMinutes[X] = EEPROM.read(address);
-      MyBaseSetpoints[X] = ReadTempEprom(address + SetPointCount , 0);
-    }
-  }
-  //330 to 394 (320 pixes wide/5 = 64)
-  address = (number * 100) + 30;
-  int avgwidth = 5;
-  if (!Load) {
-    int total; int count;
-    for (int X = 0; X < 320; X++) {
-      total = total + myLastGraph[X];
-      count++;
-      if (count >= avgwidth) {
-        address++;
-        int avg = total / avgwidth;
-        EEPROM.write(address, avg);
-      }
-    }
-  }
-  else {
-    int Xlast = 0;
-    int Ylast = EEPROM.read(address);
-    address++;
-    for (int X = 1; X < 64; X++) {
-      int Ynext =  EEPROM.read(address);
-      double Ydelta = (double)(Ynext - Ylast) / (double)avgwidth;
-      for (int k = 1;  k <= avgwidth; X++) {
-        myLastGraph[(X - 1) + k] = Ylast + (Ydelta * k) ;
-      }
-      address++;
-    }
-  }
-  if (Load) {
-
-  }
 }
 

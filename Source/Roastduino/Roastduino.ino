@@ -47,7 +47,7 @@
 
 // This is calibration data for the raw touch data to the screen coordinates
 
-#define MINTOUCHPRESSURE 10
+#define MINTOUCHPRESSURE 5
 #define MAXTOUCHPRESSURE 1000
 
 
@@ -73,7 +73,6 @@
 #define CURHEAT2ap  A6
 #define CURHEAT1ap  A5
 #define VOLT5ap     A4
-#
 
 //capacitive buttons
 #define CP1p    30
@@ -134,29 +133,25 @@ int Gain = 10; //read from eeprom
 
 
 
-int TGainCurrentX = 0;
-int TGainCurrentY = 0;
-int TGainIncreaseX = 0;
-int TGainIncreaseY = 0;
-int TGainDecreaseX = 0;
-int TGainDecreaseY = 0;
-int TGainSize = 5;
-double Integral = 0.1;  //read from eeprom
-
-
-int TIntegralCurrentX = 0;
-int TIntegralCurrentY = 0;
-int TIntegralIncreaseX = 0;
-int TIntegralIncreaseY = 0;
-int TIntegralDecreaseX = 0;
-int TIntegralDecreaseY = 0;
+point TGainValue;
+point TGainIncrease;
+point TGainDecrease;
+point TIntegralValue;
+point TIntegralIncrease;
+point TIntegralDecrease;
 
 rect TouchExtent;
 rect MappedExtent;
-int Ts_minx = 0 ;
-int Ts_miny = 0 ;
-int Ts_maxx = 0 ;
-int Ts_maxy = 0 ;
+rect TsSetting;
+
+
+int TTextClickBuffer = 5;
+const point TTextClickBufferOffset =  { 4 , -5 }  ;
+
+
+boolean ShowTouch = false;
+double Integral = 0.1;  //read from eeprom
+
 
 long unsigned IntegralLastTime = 0;
 long unsigned IntegralSum = 0;
@@ -171,31 +166,31 @@ int PIDWindowSize ;
 int ManagingSSR ;
 
 
-int MySetpointsX[6];
-int MySetpointsY[6];
+point MySetpoints[6];
 int MySpanAccumulatedMinutes[6];
 int MyMinuteSetpoints[20];
 int MySetpointsEprom[]    = {3, 4, 5, 6, 7, 8};  //these are EEprom memory locations - not data
 int MySpanMinutesEprom[]  = {10, 11, 12, 13, 14, 15};  //these are EEprom memory locations - not data
-int MySpanMinutes[] =      {  0,   4,   2,   7,    1,   1}; //actual values read from eeprom
-int MyBaseSetpoints[] =     {120, 390, 430, 450,  470, 500}; //actual values read from eeprom
+int MySpanMinutes[6] =       {  0,   4,   2,   7,    1,   1}; //actual values read from eeprom
+int MyBaseSetpoints[6] =     {120, 390, 430, 450,  470, 500}; //actual values read from eeprom
 unsigned long MyProfileTimeStamp;
 int SetPointCount = 6;
-
 double TempRoastDone = 0;
 
-double TempYMax = 650; //actual value is set in program
-double PixelYSplit = 100;
-double TempYSplit = 400;
-double PixelYSplit2 = 200;
-double TempYSplit2 = 440;
+
+unsigned long TempScreenTop = 700;
+const double TempYMax = 700; //actual value is set in program
+const double PixelYSplit = 90;
+const double TempYSplit = 400;
+const double PixelYSplit2 = 170;
+const double TempYSplit2 = 440;
 
   //we have 240 units...
   //240-120 is for < 400 >> 400/120  3.333 degrees per pixel
   //120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
-double TempPerPixL = TempYSplit/PixelYSplit;
-double TempPerPixM = (TempYSplit2 - TempYSplit)/(PixelYSplit2 - PixelYSplit);
-double TempPerPixH = (TempYMax - TempYSplit2)/(240.00 - PixelYSplit2);
+const double TempPerPixL = TempYSplit/PixelYSplit;
+const double TempPerPixM = (TempYSplit2 - TempYSplit)/(PixelYSplit2 - PixelYSplit);
+const double TempPerPixH = (TempYMax - TempYSplit2)/(240.00 - PixelYSplit2);
   
 
 int TimeScreenLeft = 14;
@@ -203,12 +198,11 @@ int TempLastEndOfRoast;
 double TimeLastEndOfRoast;
 
 
-int AdjustmentDisplayTop = 140;
-int AdjustmentSetpoint = 0;
+int SetpointbeingAdjusted ;
 
+char RoastName[10] = "Default";
+byte RoastNumber = 0;
 
-
-unsigned long TempScreenTop = 450;
 long IYscale;
 
 int LoopsPerSecond;
@@ -226,7 +220,8 @@ int CapButActive = 0;
 Average<float> AvgFanCurrent(10);
 Average<float> AvgCoil1Amp(20);
 Average<float> AvgCoil2Amp(20);
-Average<int> TBeanAvgRoll(4);
+Average<int> TBeanAvgRoll(5);
+Average<int> TCoilRoll(20);
 int OVERHEATFANCount;
 int OVERHEATCOILCount;
 int TempReachedCount;
@@ -236,25 +231,30 @@ int Readingskipped;
 long PixelsPerMin;
 
 
-buttondef* myButtonControl = 0;
-int myButtonControlCount = 0;
-rect myButtonControlrect;
+buttonsetdef myButtonControl;
+//buttondef* myButtonControl = 0;
+//int myButtonControlCount = 0;
+//rect myButtonControlrect;
 
-buttondef* myButtonMenu1 = 0;
-int myButtonMenu1Count = 0;
-rect myButtonMenu1rect;
+buttonsetdef myButtonMenu1;
 
-buttondef* myButtonMenu2 = 0;
-int myButtonMenu2Count = 0;
-rect myButtonMenu2rect;
+//buttondef* myButtonMenu1 = 0;
+//int myButtonMenu1Count = 0;
+//rect myButtonMenu1rect;
+
+buttonsetdef myButtonMenu2;
+
+//buttondef* myButtonMenu2 = 0;
+//int myButtonMenu2Count = 0;
+//rect myButtonMenu2rect;
 boolean Menu2Showing;
 
 int DUMMY;
 
 //used when drawing lines. We support up to 3 lines (see line ID constants)
-uint16_t LastXforLineID[3];
-uint16_t LastYforLineID[3];
-uint16_t LineColorforLineID[3];
+uint16_t LastXforLineID[4];
+uint16_t LastYforLineID[4];
+uint16_t LineColorforLineID[4];
 int myLastGraph[320];
 
 
@@ -297,7 +297,7 @@ void setup() {
   MaxVread = 512; //this is the expected half way value
   RoastTime.stop();
   Gain =      EEPROM.read(GAIN_EP);
-  Integral =  (double)EEPROM.read(INTEGRAL_EP) / 10;
+  Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
 //Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
 
@@ -313,31 +313,31 @@ void setup() {
     MySpanMinutes[X]  =  ReadIntEprom(MySpanMinutesEprom[X], X , 12, MySpanMinutes[X]);
     MyBaseSetpoints[X] = ReadTempEprom(MySetpointsEprom[X] , MyBaseSetpoints[X]);
   }
-  Serial.println (LastXforLineID[2]);
+//Serial.println (LastXforLineID[2]);
   PixelsPerMin =  (int)(320 / TimeScreenLeft);
   
   
   
   
-  Serial.println (LastXforLineID[2]);
+//Serial.println (LastXforLineID[2]);
   //TempScreenTop = ReadIntEprom(TEMPSCREENTOP_EP, 100, 500, 460);
  //TempScreenTop  = 450;
-  Serial.print("  tempscreentop:");Serial.println(TempScreenTop);
+//Serial.print("  tempscreentop:");Serial.println(TempScreenTop);
 
   tft.reset();
   uint16_t identifier = tft.readID();
   if (identifier == 0x9325) {
-    Serial.println(F("Found ILI9325 LCD driver"));
+  //Serial.println(F("Found ILI9325 LCD driver"));
   } else if (identifier == 0x9328) {
-    Serial.println(F("Found ILI9328 LCD driver"));
+  //Serial.println(F("Found ILI9328 LCD driver"));
   } else if (identifier == 0x7575) {
-    Serial.println(F("Found HX8347G LCD driver"));
+  //Serial.println(F("Found HX8347G LCD driver"));
   } else if (identifier == 0x9341) {
-    Serial.println(F("Found ILI9341 LCD driver"));
+  //Serial.println(F("Found ILI9341 LCD driver"));
   } else if (identifier == 0x8357) {
-    Serial.println(F("Found HX8357D LCD driver"));
+  //Serial.println(F("Found HX8357D LCD driver"));
   } else {
-    Serial.print(F("Unknown LCD driver chip: "));
+  //Serial.print(F("Unknown LCD driver chip: "));
     return;
   }
 
