@@ -5,6 +5,11 @@
 #include <WString.h>
 
 
+typedef struct pointdb {
+  double x ;
+  double y ;
+ } pointdb;
+
 typedef struct point {
   int x ;
   int y ;
@@ -45,8 +50,8 @@ typedef struct buttonsetdef {
 
 
 typedef struct  roastdef {
-  int MySpanMinutes[6];
-  int MyBaseSetpoints[6];
+  int MySpanMinutesLength[6];
+  int MySetpointTempuratures[6];
   int TempRoastDone;
 } roastdef;
 

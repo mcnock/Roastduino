@@ -52,15 +52,15 @@ void LoadORSaveToHistory(boolean Load, int &number) {
   if (!Load) {
     for (int X = 0; X < SetPointCount; X++) {
       address++;
-      EEPROM.write(address, MySpanMinutes[X]);
-      SaveTempEprom(address + SetPointCount, MyBaseSetpoints[X]);
+      EEPROM.write(address, SpanMinutesLength[X]);
+      SaveTempEprom(address + SetPointCount, MySetpointTempuratures[X]);
     }
   }
   else {
     for (int X = 0; X < SetPointCount; X++) {
       address++;
-      MySpanMinutes[X] = EEPROM.read(address);
-      MyBaseSetpoints[X] = ReadTempEprom(address + SetPointCount , 0);
+      SpanMinutesLength[X] = EEPROM.read(address);
+      MySetpointTempuratures[X] = ReadTempEprom(address + SetPointCount , 0);
     }
   }
 

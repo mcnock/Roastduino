@@ -92,9 +92,12 @@ void ProcessTouch(int Xtouch, int Ytouch)
 
   //looking to see if should show adjust graph boxes
   //is the click within 20 pixels of the setpoint?
-  for (int X = 1; X < SetPointCount; X++) {
-    if (abs(Xtouch - MySetpoints[X].x) < 5 && abs(Ytouch - MySetpoints[X].y) < 5 ) {
-      DrawAdjustMentBoxes(X);
+  for (int i = 1; i < SetPointCount; i++) {
+     //boolean NearPoint(int Xtouch, int Ytouchinv , point &targetpoint, int Buffer, point BufferOffset) {
+    
+    if (NearPoint(Xtouch,Ytouch, MySetpointsTouchXY[i], 5)){
+//    if (abs(Xtouch - MySetpointsTouchXY[i].x) < 5 && abs(Ytouch - MySetpointsTouchXY[i].y) < 5 ) {
+             DrawAdjustMentBoxes(i);
       return;
     }
   }
@@ -151,6 +154,12 @@ void ProcessTouch(int Xtouch, int Ytouch)
       EEPROM.update(INTEGRAL_EP , (int)(Integral * 100));
       return;
     }
+    Serial.println("looking for int R");
+    if  (NearChar(Xtouch, Ytouchinv, TIntegralReset)) {
+        Serial.println("found  int R");    
+       IntegralSum = 0;
+      return;
+    }
   }
 
   //Serial.println ("looking for buttons");
@@ -164,9 +173,9 @@ void ProcessTouch(int Xtouch, int Ytouch)
   Serial.println ("looking for menu1");
   //  SerialprintRect(myButtonMenu1.bounding);
   if (Menu2Showing == false && InRect(Xtouch, Ytouchinv, myButtonMenu1.bounding)) {
-    Serial.print ("found menu1 count:"); Serial.println (myButtonMenu1.Count);
+    //Serial.print ("found menu1 count:"); Serial.println (myButtonMenu1.Count);
     int i = WhatMenu(Xtouch, Ytouchinv, myButtonMenu1);
-    Serial.print ("menu1 found index: "); Serial.println(i);
+    //Serial.print ("menu1 found index: "); Serial.println(i);
     ProcessMenu1(i);
   }
 }
@@ -176,25 +185,39 @@ void ProcessTouch(int Xtouch, int Ytouch)
 
 boolean NearChar(int Xtouch, int Ytouchinv , point &textdrawpoint) {
 
-  Serial.print("Nearchar for x:");Serial.print(Xtouch);Serial.print(" y:");Serial.println(Ytouchinv);
-  Serial.print("     drawpoint ");SerialprintPoint(textdrawpoint);
+  //Serial.print("Nearchar for x:");Serial.print(Xtouch);Serial.print(" y:");Serial.println(Ytouchinv);
+  //Serial.print("     drawpoint ");SerialprintPoint(textdrawpoint);
   
-  return (NearPoint(Xtouch, Ytouchinv, textdrawpoint, TTextClickBuffer, TTextClickBufferOffset));
+  return (NearPointOffset(Xtouch, Ytouchinv, textdrawpoint, TTextClickBuffer, TTextClickBufferOffset));
 
 }
 
 
-boolean NearPoint(int Xtouch, int Ytouchinv , point &targetpoint, int Buffer, point BufferOffset) {
+boolean NearPointOffset(int Xtouch, int Ytouchinv , point &targetpoint, int Buffer, point BufferOffset) {
   
-  Serial.print("NearPoint for x:");Serial.print(Xtouch);Serial.print(" y:");Serial.println(Ytouchinv);
-  Serial.print("    drawpoint ");SerialprintPoint(targetpoint);
-  Serial.print("       Offset ");SerialprintPoint(BufferOffset);
-  Serial.print("       Adjust x:");Serial.print(Xtouch + BufferOffset.x);Serial.print("y:");Serial.println(Ytouchinv + BufferOffset.y);
-  Serial.print("       abs    x:");Serial.print(abs((Xtouch + BufferOffset.x) -  targetpoint.x));Serial.print("y:");Serial.println(abs((Ytouchinv + BufferOffset.y) - targetpoint.y));
+  //Serial.print("NearPoint for x:");Serial.print(Xtouch);Serial.print(" y:");Serial.println(Ytouchinv);
+  //Serial.print("    drawpoint ");SerialprintPoint(targetpoint);
+  //Serial.print("       Offset ");SerialprintPoint(BufferOffset);
+  //Serial.print("       Adjust x:");Serial.print(Xtouch + BufferOffset.x);Serial.print("y:");Serial.println(Ytouchinv + BufferOffset.y);
+  //Serial.print("       abs    x:");Serial.print(abs((Xtouch + BufferOffset.x) -  targetpoint.x));Serial.print("y:");Serial.println(abs((Ytouchinv + BufferOffset.y) - targetpoint.y));
   
-  Serial.print("Buffer:");Serial.println(Buffer);
+  //Serial.print("Buffer:");Serial.println(Buffer);
   
   return (abs((Xtouch + BufferOffset.x) -  targetpoint.x) < Buffer && abs((Ytouchinv + BufferOffset.y) - targetpoint.y) < Buffer);
+
+}
+
+boolean NearPoint(int Xtouch, int Ytouchinv , point &targetpoint, int Buffer) {
+  
+  //Serial.print("NearPoint for x:");Serial.print(Xtouch);Serial.print(" y:");Serial.println(Ytouchinv);
+  //Serial.print("    drawpoint ");SerialprintPoint(targetpoint);
+  //Serial.print("       Offset ");SerialprintPoint(BufferOffset);
+  //Serial.print("       Adjust x:");Serial.print(Xtouch + BufferOffset.x);Serial.print("y:");Serial.println(Ytouchinv + BufferOffset.y);
+  //Serial.print("       abs    x:");Serial.print(abs((Xtouch + BufferOffset.x) -  targetpoint.x));Serial.print("y:");Serial.println(abs((Ytouchinv + BufferOffset.y) - targetpoint.y));
+  
+  //Serial.print("Buffer:");Serial.println(Buffer);
+  
+  return (abs((Xtouch) -  targetpoint.x) < Buffer && abs((Ytouchinv) - targetpoint.y) < Buffer);
 
 }
 

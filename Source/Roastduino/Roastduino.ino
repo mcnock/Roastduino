@@ -139,6 +139,7 @@ point TGainDecrease;
 point TIntegralValue;
 point TIntegralIncrease;
 point TIntegralDecrease;
+point TIntegralReset;
 
 rect TouchExtent;
 rect MappedExtent;
@@ -160,45 +161,50 @@ boolean PIDNewWindow;
 int ErrI = 0;
 int Err = 0;
 double Duty ;
+double Dutyraw ;
 double Setpoint ;
 int PIDIntegralUdateTimeValue ;
 int PIDWindowSize ;
-int ManagingSSR ;
 
 
-point MySetpoints[6];
-int MySpanAccumulatedMinutes[6];
-int MyMinuteSetpoints[20];
+
+point MySetpointsTouchXY[6];
+//double BySpanTempuratureSetpoints[6];
+double MyMinuteTempuratureSetpoints[20];
+int MySetpointAccumlulativeMinutes[6];
 int MySetpointsEprom[]    = {3, 4, 5, 6, 7, 8};  //these are EEprom memory locations - not data
 int MySpanMinutesEprom[]  = {10, 11, 12, 13, 14, 15};  //these are EEprom memory locations - not data
-int MySpanMinutes[6] =       {  0,   4,   2,   7,    1,   1}; //actual values read from eeprom
-int MyBaseSetpoints[6] =     {120, 390, 430, 450,  470, 500}; //actual values read from eeprom
+int SpanMinutesLength[6] =       {0,   4,   2,   7,    1,   1}; //actual values read from eeprom
+int MySetpointTempuratures[6] =     {120, 390, 430, 450,  470, 500}; //actual values read from eeprom
 unsigned long MyProfileTimeStamp;
 int SetPointCount = 6;
-double TempRoastDone = 0;
-
-
-unsigned long TempScreenTop = 700;
-const double TempYMax = 700; //actual value is set in program
-const double PixelYSplit = 90;
-const double TempYSplit = 400;
-const double PixelYSplit2 = 170;
-const double TempYSplit2 = 440;
-
-  //we have 240 units...
-  //240-120 is for < 400 >> 400/120  3.333 degrees per pixel
-  //120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
-const double TempPerPixL = TempYSplit/PixelYSplit;
-const double TempPerPixM = (TempYSplit2 - TempYSplit)/(PixelYSplit2 - PixelYSplit);
-const double TempPerPixH = (TempYMax - TempYSplit2)/(240.00 - PixelYSplit2);
-  
-
 int TimeScreenLeft = 14;
+
+
+
+
+const double TempYMax = 800;
+const double TempYSplit2 = 440;
+const double PixelYSplit2 = 150;
+const double TempYSplit = 390;
+const double PixelYSplit = 90;
+
+//we have 240 units...
+//240-120 is for < 400 >> 400/120  3.333 degrees per pixel
+//120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
+const double TempPerPixL = TempYSplit / PixelYSplit;
+const double TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
+const double TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
+
+double TempRoastDone = 0;
 int TempLastEndOfRoast;
 double TimeLastEndOfRoast;
 
 
 int SetpointbeingAdjusted ;
+int BeforeTemp = 0;
+int BeforeTime = 0;
+
 
 char RoastName[10] = "Default";
 byte RoastNumber = 0;
@@ -216,12 +222,15 @@ Chrono PIDIntegralUdateTime(Chrono::MILLIS);
 
 
 int CapButActive = 0;
+//current is read every loop (200 per second) so 30  very short
+Average<float> AvgFanCurrent(30);
+Average<float> AvgCoil1Amp(30);
+Average<float> AvgCoil2Amp(30);
 
-Average<float> AvgFanCurrent(10);
-Average<float> AvgCoil1Amp(20);
-Average<float> AvgCoil2Amp(20);
+//temps are read  once per second
 Average<int> TBeanAvgRoll(5);
-Average<int> TCoilRoll(20);
+Average<int> TCoilRoll(60); //this is minute avg
+
 int OVERHEATFANCount;
 int OVERHEATCOILCount;
 int TempReachedCount;
@@ -299,57 +308,65 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-//Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
+  //Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
 
   EEPROM.get(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
-//Serial.print("Read profile time stamp:");Serial.println(MyProfileTimeStamp);
+  //Serial.print("Read profile time stamp:");Serial.println(MyProfileTimeStamp);
   if (MyProfileTimeStamp == 0)   {
     MyProfileTimeStamp = millis();
     EEPROM.put(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
-  //Serial.print("Saving time stamp:");Serial.println(MyProfileTimeStamp);
+    //Serial.print("Saving time stamp:");Serial.println(MyProfileTimeStamp);
   }
   TempLastEndOfRoast = ReadTempEprom (TEMPLASTENDOFROAST_EP, 0);
+
+  int accumulated = 0;
   for (int X = 1; X < SetPointCount; X++) {
-    MySpanMinutes[X]  =  ReadIntEprom(MySpanMinutesEprom[X], X , 12, MySpanMinutes[X]);
-    MyBaseSetpoints[X] = ReadTempEprom(MySetpointsEprom[X] , MyBaseSetpoints[X]);
-  }
-//Serial.println (LastXforLineID[2]);
-  PixelsPerMin =  (int)(320 / TimeScreenLeft);
-  
-  
-  
-  
-//Serial.println (LastXforLineID[2]);
-  //TempScreenTop = ReadIntEprom(TEMPSCREENTOP_EP, 100, 500, 460);
- //TempScreenTop  = 450;
-//Serial.print("  tempscreentop:");Serial.println(TempScreenTop);
+    SpanMinutesLength[X]  =  ReadIntEprom(MySpanMinutesEprom[X], X , 12, SpanMinutesLength[X]);
+    if (SpanMinutesLength[X] < 1) {
+      SpanMinutesLength[X] = 1;
+    }
+    if (accumulated + SpanMinutesLength[X] > (14 - 1)) {
+      SpanMinutesLength[X] = 14 - 1 - accumulated;
+    }
+    accumulated = accumulated + SpanMinutesLength[X];
 
-  tft.reset();
-  uint16_t identifier = tft.readID();
-  if (identifier == 0x9325) {
+    MySetpointTempuratures[X] = ReadTempEprom(MySetpointsEprom[X] , MySetpointTempuratures[X]);
+
+  }
+
+
+
+//Serial.println (LastXforLineID[2]);
+PixelsPerMin =  (int)(320 / TimeScreenLeft);
+
+
+
+
+tft.reset();
+uint16_t identifier = tft.readID();
+if (identifier == 0x9325) {
   //Serial.println(F("Found ILI9325 LCD driver"));
-  } else if (identifier == 0x9328) {
+} else if (identifier == 0x9328) {
   //Serial.println(F("Found ILI9328 LCD driver"));
-  } else if (identifier == 0x7575) {
+} else if (identifier == 0x7575) {
   //Serial.println(F("Found HX8347G LCD driver"));
-  } else if (identifier == 0x9341) {
+} else if (identifier == 0x9341) {
   //Serial.println(F("Found ILI9341 LCD driver"));
-  } else if (identifier == 0x8357) {
+} else if (identifier == 0x8357) {
   //Serial.println(F("Found HX8357D LCD driver"));
-  } else {
+} else {
   //Serial.print(F("Unknown LCD driver chip: "));
-    return;
-  }
+  return;
+}
 
-  SecondTimer.restart(0);
-  FlashTimer.restart(0);
-  tft.begin(identifier);
+SecondTimer.restart(0);
+FlashTimer.restart(0);
+tft.begin(identifier);
 
-  graphProfile();
+graphProfile();
 
-  ManagingSSR = 1;
 
-  State = AMSTOPPED;
+State = AMSTOPPED;
 }
 
 void loop()

@@ -71,11 +71,31 @@ double getBeanAvgTemp(double t1, double t2) {
     }
   }
 }
+
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 double calcSetpoint(double roastminutes) {
   int setpoint;
   double r = (roastminutes - (int)roastminutes);
-  setpoint = MyMinuteSetpoints[(int)roastminutes] + ((MyMinuteSetpoints[int(roastminutes) + 1] - MyMinuteSetpoints[(int)roastminutes]) * r);
-  return setpoint;
+  setpoint = MyMinuteTempuratureSetpoints[(int)roastminutes] + ((double)(MyMinuteTempuratureSetpoints[int(roastminutes) + 1] - MyMinuteTempuratureSetpoints[(int)roastminutes]) * r);
+  if (setpoint > 0){
+     return setpoint;}
+  else
+  {
+    return 0;
+  }
 }
 
+int Y(int temp){
+  if (temp <= TempYSplit) {  
+     return (240 - ((double)temp/TempPerPixL));
+  }
+  else if (temp <= TempYSplit2){
+      return ((240 - PixelYSplit) - ((double)(temp-TempYSplit)/TempPerPixM));
+      //460 x 460 x 460 /240  = 379.687
+      //return (240 -  ((double)temp * (double)temp * double(temp)) / IYscale);    
+  } else {
+    
+      return ((240 -  PixelYSplit2) - ((double)(temp-TempYSplit2)/TempPerPixH));
+  }
+  
+}
