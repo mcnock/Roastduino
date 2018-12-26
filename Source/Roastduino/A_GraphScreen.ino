@@ -8,12 +8,21 @@ void graphProfile() {
 
   tft.setRotation(3);
 
-  //screen left should always 2 minutes greater than roast length
-  //hard coded for now based on 12
-  TimeScreenLeft = 14;
-  //for (int xSpan = 1; xSpan < SetPointCount; xSpan++) {
-  //  TimeScreenLeft =TimeScreenLeft + SpanMinutesLength[xSpan];
-  // }
+  TempYMax = 700; 
+  TempYSplit2 = 440;
+  TempYSplit2 = MySetPoints[5].Temperature ;
+  PixelYSplit2 = 180;
+  TempYSplit = (MySetPoints[1].Temperature) ;
+  PixelYSplit = 90;
+
+//we have 240 units...
+//240-120 is for < 400 >> 400/120  3.333 degrees per pixel
+//120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
+  TempPerPixL = TempYSplit / PixelYSplit;
+  TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
+  TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
+
+  TimeScreenLeft = MySetPoints[5].Minutes + 1;
 
   PixelsPerMin =  (int)(320 / TimeScreenLeft);
 
@@ -34,113 +43,82 @@ void graphProfile() {
   tft.setCursor((15 * PixelsPerMin) - 12, 230); tft.println("15");
 
   //draw y scale
-  tft.drawFastHLine(0,  Y(100), tft.width(), color);
-  tft.setCursor(2 , Y(100) - 4); tft.println("100");
-  tft.drawFastHLine(0,  Y(200), tft.width(), color);
-  tft.setCursor(2 , Y(200) - 4); tft.println("200");
-  tft.drawFastHLine(0,  Y(300), tft.width(), color);
-  tft.setCursor(2 , Y(300) - 4); tft.println("300");
-  tft.drawFastHLine(0,  Y(350), tft.width(), color);
-  tft.setCursor(2 , Y(350) - 4); tft.println("350");
-  tft.drawFastHLine(0,  Y(400), tft.width(), color);
-  tft.setCursor(2 , Y(400) - 4); tft.println("400");
-  tft.drawFastHLine(0,  Y(410), tft.width(), color);
-  tft.setCursor(2 , Y(410) - 4); tft.println("410");
-  tft.drawFastHLine(0,  Y(420), tft.width(), color);
-  tft.setCursor(2 , Y(420) - 4); tft.println("420");
-  tft.drawFastHLine(0,  Y(430), tft.width(), color);
-  tft.setCursor(2 , Y(430) - 4); tft.println("430");
-  tft.drawFastHLine(0,  Y(440), tft.width(), color);
-  tft.setCursor(2 , Y(440) - 4); tft.println("440");
-  tft.drawFastHLine(0,  Y(500), tft.width(), color);
-  tft.setCursor(2 , Y(500) - 4); tft.println("500");
-  tft.drawFastHLine(0,  Y(600), tft.width(), color);
-  tft.setCursor(2 , Y(600) - 4); tft.println("600");
-  tft.drawFastHLine(0,  Y(700), tft.width(), color);
-  tft.setCursor(2 , Y(700) - 4); tft.println("700");
+
+  Serial.println(TempYSplit);
+  for (int t = 100; t < (TempYSplit - 20); t = t + 100) {
+    Serial.println(t);
+    tft.drawFastHLine(0,  YforATemp(t), tft.width(), color);
+    tft.setCursor(2 , YforATemp(t) - 4); tft.println(t);
+  }
 
 
-  //the 0 setpoint is the left y axis
-  //the 6 setpoint is the right y axis
-  //so we have setpoint - 1 spans on the graph
+  for (int t = TempYSplit; t < (TempYSplit2); t = t + 20) {
+    tft.drawFastHLine(0,  YforATemp(t), tft.width(), color);
+    tft.setCursor(2 , YforATemp(t) - 4); tft.println(t);
+  }
 
-  StartLinebyTimeAndTemp (0, MySetpointTempuratures[0], SETPOINTLINEID , WHITE);
 
-  //set the by minute temp profile from 6 spans
+  for (int t = TempYSplit2 +10; t < TempYMax ; t = t + 100) {
+    tft.drawFastHLine(0,  YforATemp(t), tft.width(), color);
+    tft.setCursor(2 , YforATemp(t) - 4); tft.println(t);
+  }
 
-  MyMinuteTempuratureSetpoints[0] = 0;
-  MySetpointAccumlulativeMinutes[0] = 0;
+  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
+  //set the by minute temp profile for 5 spans
+  MyMinuteSetpoints[0] = 0;
   int accumulatedMinutes = 0;
-  for (int xSpan = 1; xSpan < SetPointCount; xSpan++) {
-    Serial.print("Span:"); Serial.print(xSpan);
-    Serial.print(" len:"); Serial.println(SpanMinutesLength[xSpan]);
-    double TempPerMinuteinSpan = ((double)(MySetpointTempuratures[xSpan] - MySetpointTempuratures[xSpan - 1])) / SpanMinutesLength[xSpan];
-    //loop through all the minutes leading to the setpoint the span
-    for (int xSpanMinute = 1 ; xSpanMinute <= SpanMinutesLength[xSpan] ;  xSpanMinute++)
+  for (int x = 1; x < SetPointCount; x++) {
+    double TempPerMinuteinSpan = ((double)(MySetPoints[x].Temperature - MySetPoints[x - 1].Temperature)) / MySetPoints[x].SpanMinutes ;
+    for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[x].SpanMinutes  ;  xSpanMinute++)
     {
-
-      accumulatedMinutes++;
-      Serial.println(xSpanMinute);
-      Serial.println(accumulatedMinutes);
-      MyMinuteTempuratureSetpoints[accumulatedMinutes] =  MySetpointTempuratures[xSpan - 1] + ( TempPerMinuteinSpan * xSpanMinute);
-      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTempuratureSetpoints[accumulatedMinutes], SETPOINTLINEID);
-
-    
+      accumulatedMinutes = accumulatedMinutes + 1;
+      MyMinuteSetpoints[accumulatedMinutes] =  MySetPoints[x - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
+      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteSetpoints[accumulatedMinutes], SETPOINTLINEID);
     }
-    Serial.println(MySetpointTempuratures[xSpan]);
-    MySetpointAccumlulativeMinutes[xSpan] = accumulatedMinutes;
-    //capture there it was drawn for touch screen
-    MySetpointsTouchXY[xSpan].x = (int)((double)accumulatedMinutes * PixelsPerMin);
-    MySetpointsTouchXY[xSpan].y = 240 - Y(MySetpointTempuratures[xSpan]);
-    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetpointTempuratures[xSpan], SETPOINTLINEID, 5);
-
-    //tft.drawFastVLine(BySpanTempuratureSetpoints[X] * PixelsPerMin, Y(MySetpointTempuratures[X] + 10), 20, WHITE);
+    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[x].Temperature, SETPOINTLINEID, 5);
   }
 
+  //create temp setpoint array between the last setpoint and the left of screen
+  // for (int Y = MySetPoints.Temperature[SetPointCount - 1] ; Y <= TimeScreenLeft; Y++) {
+  //   MyMinuteSetpoints[Y] = MySetPoints[SetPointCount - 1].Temperature ;
+  //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
+  //  }
 
-  //create temp setpoint array for last segment
-  for (int Y = MySetpointTempuratures[SetPointCount - 1] ; Y <= TimeScreenLeft; Y++) {
-
-    MyMinuteTempuratureSetpoints[Y] = MySetpointTempuratures[SetPointCount - 1] ;
-    //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteTempuratureSetpoints[Y]);
-  }
-
-  //draw end
-  TempRoastDone = MySetpointTempuratures[SetPointCount - 2];
-  //Serial.print ("TempRoastDone:");Serial.println (TempRoastDone);
-  tft.setCursor((tft.width() / 2), Y(TempRoastDone) - 10); tft.println("SP:"); tft.setCursor((tft.width() / 2) + 24, Y(TempRoastDone) - 10); tft.println(TempRoastDone);
-  tft.drawFastHLine(((tft.width() / 2) + 20)    ,  Y(TempRoastDone), tft.width(), BLUE);
-  tft.drawFastVLine(PixelsPerMin * MySetpointTempuratures[SetPointCount - 2], 0, tft.height() / 2, BLUE);
-
-
-  //tft.fillRect(0,0,5,5, BLUE);
-  //tft.fillRect(0,235,5,5, RED);
-  //tft.fillRect(315,0,5,5,YELLOW);
-  //tft.fillRect(315,235,5,5,WHITE);
-
-  tft.drawFastVLine(PixelsPerMin * MySetpointAccumlulativeMinutes[SetPointCount - 2], 0, tft.height() / 2, BLUE);
+  //draw endpoint highlights
+  tft.setCursor((tft.width() / 2), YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
+  tft.println("END:"); tft.setCursor((tft.width() / 2) + 24, YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
+  tft.println(MySetPoints[EndingSetPoint].Temperature);
+  tft.drawFastHLine(((tft.width() / 2) + 20)    ,  YforATemp(MySetPoints[EndingSetPoint].Temperature), tft.width(), BLUE);
+  tft.drawFastVLine(PixelsPerMin * MySetPoints[EndingSetPoint].Temperature, 0, tft.height() / 2, BLUE);
+  tft.drawFastVLine(PixelsPerMin * MySetPoints[EndingSetPoint].Minutes, 0, tft.height() / 2, BLUE);
   //delay(1000);
 
   ReDrawROLLAVGLINEFromArray(ORANGE);
 
-  if (SetpointbeingAdjusted > 0) {
-    DrawAdjustMentBoxes(SetpointbeingAdjusted);
+  DrawControlButtons();
+  DrawVertMenu1();
+
+}
+void drawprofileline() {
+  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
+  //set the by minute temp profile for 5 spans
+  MyMinuteSetpoints[0] = 0;
+  int accumulatedMinutes = 0;
+  for (int x = 1; x < SetPointCount; x++) {
+    double TempPerMinuteinSpan = ((double)(MySetPoints[x].Temperature - MySetPoints[x - 1].Temperature)) / MySetPoints[x].SpanMinutes ;
+    for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[x].SpanMinutes  ;  xSpanMinute++)
+    {
+      accumulatedMinutes = accumulatedMinutes + 1;
+      MyMinuteSetpoints[accumulatedMinutes] =  MySetPoints[x - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
+      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteSetpoints[accumulatedMinutes], SETPOINTLINEID);
+    }
+    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[x].Temperature, SETPOINTLINEID, 5);
   }
 
-  DrawControlButtons();
-  //if (Menu2Showing){
-  //DrawMenu2();
-  //}
-  //else{
-  Menu2Showing = false;
-  DrawMenu1();
-  //}
+
+
+
 }
-
-
-
-
-
 void tftPrintDouble5b(double num ) {
 
   //+11.1
@@ -213,17 +191,13 @@ void tftPrintIntTo5Char(int num) {
 //   UpdateGraphA(roastMinutes, Duty, Setpoint, err, ErrI);
 
 void UpdateGraphA() {
+  //this is top row
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
   int rowheight = 12;
-  int row = 20;
+  int row = 25;
   int col = 40;
-  // tft.setCursor(40 ,row); tft.println("F:"); tft.setCursor(50 , row); tft.println(TempEnd);
-  // tft.setCursor(100 , row); tft.println("Last:"); tft.setCursor(130 , row); tft.println(TempLastEndOfRoast);
-
   tft.setCursor(col , row); tft.println("Time:");   tft.setCursor(col + 45 , row); tft.println(RoastMinutes);
-        tft.setCursor(col + 90 , row); tft.print(" sp:"); tft.setCursor(col + 130 , row);   tftPrintDouble7(Setpoint);
-
-  row = 80; 
+  tft.setCursor(col + 90 , row); tft.print(" sp:"); tft.setCursor(col + 130 , row);   tftPrintDouble7(CurrentSetPointTemp);
   row = row + rowheight;
   if (Duty > 1) {
     tft.setCursor(col , row); tft.println("Duty:"); tft.setCursor(col + 40 , row); tftPrintDouble7(1.00);
@@ -237,13 +211,9 @@ void UpdateGraphA() {
   row = row + rowheight;
   tft.setCursor(col + 10 , row); tft.print("IEr:"); tft.setCursor(col + 40 , row);   tftPrintDouble7(-ErrI);
   row = row + rowheight;
-  
+
 }
 void UpdateGraphB() {
-  if (Menu2Showing) {
-    return;
-  }
-  if (SetpointbeingAdjusted > 0 ) return;
 
   int rowheight = 11;
 
@@ -273,7 +243,6 @@ void UpdateGraphB() {
 
 }
 void UpdateGraphC() {
-  if (SetpointbeingAdjusted > 0 ) return;
   int rowheight = 11;
   tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
   int row = 180 ;
@@ -307,7 +276,7 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
   //Serial.print ("StartLineTandT id:");Serial.print (lineID);Serial.print(" color:");Serial.println(color);
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   if (temp > 0) {
-    LastYforLineID[lineID] = Y(temp);
+    LastYforLineID[lineID] = YforATemp(temp);
   }
   else {
     LastYforLineID[lineID] = 240;
@@ -315,7 +284,8 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
   LineColorforLineID[lineID] = color;
   if (lineID == ROLLAVGLINEID) {
     for (int X = 0; X < 320; X++) {
-      myLastGraph[X] = -1;
+      myLastGraphYPixels[X] = -1;
+      myLastGraphTemps[X] = -1;
     }
   }
 }
@@ -323,7 +293,7 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
 
 void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  int newY = Y(temp);
+  int newY = YforATemp(temp);
   //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
   //Serial.print ("newX:");Serial.print (newX);Serial.print ("pixelspermin:");Serial.print (PixelsPerMin);Serial.print(" newY:");Serial.println(newY);
   tft.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
@@ -331,12 +301,13 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   LastYforLineID[lineID] = newY;
   if (lineID == ROLLAVGLINEID) {
     BoldLine(LastXforLineID[lineID], LastYforLineID[lineID] + 1, newX, newY + 1, LineColorforLineID[lineID]);
-    myLastGraph[newX] = newY;
+    myLastGraphYPixels[newX] = newY;
+    myLastGraphTemps[newX] = temp;
   }
 }
 void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int radius) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  int newY = Y(temp);
+  int newY = YforATemp(temp);
   tft.fillCircle(newX, newY, radius, LineColorforLineID[lineID]);
 
   //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
@@ -347,10 +318,9 @@ void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int r
 
 }
 
-
 void AddPointbyTimeandTemp(double timemins, int temp, int color, int radius) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  int newY = Y(temp);
+  int newY = YforATemp(temp);
   tft.fillCircle(newX, newY, radius, color);
 
   //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
@@ -363,12 +333,12 @@ void ReDrawROLLAVGLINEFromArray(int color) {
   LastXforLineID[1] = 0;
   LastYforLineID[1] = 240;
   for (int X = 0; X < 320; X++) {
-    if (myLastGraph[X] > 0 ) {
+    if (myLastGraphYPixels[X] > 0 ) {
       //  Serial.print ("DrawRealTime ");Serial.print(" color:");Serial.println(color);
-      tft.drawLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraph[X], color);
-      BoldLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraph[X], color);
+      tft.drawLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X], color);
+      BoldLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X], color);
       LastXforLineID[1] = X;
-      LastYforLineID[1] = myLastGraph[X];
+      LastYforLineID[1] = myLastGraphYPixels[X];
     }
   }
 }
@@ -382,45 +352,81 @@ void BoldLine(int x, int y, int newX, int newY, int color) {
 void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double timemins2, int temp2, int color) {
   if (log == true)
   {
-    Serial.print ("timemins1:");
-    Serial.print (timemins1);
-    Serial.print(" temp1:");
-    Serial.println(temp1);
-    Serial.print(" timemins2:");
-    Serial.print (timemins2);
-    Serial.print (" color:");
-    Serial.println(color);
+    //Serial.print ("timemins1:");
+    //Serial.print (timemins1);
+    //Serial.print(" temp1:");
+    //Serial.println(temp1);
+    //Serial.print(" timemins2:");
+    //Serial.print (timemins2);
+    //Serial.print (" color:");
+    //Serial.println(color);
   }
-  tft.drawLine(PixelsPerMin * timemins1, Y(temp1), PixelsPerMin * timemins2, Y(temp2), color);
+  tft.drawLine(PixelsPerMin * timemins1, YforATemp(temp1), PixelsPerMin * timemins2, YforATemp(temp2), color);
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void  displayState(int state) {
   tft.setCursor(30, 0);
   tft.setTextSize(2);
   tft.setTextColor(WHITE, BLACK);
   switch (state) {
-    case AMROASTING:
+    case STATEROASTING:
       tft.setTextColor(WHITE, RED);
+      strncpy(StateName, "Roasting", 8);
       tft.println("Roasting");
       break;
-    case AMSTOPPED:
+    case STATESTOPPED:
+      strncpy(StateName, "Stopped ", 8);
       tft.println("Stopped ");
       break;
-    case AMAUTOCOOLING:
+    case STATECOOLING:
       tft.setTextColor(WHITE, BLUE);
+      strncpy(StateName, "Cooling ", 8);
       tft.println( "Cooling ");
       break;
-    case AMOVERHEATEDCOIL:
+    case STATEOVERHEATED:
+      strncpy(StateName, "HotCoil  ", 9);
       tft.println ("HotCoil ");
       break;
-    case AMOVERHEATEDFAN:
+    case STATENOFANCURRENT:
+      strncpy(StateName, "NoFanCur   ", 8);
       tft.println ("HotFan ");
       break;
-    case AMFANONLY:
-      tft.println ("FanOnly");
+    case STATEFANONLY:
+      strncpy(StateName, "FanOnly ", 8);
+      tft.println ("FanOnly ");
       break;
     default:
-      tft.println ("unk    ");
+      strncpy(StateName, "unk   ", 8);
+      tft.println ("unk     ");
       break;
   }
+}
+
+int UpdateMySetPointSpan(struct setpoint *setpoint)
+{
+}
+int YforATemp(int temp) {
+  int result = 0;
+  if ( temp < 0 ) {
+    temp = 0;
+  }  
+  if (temp <= TempYSplit) {
+    result = (240 - ((double)temp / TempPerPixL));
+  }
+  else if (temp <= TempYSplit2) {
+    result = ((240 - PixelYSplit) - ((double)(temp - TempYSplit) / TempPerPixM));
+    //460 x 460 x 460 /240  = 379.687
+    //return (240 -  ((double)temp * (double)temp * double(temp)) / IYscale);
+  } else {
+    result = ((240 -  PixelYSplit2) - ((double)(temp - TempYSplit2) / TempPerPixH));
+  }
+  if (result < 0) {
+    return 1;
+  }
+  else
+  { return result;
+  }
+
+
 }

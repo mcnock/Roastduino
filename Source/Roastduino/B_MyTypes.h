@@ -16,13 +16,6 @@ typedef struct point {
  } point;
 
 
-//typedef struct rect {
-//  int xmin = 999;
-//  int ymin = 999;
-//  int xmax = -1;
-//  int ymax = -1;
-//} rect;
-
 typedef struct rect {
   int xmin;
   int ymin;
@@ -49,12 +42,11 @@ typedef struct buttonsetdef {
 } buttonsetdef;
 
 
-typedef struct  roastdef {
-  int MySpanMinutesLength[6];
-  int MySetpointTempuratures[6];
-  int TempRoastDone;
+typedef struct  setpoint {
+  int Temperature;
+  int Minutes;
+  int SpanMinutes;
 } roastdef;
-
 
 
 

@@ -1,3 +1,4 @@
+#include "Chrono.h"
 #include <Time.h>
 #include <TimeLib.h>
 #include <Adafruit_TFTLCD.h>
@@ -7,7 +8,6 @@
 #include "libraries\Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
-#include "Chrono.h"
 #include "TouchScreen.h"
 #include "B_MyTypes.h"
 
@@ -98,12 +98,13 @@
 #define BAUD            57600
 #define TEMPCOOLINGDONE 170
 
-#define AMROASTING          1
-#define AMSTOPPED           2
-#define AMAUTOCOOLING       3
-#define AMOVERHEATEDCOIL    4
-#define AMOVERHEATEDFAN     5
-#define AMFANONLY           6
+#define STATEROASTING          1
+#define STATESTOPPED           2
+#define STATECOOLING       3
+#define STATEOVERHEATED    4
+
+#define STATEFANONLY           6
+#define STATENOFANCURRENT   7
 #define STATECHANGED        8
 
 #define SETPOINTLINEID 0
@@ -123,6 +124,7 @@ TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 // GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS
 // ======================================================================================================================================================================================
 int State;
+char StateName[9] = "12345678";
 int newState;
 MAX6675 thermocouple1(TSCKp, TCS1p,  TSD1p);
 MAX6675 thermocouple2(TSCKp, TCS2p,  TSD2p);
@@ -145,6 +147,13 @@ rect TouchExtent;
 rect MappedExtent;
 rect TsSetting;
 
+char Commandsp1[7] = "xxxxx ";
+int iCommandsp1 = 0;
+
+
+char Commandsp[7] = "xxxxx ";
+int iCommandsp = 0;
+
 
 int TTextClickBuffer = 5;
 const point TTextClickBufferOffset =  { 4 , -5 }  ;
@@ -162,52 +171,36 @@ int ErrI = 0;
 int Err = 0;
 double Duty ;
 double Dutyraw ;
-double Setpoint ;
+double  ;
 int PIDIntegralUdateTimeValue ;
 int PIDWindowSize ;
 
-
-
 point MySetpointsTouchXY[6];
-//double BySpanTempuratureSetpoints[6];
-double MyMinuteTempuratureSetpoints[20];
-int MySetpointAccumlulativeMinutes[6];
+
+double MyMinuteSetpoints[30];
 int MySetpointsEprom[]    = {3, 4, 5, 6, 7, 8};  //these are EEprom memory locations - not data
 int MySpanMinutesEprom[]  = {10, 11, 12, 13, 14, 15};  //these are EEprom memory locations - not data
-int SpanMinutesLength[6] =       {0,   4,   2,   7,    1,   1}; //actual values read from eeprom
-int MySetpointTempuratures[6] =     {120, 390, 430, 450,  470, 500}; //actual values read from eeprom
-unsigned long MyProfileTimeStamp;
-int SetPointCount = 6;
+setpoint MySetPoints[6] = {{0, 120}, {4, 390}, {2, 430}, {7, 450}, {1, 470}, {1, 500}};
+int SetPointCount = 6;  //0,1,2,3,4,5
 int TimeScreenLeft = 14;
+int EndingSetPoint = 4;
 
-
-
-
-const double TempYMax = 800;
-const double TempYSplit2 = 440;
-const double PixelYSplit2 = 150;
-const double TempYSplit = 390;
-const double PixelYSplit = 90;
+double TempYMax = 800;
+double TempYSplit2 = 440;
+double PixelYSplit2 = 150;
+double TempYSplit = 390;
+double PixelYSplit = 90;
 
 //we have 240 units...
 //240-120 is for < 400 >> 400/120  3.333 degrees per pixel
 //120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
-const double TempPerPixL = TempYSplit / PixelYSplit;
-const double TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
-const double TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
+double TempPerPixL = TempYSplit / PixelYSplit;
+double TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
+double TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
 
-double TempRoastDone = 0;
-int TempLastEndOfRoast;
-double TimeLastEndOfRoast;
-
-
-int SetpointbeingAdjusted ;
+int CurrentSetPointTemp = 0;
 int BeforeTemp = 0;
 int BeforeTime = 0;
-
-
-char RoastName[10] = "Default";
-byte RoastNumber = 0;
 
 long IYscale;
 
@@ -216,10 +209,12 @@ int LoopsPerSecond;
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
 Chrono FlashTimer(Chrono::MILLIS);
+Chrono SerialInputTimer(Chrono::MILLIS);
+Chrono Serial1InputTimer(Chrono::MILLIS);
+
 //int SecondTimerValue = 1000;
 Chrono LcdUdateTime(Chrono::MILLIS);
 Chrono PIDIntegralUdateTime(Chrono::MILLIS);
-
 
 int CapButActive = 0;
 //current is read every loop (200 per second) so 30  very short
@@ -240,23 +235,9 @@ int Readingskipped;
 long PixelsPerMin;
 
 
-buttonsetdef myButtonControl;
-//buttondef* myButtonControl = 0;
-//int myButtonControlCount = 0;
-//rect myButtonControlrect;
+buttonsetdef myHorizontalButtonControl;
 
-buttonsetdef myButtonMenu1;
-
-//buttondef* myButtonMenu1 = 0;
-//int myButtonMenu1Count = 0;
-//rect myButtonMenu1rect;
-
-buttonsetdef myButtonMenu2;
-
-//buttondef* myButtonMenu2 = 0;
-//int myButtonMenu2Count = 0;
-//rect myButtonMenu2rect;
-boolean Menu2Showing;
+buttonsetdef myButtonVertMenu1;
 
 int DUMMY;
 
@@ -264,9 +245,8 @@ int DUMMY;
 uint16_t LastXforLineID[4];
 uint16_t LastYforLineID[4];
 uint16_t LineColorforLineID[4];
-int myLastGraph[320];
-
-
+int myLastGraphYPixels[320];
+int myLastGraphTemps[320];
 
 double RoastMinutes;
 int TCoil;
@@ -287,6 +267,10 @@ boolean Flasher;
 // SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP
 // =====================================================================================================================================================================
 void setup() {
+  Serial1.begin(9600);
+  Serial.begin(9600);
+  Serial.println ("setup starting");
+
   // Pin Configuration
   pinMode(VIBRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
   pinMode(TFT_RSTp, INPUT_PULLUP);
@@ -298,81 +282,95 @@ void setup() {
   pinMode(CURHEAT1ap, INPUT); pinMode(CURHEAT2ap, INPUT);
   //define CURFANap    7///#define CURHEAT2ap  6
 
-
   //set relays to high - cause that means off
   digitalWrite(FANRELAYp, RELAYOFF); digitalWrite(VIBRELAYp, RELAYOFF);
-  Serial.begin(BAUD);
+
   delay(1000);
   MaxVread = 512; //this is the expected half way value
   RoastTime.stop();
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-  //Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
-
-  EEPROM.get(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
-  //Serial.print("Read profile time stamp:");Serial.println(MyProfileTimeStamp);
-  if (MyProfileTimeStamp == 0)   {
-    MyProfileTimeStamp = millis();
-    EEPROM.put(PROFILETIMESTAMP_EP , MyProfileTimeStamp);
-    //Serial.print("Saving time stamp:");Serial.println(MyProfileTimeStamp);
-  }
-  TempLastEndOfRoast = ReadTempEprom (TEMPLASTENDOFROAST_EP, 0);
+  Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
 
   int accumulated = 0;
-  for (int X = 1; X < SetPointCount; X++) {
-    SpanMinutesLength[X]  =  ReadIntEprom(MySpanMinutesEprom[X], X , 12, SpanMinutesLength[X]);
-    if (SpanMinutesLength[X] < 1) {
-      SpanMinutesLength[X] = 1;
+  for (int X = 0; X < SetPointCount; X++) {
+    Serial.print(X); Serial.print( " ");
+    if (X > 0) {
+      MySetPoints[X].SpanMinutes  =  ReadIntEprom(MySpanMinutesEprom[X], 1 , 10, 2);
+      accumulated = accumulated + MySetPoints[X].SpanMinutes;
+      MySetPoints[X].Minutes = accumulated;
     }
-    if (accumulated + SpanMinutesLength[X] > (14 - 1)) {
-      SpanMinutesLength[X] = 14 - 1 - accumulated;
+    else
+    { MySetPoints[X].SpanMinutes = 0;
+      MySetPoints[X].Minutes = 0;
     }
-    accumulated = accumulated + SpanMinutesLength[X];
+    Serial.print(MySetPoints[X].SpanMinutes);
+    Serial.print( " ");
 
-    MySetpointTempuratures[X] = ReadTempEprom(MySetpointsEprom[X] , MySetpointTempuratures[X]);
+    Serial.print(MySetPoints[X].Minutes);
+    Serial.print( " ");
+
+    if (X > 0) {
+      MySetPoints[X].Temperature = ReadTempEprom(MySetpointsEprom[X] , MySetPoints[X].Temperature);
+      if (MySetPoints[X].Temperature < MySetPoints[X - 1].Temperature) {
+        MySetPoints[X].Temperature = MySetPoints[X - 1].Temperature * 1.1;
+        Serial.print (" correcting low value of "); Serial.println (X); Serial.print(" to ");
+        Serial.print (MySetPoints[X].Temperature);
+      }
+    }
+    else
+    {
+      MySetPoints[X].Temperature = 150;
+      
+    }
+    Serial.println(MySetPoints[X].Temperature);
+
 
   }
+  //TempRoastDone = MySetPoints[EndingSetPoint].Temperature;
+  //TimeRoastDone = MySetPoints[EndingSetPoint].Minutes;
+
+  //Serial.println (LastXforLineID[2]);
+  PixelsPerMin =  (int)(320 / TimeScreenLeft);
 
 
 
-//Serial.println (LastXforLineID[2]);
-PixelsPerMin =  (int)(320 / TimeScreenLeft);
+
+  tft.reset();
+  uint16_t identifier = tft.readID();
+  if (identifier == 0x9325) {
+    //Serial.println(F("Found ILI9325 LCD driver"));
+  } else if (identifier == 0x9328) {
+    //Serial.println(F("Found ILI9328 LCD driver"));
+  } else if (identifier == 0x7575) {
+    //Serial.println(F("Found HX8347G LCD driver"));
+  } else if (identifier == 0x9341) {
+    //Serial.println(F("Found ILI9341 LCD driver"));
+  } else if (identifier == 0x8357) {
+    //Serial.println(F("Found HX8357D LCD driver"));
+  } else {
+    //Serial.print(F("Unknown LCD driver chip: "));
+    return;
+  }
+
+  SecondTimer.restart(0);
+  FlashTimer.restart(0);
+  tft.begin(identifier);
+
+  graphProfile();
 
 
+  
 
-
-tft.reset();
-uint16_t identifier = tft.readID();
-if (identifier == 0x9325) {
-  //Serial.println(F("Found ILI9325 LCD driver"));
-} else if (identifier == 0x9328) {
-  //Serial.println(F("Found ILI9328 LCD driver"));
-} else if (identifier == 0x7575) {
-  //Serial.println(F("Found HX8347G LCD driver"));
-} else if (identifier == 0x9341) {
-  //Serial.println(F("Found ILI9341 LCD driver"));
-} else if (identifier == 0x8357) {
-  //Serial.println(F("Found HX8357D LCD driver"));
-} else {
-  //Serial.print(F("Unknown LCD driver chip: "));
-  return;
+  State = STATESTOPPED;
+  // Serial.println ("setup complete");
+  //  Serial.flush();
 }
 
-SecondTimer.restart(0);
-FlashTimer.restart(0);
-tft.begin(identifier);
-
-graphProfile();
-
-
-State = AMSTOPPED;
-}
 
 void loop()
 {
   theloop();
 
 }
-
-

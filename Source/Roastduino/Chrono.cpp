@@ -118,6 +118,3 @@ bool Chrono::hasPassed(unsigned long timeout, bool restartIfPassed)
 unsigned long Chrono::seconds() {
   return (millis()/1000);
 }
-
-
-
