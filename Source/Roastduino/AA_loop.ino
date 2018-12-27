@@ -228,6 +228,9 @@ void theloop () {
           IntegralSum =  IntegralSum + double(Err);
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
           //Serial.print("Isum:");Serial.print(IntegralSum);Serial.print("ErrI:");Serial.println(ErrI);
+
+          
+          
           PIDIntegralUdateTime.restart(0);
         }
       }

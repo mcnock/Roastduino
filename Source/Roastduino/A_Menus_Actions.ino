@@ -175,7 +175,7 @@ void MoveGain(int amount) {
   delay(100);
 }
 void MoveIntegral(int amount) {
-  Integral = Integral + (float(amount) / 10);
+  Integral = Integral + (float(amount) / 20);
   delay(100);
   EEPROM.update(INTEGRAL_EP , (int)(Integral * 100));
 }
