@@ -136,11 +136,7 @@ int Gain = 10; //read from eeprom
 
 
 point TGainValue;
-point TGainIncrease;
-point TGainDecrease;
 point TIntegralValue;
-point TIntegralIncrease;
-point TIntegralDecrease;
 point TIntegralReset;
 
 rect TouchExtent;
@@ -171,7 +167,7 @@ int ErrI = 0;
 int Err = 0;
 double Duty ;
 double Dutyraw ;
-double  ;
+
 int PIDIntegralUdateTimeValue ;
 int PIDWindowSize ;
 
@@ -216,7 +212,7 @@ Chrono Serial1InputTimer(Chrono::MILLIS);
 Chrono LcdUdateTime(Chrono::MILLIS);
 Chrono PIDIntegralUdateTime(Chrono::MILLIS);
 
-int CapButActive = 0;
+//int CapButActive = 0;
 //current is read every loop (200 per second) so 30  very short
 Average<float> AvgFanCurrent(30);
 Average<float> AvgCoil1Amp(30);
@@ -248,7 +244,7 @@ uint16_t LineColorforLineID[4];
 int myLastGraphYPixels[320];
 int myLastGraphTemps[320];
 
-double RoastMinutes;
+double RoastMinutes = 0;
 int TCoil;
 int TBean1;
 int TBean2;

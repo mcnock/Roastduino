@@ -174,10 +174,16 @@ void MoveGain(int amount) {
   EEPROM.update(GAIN_EP, Gain);
   delay(100);
 }
+
 void MoveIntegral(int amount) {
   Integral = Integral + (float(amount) / 20);
   delay(100);
   EEPROM.update(INTEGRAL_EP , (int)(Integral * 100));
+}
+
+void MoveIntegralSum(int amount) {
+  IntegralSum = IntegralSum + amount;
+  
 }
 void MoveTime(int jsetpointPlusOrMInus) {
   int i = abs(jsetpointPlusOrMInus);

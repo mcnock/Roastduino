@@ -9,10 +9,10 @@ void theloop () {
 
   ReadSerial(Serial1,Serial1InputTimer);//for blue tooth
   //per loop variables
-
-  int minuteToStart = 0;
+ // int minuteToStart = 0;
   boolean bNewSecond = false;
-  RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+  
+ 
   //Serial.println(roastMinutes);
   if (FlashTimer.elapsed() > 100) {
     if (Flasher == false) {
@@ -56,7 +56,6 @@ void theloop () {
 
   //we read current each loop since it is fast
   int tempread;
-
   MaxVread = analogRead(VOLT5ap);
   MaxVoltage = (((double)MaxVread) / 1024) * 5;
   // the center of the max voltage is 0
@@ -114,9 +113,17 @@ void theloop () {
     }
   }
 
+
+ //update roast time
+ if (State == STATEROASTING or State == STATECOOLING)
+ {
+    RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+ }
   //**************************************************************************************************
   //DETERIM NEW STATE BASE ON TEMPERATURE or TIME
   //*****************************************************************************************************
+
+  
   if (State == STATEROASTING) {
     if (TCoil > OVERHEATCOIL) {
       OVERHEATCOILCount++;
@@ -143,9 +150,12 @@ void theloop () {
       Serial.println("Max time reached. Cooling starting");
     }
   }
-  else if (State == STATECOOLING && TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
-    newState = STATESTOPPED;
+  else if (State == STATECOOLING){
+    if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
+      newState = STATESTOPPED;
     //Serial.println("Auto Cooling Complete ");
+    
+    }
   }
 
 
@@ -165,11 +175,6 @@ void theloop () {
     }
   }
   else if (newState == STATEROASTING) {
-    Serial.print("starting roasting with end temp of ");
-    Serial.print(MySetPoints[EndingSetPoint].Temperature);
-    Serial.print(" and end time of ");
-    Serial.println(MySetPoints[EndingSetPoint].Minutes);
-    
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
       TCoilRoll.clear();
@@ -183,8 +188,12 @@ void theloop () {
       graphProfile();
       delay(2000);
       //Serial.println("2 Starting Heaters ");
-      RoastTime.restart(minuteToStart * 60);
-      RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+      RoastTime.restart(0);
+      RoastMinutes = 0;
+      //RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+    }
+    else if (State == STATECOOLING) {
+      //nothing is needed
     }
     State = STATEROASTING;
   }
@@ -221,16 +230,13 @@ void theloop () {
     //if (bNewSecond) {Serial.print(" new calc of err:");Serial.println(err);    };
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
-    if (RoastMinutes > MySetPoints[1].Minutes ) { //only calc intergral error if we are above the 1st setpoint
+    if (RoastMinutes > MySetPoints[2].Minutes ) { //only calc intergral error if we are above the 1st setpoint
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
-        if (Dutyraw < 1 && abs(ErrI) < Gain) {
+        if (Dutyraw < 1 && ErrI < Gain ) {
           //only add/remove from the integral if reasonable
           IntegralSum =  IntegralSum + double(Err);
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
-          //Serial.print("Isum:");Serial.print(IntegralSum);Serial.print("ErrI:");Serial.println(ErrI);
-
-          
-          
+          //Serial.print("Isum:");Serial.print(IntegralSum);Serial.print("ErrI:");Serial.println(ErrI);          
           PIDIntegralUdateTime.restart(0);
         }
       }

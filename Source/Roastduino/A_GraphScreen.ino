@@ -186,9 +186,6 @@ void tftPrintIntTo5Char(int num) {
   tft.println(Buf5);
   // Serial.print("printbuf:");Serial.println(num);
 }
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-//void UpdateGraphA(double roastMinutes, double duty, int setpoint, double err, double errI) {
-//   UpdateGraphA(roastMinutes, Duty, Setpoint, err, ErrI);
 
 void UpdateGraphA() {
   //this is top row
@@ -249,20 +246,20 @@ void UpdateGraphC() {
   int colr = 40 ;
 
 
-  TGainValue.x =  colr + 10; TGainValue.y = row; TGainIncrease.x = colr + 35;
-  TGainIncrease.y = row; TGainDecrease.x = colr + 55; TGainDecrease.y = row;
+  TGainValue.x =  colr + 10; TGainValue.y = row;// TGainIncrease.x = colr + 35;
+  //TGainIncrease.y = row; TGainDecrease.x = colr + 55; TGainDecrease.y = row;
 
   tft.setCursor(colr , row); tft.println("G:"); tft.setCursor(TGainValue.x , TGainValue.y); tft.println(Gain);
-  tft.setCursor(TGainIncrease.x, TGainIncrease.y); tft.print("U"); tft.setCursor(TGainDecrease.x   , TGainDecrease.y); tft.println("D");
+  //tft.setCursor(TGainIncrease.x, TGainIncrease.y); tft.print("U"); tft.setCursor(TGainDecrease.x   , TGainDecrease.y); tft.println("D");
 
 
   row = row + rowheight;;
-  TIntegralValue.x  = colr + 5; TIntegralValue.y  = row;  TIntegralIncrease.x = colr + 35 ;
-  TIntegralIncrease.y = row; TIntegralDecrease.x = colr + 55; TIntegralDecrease.y = row;
-  TIntegralReset.y = row; TIntegralReset.x = colr + 75; TIntegralReset.y = row;
+  TIntegralValue.x  = colr + 5; TIntegralValue.y  = row;//  TIntegralIncrease.x = colr + 35 ;
+ // TIntegralIncrease.y = row; TIntegralDecrease.x = colr + 55; TIntegralDecrease.y = row;
+  TIntegralReset.y = row; TIntegralReset.x = colr + 75; //TIntegralReset.y = row;
 
   tft.setCursor(colr - 5 , row); tft.println("I:"); tft.setCursor(TIntegralValue.x , TIntegralValue.y); tft.println(Integral) ;
-  tft.setCursor(TIntegralIncrease.x  , TIntegralIncrease.y); tft.println("U"); tft.setCursor(TIntegralDecrease.x , TIntegralDecrease.y); tft.print("D");
+ // tft.setCursor(TIntegralIncrease.x  , TIntegralIncrease.y); tft.println("U"); tft.setCursor(TIntegralDecrease.x , TIntegralDecrease.y); tft.print("D");
   tft.setCursor(TIntegralReset.x , TIntegralReset.y); tft.print("R");
 
   row = row + rowheight;;

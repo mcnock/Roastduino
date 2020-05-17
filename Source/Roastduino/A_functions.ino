@@ -260,6 +260,15 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             MoveIntegral(cmd3AsSignedInt);
             port.print(cmd1); port.print(cmd2); port.print(cmd3); port.print( "OK");
             break;
+          case 's':
+            port.print("MoveIntegralSum by ");
+            port.println(float(cmd3AsSignedInt) / 10);
+            break;
+          case 'S':
+            MoveIntegralSum(cmd3AsSignedInt);
+            port.print(cmd1); port.print(cmd2); port.print(cmd3); port.print( "OK");
+            break;
+
           case 'g':
             port.print("MoveGain by ");
             port.println(cmd3AsSignedInt);
