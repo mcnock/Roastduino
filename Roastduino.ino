@@ -1,9 +1,10 @@
-#include "Chrono.h"
+#include <LiquidCrystal.h>
+#include <Chrono.h>
 #include <Time.h>
 #include <TimeLib.h>
 #include <Adafruit_TFTLCD.h>
 #include <max6675.h>
-#include  <Adafruit_GFX.h>
+#include <Adafruit_GFX.h>
 #include <gfxfont.h>
 #include "libraries\Average.h"
 #include <EEPROM.h>
