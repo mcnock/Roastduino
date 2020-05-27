@@ -6,7 +6,7 @@
 #include <max6675.h>
 #include <Adafruit_GFX.h>
 #include <gfxfont.h>
-#include "libraries\Average.h"
+#include "Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include "TouchScreen.h"
