@@ -1,3 +1,5 @@
 Source/Roastduino/Roastduino.ino
 Debug/
 Release/
+__vm/
+*vs/
