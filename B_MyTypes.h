@@ -43,8 +43,9 @@ typedef struct buttonsetdef {
 
 
 typedef struct  setpoint {
-  int Temperature;
+  
   int Minutes;
+  int Temperature;
   int SpanMinutes;
 } roastdef;
 

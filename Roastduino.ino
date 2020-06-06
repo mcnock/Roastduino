@@ -1,16 +1,28 @@
-#include <LiquidCrystal.h>
 #include <Chrono.h>
 #include <Time.h>
 #include <TimeLib.h>
-#include <Adafruit_TFTLCD.h>
+//#include <Adafruit_TFTLCD.h>
 #include <max6675.h>
-#include <Adafruit_GFX.h>
-#include <gfxfont.h>
+//#include <Adafruit_GFX.h>
+//#include <gfxfont.h>
 #include "Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include "TouchScreen.h"
 #include "B_MyTypes.h"
+#include <UTFT.h>
+
+// Declare which fonts we will be using
+extern uint8_t SmallFont[];
+extern uint8_t BigFont[];
+
+// Set the pins to the correct ones for your development shield
+// ------------------------------------------------------------
+// Standard Arduino Mega/Due shield            : <display model>,38,39,40,41
+
+// Remember to change the model parameter to suit your display module!
+UTFT myGLCD(SSD1963_800480,38,39,40,41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
+
 
 // ===========
 //  DEFINES
@@ -27,20 +39,6 @@
 #define ORANGE  0xFD20
 #define WHITE   0xFFFF
 
-#define TFT_CSp 39 // Chip Select goes to Analog 3
-#define TFT_CDp 41 // Command/Data goes to Analog 2
-#define TFT_WRp 43 // LCD Write goes to Analog 1
-#define TFT_RDp 45 // LCD Read goes to Analog 0
-#define TFT_RSTp 47 // Can alternately just connect to Arduino's reset pin
-//   D0 connects to digital pin 28  (Notice these are
-//   D1 connects to digital pin 29   NOT in order!)
-//   D2 connects to digital pin 22
-//   D3 connects to digital pin 23
-//   D4 connects to digital pin 24
-//   D5 connects to digital pin 25
-//   D6 connects to digital pin 26
-//   D7 connects to digital pin 27
-// These are the four touchscreen analog pins
 #define YM A3   // can be a digital pin
 #define XM A2  // must be an analog pin, use "An" notation!
 #define YP A1  // xx must be an analog pin, use "An" notation!
@@ -75,11 +73,6 @@
 #define CURHEAT1ap  A5
 #define VOLT5ap     A4
 
-//capacitive buttons
-#define CP1p    30
-#define CP2p    32
-#define CP3p    34
-#define CP4p    36
 
 #define VIBRELAYp    31
 #define FANRELAYp    33
@@ -118,8 +111,6 @@
 // ===========
 // DEFINITIONS
 // ===========
-Adafruit_TFTLCD tft(TFT_CSp, TFT_CDp, TFT_WRp, TFT_RDp, TFT_RSTp);
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
 
 // ===============================================================================================================================================================================
 // GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS
@@ -147,6 +138,7 @@ rect TsSetting;
 char Commandsp1[7] = "xxxxx ";
 int iCommandsp1 = 0;
 
+int spSelected = 0;
 
 char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
@@ -174,23 +166,34 @@ int PIDWindowSize ;
 
 point MySetpointsTouchXY[6];
 
-double MyMinuteSetpoints[30];
+double MyMinuteTemperature[30];
 int MySetpointsEprom[]    = {3, 4, 5, 6, 7, 8};  //these are EEprom memory locations - not data
 int MySpanMinutesEprom[]  = {10, 11, 12, 13, 14, 15};  //these are EEprom memory locations - not data
-setpoint MySetPoints[6] = {{0, 120}, {4, 390}, {2, 430}, {7, 450}, {1, 470}, {1, 500}};
+setpoint MySetPoints[6] = {{0, 120}, {3, 410}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
 int SetPointCount = 6;  //0,1,2,3,4,5
-int TimeScreenLeft = 14;
+int TimeScreenLeft = 15;
 int EndingSetPoint = 4;
 
 double TempYMax = 800;
+
 double TempYSplit2 = 440;
-double PixelYSplit2 = 150;
+
+//double PixelYSplit2 = 150;
+double PixelYSplit2 = 300;
+
 double TempYSplit = 390;
-double PixelYSplit = 90;
+
+//double PixelYSplit = 90;
+double PixelYSplit = 180;
 
 //we have 240 units...
 //240-120 is for < 400 >> 400/120  3.333 degrees per pixel
 //120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
+//we have 480 units...
+//480-240 is for < 400 >> 400/120  6.66 degrees per pixel
+//240 - 0 is for < 400 - 600 >> 200/120 3.32 degrees per pixel
+
+
 double TempPerPixL = TempYSplit / PixelYSplit;
 double TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
 double TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
@@ -270,7 +273,6 @@ void setup() {
 
   // Pin Configuration
   pinMode(VIBRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
-  pinMode(TFT_RSTp, INPUT_PULLUP);
   pinMode(SSR1p, OUTPUT); pinMode(SSR2p, OUTPUT);
   pinMode(Buzzerp, OUTPUT); pinMode(LEDp, OUTPUT);
   digitalWrite(Buzzerp, HIGH);
@@ -292,9 +294,10 @@ void setup() {
 
   int accumulated = 0;
   for (int X = 0; X < SetPointCount; X++) {
-    Serial.print(X); Serial.print( " ");
+    Serial.println(X); Serial.println( " ");
     if (X > 0) {
-      MySetPoints[X].SpanMinutes  =  ReadIntEprom(MySpanMinutesEprom[X], 1 , 10, 2);
+      //  =  ReadIntEprom(MySpanMinutesEprom[X], 1 , 10, 2);
+      MySetPoints[X].SpanMinutes =  MySetPoints[X].Minutes -MySetPoints[X-1].Minutes;
       accumulated = accumulated + MySetPoints[X].SpanMinutes;
       MySetPoints[X].Minutes = accumulated;
     }
@@ -302,18 +305,18 @@ void setup() {
     { MySetPoints[X].SpanMinutes = 0;
       MySetPoints[X].Minutes = 0;
     }
-    Serial.print(MySetPoints[X].SpanMinutes);
-    Serial.print( " ");
+    Serial.println(MySetPoints[X].SpanMinutes);
+    Serial.println( " ");
 
-    Serial.print(MySetPoints[X].Minutes);
-    Serial.print( " ");
+    Serial.println(MySetPoints[X].Minutes);
+    Serial.println( " ");
 
     if (X > 0) {
-      MySetPoints[X].Temperature = ReadTempEprom(MySetpointsEprom[X] , MySetPoints[X].Temperature);
+      //MySetPoints[X].Temperature = ReadTempEprom(MySetpointsEprom[X] , MySetPoints[X].Temperature);
       if (MySetPoints[X].Temperature < MySetPoints[X - 1].Temperature) {
         MySetPoints[X].Temperature = MySetPoints[X - 1].Temperature * 1.1;
-        Serial.print (" correcting low value of "); Serial.println (X); Serial.print(" to ");
-        Serial.print (MySetPoints[X].Temperature);
+        Serial.println (" correcting low value of "); Serial.println (X); Serial.println(" to ");
+        Serial.println (MySetPoints[X].Temperature);
       }
     }
     else
@@ -329,31 +332,19 @@ void setup() {
   //TimeRoastDone = MySetPoints[EndingSetPoint].Minutes;
 
   //Serial.println (LastXforLineID[2]);
-  PixelsPerMin =  (int)(320 / TimeScreenLeft);
-
-
-
-
-  tft.reset();
-  uint16_t identifier = tft.readID();
-  if (identifier == 0x9325) {
-    //Serial.println(F("Found ILI9325 LCD driver"));
-  } else if (identifier == 0x9328) {
-    //Serial.println(F("Found ILI9328 LCD driver"));
-  } else if (identifier == 0x7575) {
-    //Serial.println(F("Found HX8347G LCD driver"));
-  } else if (identifier == 0x9341) {
-    //Serial.println(F("Found ILI9341 LCD driver"));
-  } else if (identifier == 0x8357) {
-    //Serial.println(F("Found HX8357D LCD driver"));
-  } else {
-    //Serial.print(F("Unknown LCD driver chip: "));
-    return;
-  }
+  PixelsPerMin =  (int)(800 / TimeScreenLeft);
 
   SecondTimer.restart(0);
   FlashTimer.restart(0);
-  tft.begin(identifier);
+
+  myGLCD.InitLCD();
+ // -------------------------------------------------------------
+  pinMode(8, OUTPUT);  //backlight 
+  digitalWrite(8, HIGH);//on
+// -------------------------------------------------------------
+  myGLCD.setFont(SmallFont);
+
+  Serial.print("DisplayX:");Serial.print(myGLCD.getDisplayXSize());Serial.print(" DisplayY:");Serial.println(myGLCD.getDisplayYSize());
 
   graphProfile();
 
@@ -368,6 +359,11 @@ void setup() {
 
 void loop()
 {
+ delay(10000);
+ 
+ graphProfile();
+  
+  return;
   theloop();
 
 }

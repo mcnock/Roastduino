@@ -2,12 +2,14 @@
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
+// Get the temperature
+
 void theloop () {
 
 
-  ReadSerial(Serial,SerialInputTimer);//for debugging
+  //ReadSerial(Serial,SerialInputTimer);//for debugging
 
-  ReadSerial(Serial1,Serial1InputTimer);//for blue tooth
+  //ReadSerial(Serial1,Serial1InputTimer);//for blue tooth
   //per loop variables
  // int minuteToStart = 0;
   boolean bNewSecond = false;
@@ -36,7 +38,7 @@ void theloop () {
     else {
       digitalWrite(Buzzerp, HIGH);  //error off
       digitalWrite(LEDp, LOW);
-      bNewSecond = true;//Serial.print("LoopsPerSec:");Serial.println(LoopsPerSecond);
+      bNewSecond = true;//Serial.println("LoopsPerSec:");Serial.println(LoopsPerSecond);
       LoopsPerSecond = 0;
       SecondTimer.restart(0);
     }
@@ -44,10 +46,10 @@ void theloop () {
   else {
     LoopsPerSecond ++;
   }
-  TSPoint p = ts.getPoint();
-  if (p.z > MINTOUCHPRESSURE && p.z < MAXTOUCHPRESSURE) {
-    ProcessRawTouch (&p);
-  }
+//  TSPoint p = ts.getPoint();
+ // if (p.z > MINTOUCHPRESSURE && p.z < MAXTOUCHPRESSURE) {
+ //   ProcessRawTouch (&p);
+ // }
 
   //**********************************************************************************************************************************
   //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
@@ -60,7 +62,7 @@ void theloop () {
   MaxVoltage = (((double)MaxVread) / 1024) * 5;
   // the center of the max voltage is 0
   tempread = analogRead(CURFANap);
-  //Serial.print("volt:");Serial.print(maxVread);Serial.print("fan:");Serial.println(tempread);
+  //Serial.println("volt:");Serial.println(maxVread);Serial.println("fan:");Serial.println(tempread);
   //185 millamps per volt
   CurrentFan = (((double)(tempread - (MaxVread / 2) ) * 5)) / 125;
   if (CurrentFan < 0) {
@@ -74,13 +76,13 @@ void theloop () {
 
 
   if (bNewSecond) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
-    TCoil =  getCleanTemp(thermocouple1.readFahrenheit(), 1);
-    //Serial.print("Coil teamp:");Serial.println(TCoil);
+    TCoil = 0;// getCleanTemp(thermocouple1.readFahrenheit(), 1);
+    //Serial.println("Coil teamp:");Serial.println(TCoil);
     //TFan =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
     TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
     TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
-    //Serial.print(TBean1);Serial.print (TBean2);Serial.print(TCoil);Serial.println(TFan);
+    //Serial.println(TBean1);Serial.println (TBean2);Serial.println(TCoil);Serial.println(TFan);
 
     if (TCoil > 100) {
       TCoilRoll.push(TCoil);
@@ -106,9 +108,9 @@ void theloop () {
     else {
       Readingskipped++;
       //Serial.println("out of range:");
-      //Serial.print("TBean2:");Serial.print(TBean2);Serial.print(" TBean1:");Serial.print(TBean1);
-      //Serial.print(" avg:");Serial.print(TBeanAvgRoll.mean());Serial.print(" TCoil:");
-      //Serial.print(TCoil);Serial.print(" TFan:");Serial.println(TFan);
+      //Serial.println("TBean2:");Serial.println(TBean2);Serial.println(" TBean1:");Serial.println(TBean1);
+      //Serial.println(" avg:");Serial.println(TBeanAvgRoll.mean());Serial.println(" TCoil:");
+      //Serial.println(TCoil);Serial.println(" TFan:");Serial.println(TFan);
 
     }
   }
@@ -227,7 +229,7 @@ void theloop () {
     //CALC THE ERR AND INTEGRAL
     CurrentSetPointTemp =  SetpointforATime(RoastMinutes);
     Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint
-    //if (bNewSecond) {Serial.print(" new calc of err:");Serial.println(err);    };
+    //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
     if (RoastMinutes > MySetPoints[2].Minutes ) { //only calc intergral error if we are above the 1st setpoint
@@ -236,7 +238,7 @@ void theloop () {
           //only add/remove from the integral if reasonable
           IntegralSum =  IntegralSum + double(Err);
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
-          //Serial.print("Isum:");Serial.print(IntegralSum);Serial.print("ErrI:");Serial.println(ErrI);          
+          //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);          
           PIDIntegralUdateTime.restart(0);
         }
       }
@@ -314,9 +316,9 @@ void theloop () {
   }
 
   if (LcdUdateTime.elapsed() > 3000) {
-    //Serial.print("slow update. once per:");Serial.println(3000);Serial.println(" millseconds");
+    //Serial.println("slow update. once per:");Serial.println(3000);Serial.println(" millseconds");
     // void UpdateGraphB(int temp1, int temp2, int tempCoil, double ampHeater1, double ampHeater2, int tempFan, double ampFan, double volts)
-    //Serial.print("TBean2:");Serial.print(TBean2);Serial.print("TBean1:");Serial.print (TBean1);Serial.print("TCoil:");Serial.print(TCoil);Serial.print("TFan:");Serial.println(TFan);
+    //Serial.println("TBean2:");Serial.println(TBean2);Serial.println("TBean1:");Serial.println (TBean1);Serial.getDisplayYSize()("TCoil:");Serial.getDisplayYSize()(TCoil);Serial.getDisplayYSize()("TFan:");Serial.println(TFan);
     AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
     AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
 

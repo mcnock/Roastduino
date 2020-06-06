@@ -6,111 +6,125 @@
 
 void graphProfile() {
 
-  tft.setRotation(3);
-
-  TempYMax = 700; 
+  
+  TempYMax = 800; 
   TempYSplit2 = 440;
   TempYSplit2 = MySetPoints[5].Temperature ;
-  PixelYSplit2 = 180;
+  PixelYSplit2 = 360;//180;
   TempYSplit = (MySetPoints[1].Temperature) ;
-  PixelYSplit = 90;
+  PixelYSplit = 150;//90;
 
-//we have 240 units...
-//240-120 is for < 400 >> 400/120  3.333 degrees per pixel
-//120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
   TempPerPixL = TempYSplit / PixelYSplit;
   TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
-  TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
+  TempPerPixH = (TempYMax - TempYSplit2) / (480 - PixelYSplit2);
 
-  TimeScreenLeft = MySetPoints[5].Minutes + 1;
+  //TimeScreenLeft = MySetPoints[5].Minutes + 1;
 
-  PixelsPerMin =  (int)(320 / TimeScreenLeft);
+  PixelsPerMin =  (int)(800 / (TimeScreenLeft + 1));
+  
+  myGLCD.setBackColor(BLACK);
+ 
+  myGLCD.fillRect(0, 0, 800, 480);
 
-  tft.fillScreen(BLACK);
+  myGLCD.clrScr();
+  
+  myGLCD.setColor(50,50,50);  
+  myGLCD.setFont(BigFont);
+  myGLCD.drawLine(3 * PixelsPerMin ,0,  3 * PixelsPerMin,myGLCD.getDisplayYSize()-30 );
+  myGLCD.print("3min",(3 * PixelsPerMin) - 30, 460);
+  myGLCD.drawLine(6 * PixelsPerMin , 0, 6 * PixelsPerMin , myGLCD.getDisplayYSize()-30);
+  myGLCD.print("6min",(6 * PixelsPerMin) - 30, 460);
 
-  //draw x scale
-  int color = tft.color565(125, 125, 125);
-  tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
-  tft.drawFastVLine(3 * PixelsPerMin , 0, tft.height(), color);
-  tft.setCursor((3 * PixelsPerMin) - 12, 230); tft.println("3min");
-  tft.drawFastVLine(6 * PixelsPerMin , 0, tft.height(), color);
-  tft.setCursor((6 * PixelsPerMin) - 12, 230); tft.println("6min");
-  tft.drawFastVLine(9 * PixelsPerMin , 0, tft.height(), color);
-  tft.setCursor((9 * PixelsPerMin) - 12, 230); tft.println("9min");
-  tft.drawFastVLine(12 * PixelsPerMin , 0, tft.height(), color);
-  tft.setCursor((12 * PixelsPerMin) - 12, 230); tft.println("12min");
-  tft.drawFastVLine(12 * PixelsPerMin , 0, tft.height(), color);
-  tft.setCursor((15 * PixelsPerMin) - 12, 230); tft.println("15");
+  myGLCD.drawLine(9 * PixelsPerMin , 0, 9 * PixelsPerMin, myGLCD.getDisplayYSize()-30);
+  myGLCD.print("9min",(9 * PixelsPerMin) - 30, 460);
+  myGLCD.drawLine(12 * PixelsPerMin ,0,12 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
+  myGLCD.print("12min",(12 * PixelsPerMin) - 30, 460);
+  myGLCD.drawLine(15 * PixelsPerMin ,0,15 * PixelsPerMin, myGLCD.getDisplayYSize()-30);
+  myGLCD.print("15min",(15 * PixelsPerMin) - 30, 460);
 
-  //draw y scale
+  //draw y scale for 3 ranges
+  
 
-  Serial.println(TempYSplit);
+  
+    //draw y scale
+  myGLCD.setFont(SmallFont);
+  int yaxislable = 30;
   for (int t = 100; t < (TempYSplit - 20); t = t + 100) {
     Serial.println(t);
-    tft.drawFastHLine(0,  YforATemp(t), tft.width(), color);
-    tft.setCursor(2 , YforATemp(t) - 4); tft.println(t);
+    myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),YforATemp(t) );
+    myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
 
-
-  for (int t = TempYSplit; t < (TempYSplit2); t = t + 20) {
-    tft.drawFastHLine(0,  YforATemp(t), tft.width(), color);
-    tft.setCursor(2 , YforATemp(t) - 4); tft.println(t);
+  
+  
+  for (int t = TempYSplit; t < (TempYSplit2); t = t + 10) {
+    myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),  YforATemp(t));
+    myGLCD.printNumI(t,2, YforATemp(t) - 5);
   }
 
-
+  
+  
+  
   for (int t = TempYSplit2 +10; t < TempYMax ; t = t + 100) {
-    tft.drawFastHLine(0,  YforATemp(t), tft.width(), color);
-    tft.setCursor(2 , YforATemp(t) - 4); tft.println(t);
+    myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),  YforATemp(t));
+    myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
-
   StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
   //set the by minute temp profile for 5 spans
-  MyMinuteSetpoints[0] = 0;
+  
+  MyMinuteTemperature[0] = 0;
   int accumulatedMinutes = 0;
-  for (int x = 1; x < SetPointCount; x++) {
-    double TempPerMinuteinSpan = ((double)(MySetPoints[x].Temperature - MySetPoints[x - 1].Temperature)) / MySetPoints[x].SpanMinutes ;
-    for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[x].SpanMinutes  ;  xSpanMinute++)
+  for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++) {
+    double TempPerMinuteinSpan = ((double)(MySetPoints[xSetPoint].Temperature - MySetPoints[xSetPoint - 1].Temperature)) / MySetPoints[xSetPoint].SpanMinutes ;
+    for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[xSetPoint].SpanMinutes  ;  xSpanMinute++)
     {
       accumulatedMinutes = accumulatedMinutes + 1;
-      MyMinuteSetpoints[accumulatedMinutes] =  MySetPoints[x - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
-      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteSetpoints[accumulatedMinutes], SETPOINTLINEID);
+     // MyMinuteTemperature[accumulatedMinutes] =  MySetPoints[MySetPoints[xSetPoint].SpanMinutes - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
+      
+      MyMinuteTemperature[accumulatedMinutes] = MySetPoints[xSetPoint - 1].Temperature + (TempPerMinuteinSpan * xSpanMinute);
+
+      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTemperature[accumulatedMinutes], SETPOINTLINEID);
     }
-    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[x].Temperature, SETPOINTLINEID, 5);
+    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[xSetPoint].Temperature, SETPOINTLINEID, 5);
   }
+
 
   //create temp setpoint array between the last setpoint and the left of screen
   // for (int Y = MySetPoints.Temperature[SetPointCount - 1] ; Y <= TimeScreenLeft; Y++) {
-  //   MyMinuteSetpoints[Y] = MySetPoints[SetPointCount - 1].Temperature ;
-  //Serial.print("minutesp:");Serial.print(Y);Serial.print("  ");Serial.println(MyMinuteSetpoints[Y]);
+  //   MyMinuteTemperature[Y] = MySetPoints[SetPointCount - 1].Temperature ;
+  //Serial.println("minutesp:");Serial.println(Y);Serial.println("  ");Serial.println(MyMinuteTemperature[Y]);
   //  }
 
   //draw endpoint highlights
-  tft.setCursor((tft.width() / 2), YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
-  tft.println("END:"); tft.setCursor((tft.width() / 2) + 24, YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
-  tft.println(MySetPoints[EndingSetPoint].Temperature);
-  tft.drawFastHLine(((tft.width() / 2) + 20)    ,  YforATemp(MySetPoints[EndingSetPoint].Temperature), tft.width(), BLUE);
-  tft.drawFastVLine(PixelsPerMin * MySetPoints[EndingSetPoint].Temperature, 0, tft.height() / 2, BLUE);
-  tft.drawFastVLine(PixelsPerMin * MySetPoints[EndingSetPoint].Minutes, 0, tft.height() / 2, BLUE);
+  myGLCD.setColor(BLUE);
+  
+  //myGLCD.setCursor((myGLCD.width() / 2), YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
+  //myGLCD.print("END:"); myGLCD.setCursor((myGLCD.width() / 2) + 24, YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
+  //myGLCD.print(MySetPoints[EndingSetPoint].Temperature);
+  //myGLCD.drawLine(((myGLCD.width() / 2) + 20)    ,  YforATemp(MySetPoints[EndingSetPoint].Temperature), myGLCD.width());
+  //myGLCD.drawLine(0,PixelsPerMin * MySetPoints[EndingSetPoint].Temperature, 0, myGLCD.print / 2);
+  //myGLCD.drawLine(0,PixelsPerMin * MySetPoints[EndingSetPoint].Minutes, 0, myGLCD.print / 2);
   //delay(1000);
 
   ReDrawROLLAVGLINEFromArray(ORANGE);
 
-  DrawControlButtons();
+  DrawHorMenu1();
+  
   DrawVertMenu1();
 
 }
 void drawprofileline() {
   StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
   //set the by minute temp profile for 5 spans
-  MyMinuteSetpoints[0] = 0;
+  MyMinuteTemperature[0] = 0;
   int accumulatedMinutes = 0;
   for (int x = 1; x < SetPointCount; x++) {
     double TempPerMinuteinSpan = ((double)(MySetPoints[x].Temperature - MySetPoints[x - 1].Temperature)) / MySetPoints[x].SpanMinutes ;
     for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[x].SpanMinutes  ;  xSpanMinute++)
     {
       accumulatedMinutes = accumulatedMinutes + 1;
-      MyMinuteSetpoints[accumulatedMinutes] =  MySetPoints[x - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
-      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteSetpoints[accumulatedMinutes], SETPOINTLINEID);
+      MyMinuteTemperature[accumulatedMinutes] =  MySetPoints[x - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
+      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTemperature[accumulatedMinutes], SETPOINTLINEID);
     }
     AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[x].Temperature, SETPOINTLINEID, 5);
   }
@@ -131,7 +145,7 @@ void tftPrintDouble5b(double num ) {
   {
     sprintf(Buf5, " %d.%1d", (int)num, (int)(num * 100) % 100);
   }
-  tft.println(Buf5);
+//  myGLCD.print(Buf5);
 }
 void tftPrintDouble5(double num ) {
 
@@ -145,7 +159,7 @@ void tftPrintDouble5(double num ) {
   {
     sprintf(Buf5, " %d.%02d", (int)num, (int)(num * 100) % 100);
   }
-  tft.println(Buf5);
+  //myGLCD.print(Buf5);
 }
 void tftPrintDouble6(double num ) {
 
@@ -159,7 +173,7 @@ void tftPrintDouble6(double num ) {
   {
     sprintf(Buf6, " %d.%02d", (int)num, (int)(num * 100) % 100);
   }
-  tft.println(Buf6);
+//  myGLCD.print(Buf6);
 }
 void tftPrintDouble7(double num ) {
   //+111.11
@@ -173,40 +187,40 @@ void tftPrintDouble7(double num ) {
   {
     sprintf(Buf7, " %d.%02d", (int)num, (int)(num * 100) % 100);
   }
-  tft.println(Buf7);
+//  myGLCD.print(Buf7);
 }
 void tftPrintDouble(double num ) {
 
-  tft.println(num, 1);
+//  myGLCD.print(num, 1);
 
 }
 void tftPrintIntTo5Char(int num) {
-  //  Serial.print("print:");Serial.println(num);
+  //  Serial.println("print:");Serial.println(num);
   sprintf(Buf5, "% 5d", num);
-  tft.println(Buf5);
-  // Serial.print("printbuf:");Serial.println(num);
+  //myGLCD.print(Buf5);
+  // Serial.println("printbuf:");Serial.println(num);
 }
 
 void UpdateGraphA() {
   //this is top row
-  tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
+  myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(BigFont);
   int rowheight = 12;
   int row = 25;
   int col = 40;
-  tft.setCursor(col , row); tft.println("Time:");   tft.setCursor(col + 45 , row); tft.println(RoastMinutes);
-  tft.setCursor(col + 90 , row); tft.print(" sp:"); tft.setCursor(col + 130 , row);   tftPrintDouble7(CurrentSetPointTemp);
+ myGLCD.print("Time:",col , row);   myGLCD.print("***", col + 45 , row);
+//  myGLCD.setCursor(col + 90 , row); myGLCD.print(" sp:"); myGLCD.setCursor(col + 130 , row);   tftPrintDouble7(CurrentSetPointTemp);
   row = row + rowheight;
   if (Duty > 1) {
-    tft.setCursor(col , row); tft.println("Duty:"); tft.setCursor(col + 40 , row); tftPrintDouble7(1.00);
+//     myGLCD.print("Duty:",col , row);// myGLCD.setCursor(col + 40 , row); tftPrintDouble7(1.00);
   }
   else {
-    tft.setCursor(col , row); tft.println("Duty:"); tft.setCursor(col + 40 , row); tftPrintDouble7(Duty);
+ //   myGLCD.setCursor(col , row); myGLCD.print("Duty:"); myGLCD.setCursor(col + 40 , row); tftPrintDouble7(Duty);
   }
   row = row + rowheight;
-  tft.setCursor(col + 10 , row); tft.print("Err:"); tft.setCursor(col + 40 , row);   tftPrintDouble7(-Err);
+   myGLCD.print("Err:",col + 10 , row);// myGLCD.setCursor(col + 40 , row);   tftPrintDouble7(-Err);
 
   row = row + rowheight;
-  tft.setCursor(col + 10 , row); tft.print("IEr:"); tft.setCursor(col + 40 , row);   tftPrintDouble7(-ErrI);
+   myGLCD.print("IEr:",col + 10 , row);// myGLCD.setCursor(col + 40 , row);   tftPrintDouble7(-ErrI);
   row = row + rowheight;
 
 }
@@ -214,34 +228,34 @@ void UpdateGraphB() {
 
   int rowheight = 11;
 
-  tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
+  myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(BigFont);
   int row = 160 ;
   int col = 135 ;
 
-  tft.setCursor(col , row); tft.println("Tvg:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TBeanAvgRoll.mean());
+   myGLCD.print("Tvg:",col , row); //myGLCD.setCursor(col + 40 , row,col + 40 , row); //tftPrintIntTo5Char(TBeanAvgRoll.mean());
 
   row = row + rowheight; ;
-  tft.setCursor(col , row); tft.println("T1:"); tft.setCursor(col + 40 , row);  tft.println("   "); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TBean1);
-  tft.setCursor(col + 90 , row); tft.println("T2"); tft.setCursor(col + 120 , row);   tft.println("   "); tft.setCursor(col + 120 , row); tftPrintIntTo5Char(TBean2);
+   myGLCD.print("T1:",col , row);   myGLCD.print("   ",col + 40 , row); // tftPrintIntTo5Char(TBean1,col + 40 , row);
+   myGLCD.print("T2",col + 90 , row);    myGLCD.print("   ",col + 120 , row); // tftPrintIntTo5Char(TBean2,col + 120 , row);
 
   row = row + rowheight;
-  tft.setCursor(col , row); tft.println("Fan  T:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TFan);
-  tft.setCursor(col + 90 , row); tft.println("Amp:"); tft.setCursor(col + 120 , row); tftPrintDouble5b(CurrentFan);
+  myGLCD.print("Fan  T:",col , row); myGLCD.print(TFan,col + 40 , row);
+  myGLCD.print("Amp:", col + 90 , row);  myGLCD.print("***",col + 120 , row);
 
   row = row + rowheight;
 
-  tft.setCursor(col , row); tft.println("Heat T:"); tft.setCursor(col + 40 , row); tftPrintIntTo5Char(TCoil); tft.setCursor(col + 90 , row); tft.println("Amp1:"); tft.setCursor(col + 120 , row); tftPrintDouble5b(CurrentHeat1);
+ myGLCD.print("Heat T:",col , row); myGLCD.print("Amp1:",col + 90 , row);  myGLCD.printNumI(CurrentHeat1,col + 120 , row);
 
   row = row + rowheight;;
 
-  tft.setCursor(col , row); tft.println("Volts:"); tft.setCursor(col + 40 , row); tft.println(MaxVoltage);
-  tft.setCursor(col + 90 , row); tft.println("Amp2:"); tft.setCursor(col + 120 , row); tftPrintDouble5b(CurrentHeat2);
+ myGLCD.print("Volts:",col , row);  myGLCD.printNumI(MaxVoltage,col + 40 , row);
+  myGLCD.print("Amp2:",col + 90 , row); myGLCD.printNumI(CurrentHeat2,col + 120 , row);
 
 
 }
 void UpdateGraphC() {
   int rowheight = 11;
-  tft.setTextColor(WHITE, BLACK);  tft.setTextSize(1);
+  myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(SmallFont);
   int row = 180 ;
   int colr = 40 ;
 
@@ -249,8 +263,8 @@ void UpdateGraphC() {
   TGainValue.x =  colr + 10; TGainValue.y = row;// TGainIncrease.x = colr + 35;
   //TGainIncrease.y = row; TGainDecrease.x = colr + 55; TGainDecrease.y = row;
 
-  tft.setCursor(colr , row); tft.println("G:"); tft.setCursor(TGainValue.x , TGainValue.y); tft.println(Gain);
-  //tft.setCursor(TGainIncrease.x, TGainIncrease.y); tft.print("U"); tft.setCursor(TGainDecrease.x   , TGainDecrease.y); tft.println("D");
+   myGLCD.print("G:",colr , row); myGLCD.print(Gain,TGainValue.x , TGainValue.y);
+  //myGLCD.setCursor(TGainIncrease.x, TGainIncrease.y); myGLCD.print("U"); myGLCD.setCursor(TGainDecrease.x   , TGainDecrease.y); myGLCD.print("D");
 
 
   row = row + rowheight;;
@@ -258,19 +272,19 @@ void UpdateGraphC() {
  // TIntegralIncrease.y = row; TIntegralDecrease.x = colr + 55; TIntegralDecrease.y = row;
   TIntegralReset.y = row; TIntegralReset.x = colr + 75; //TIntegralReset.y = row;
 
-  tft.setCursor(colr - 5 , row); tft.println("I:"); tft.setCursor(TIntegralValue.x , TIntegralValue.y); tft.println(Integral) ;
- // tft.setCursor(TIntegralIncrease.x  , TIntegralIncrease.y); tft.println("U"); tft.setCursor(TIntegralDecrease.x , TIntegralDecrease.y); tft.print("D");
-  tft.setCursor(TIntegralReset.x , TIntegralReset.y); tft.print("R");
+   myGLCD.print("I:",colr - 5 , row);  myGLCD.printNumI(Integral , TIntegralValue.x , TIntegralValue.y) ;
+ // myGLCD.setCursor(TIntegralIncrease.x  , TIntegralIncrease.y); myGLCD.print("U"); myGLCD.setCursor(TIntegralDecrease.x , TIntegralDecrease.y); myGLCD.print("D");
+   myGLCD.print("R",TIntegralReset.x , TIntegralReset.y);
 
   row = row + rowheight;;
-  tft.setCursor(colr - 10 , row); tft.println("ps:"); tft.setCursor(colr  , row); tftPrintIntTo5Char(LoopsPerSecond) ;
-  tft.setCursor(colr +  35 , row); tft.print("Skp"); tft.setCursor(colr + 60 , row); tft.println(Readingskipped);
+   myGLCD.print("ps:",colr - 10 , row); // tftPrintIntTo5Char(LoopsPerSecond,colr  , row) ;
+   myGLCD.print("Skp",colr +  35 , row);  myGLCD.print(Readingskipped,colr + 60 , row);
 
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color) {
-  //Serial.print ("StartLineTandT id:");Serial.print (lineID);Serial.print(" color:");Serial.println(color);
+  //Serial.println ("StartLineTandT id:");Serial.println (lineID);Serial.println(" color:");Serial.println(color);
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   if (temp > 0) {
     LastYforLineID[lineID] = YforATemp(temp);
@@ -291,9 +305,10 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
 void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = YforATemp(temp);
-  //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
-  //Serial.print ("newX:");Serial.print (newX);Serial.print ("pixelspermin:");Serial.print (PixelsPerMin);Serial.print(" newY:");Serial.println(newY);
-  tft.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
+  //Serial.println ("AddLineTandT line iD:");Serial.println (lineID);Serial.println(" time:");Serial.println(timemins);Serial.println("temp:");Serial.println(temp);Serial.println(" color:");Serial.println(LineColorforLineID[lineID]);
+  //Serial.println ("newX:");Serial.println (newX);Serial.println ("pixelspermin:");Serial.println (PixelsPerMin);Serial.println(" newY:");Serial.println(newY);
+  myGLCD.setColor(0,0,255  );//LineColorforLineID[lineID]);
+  myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY );
   LastXforLineID[lineID] = newX;
   LastYforLineID[lineID] = newY;
   if (lineID == ROLLAVGLINEID) {
@@ -305,11 +320,14 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
 void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int radius) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = YforATemp(temp);
-  tft.fillCircle(newX, newY, radius, LineColorforLineID[lineID]);
+  myGLCD.setColor(LineColorforLineID[lineID]);
+  //myGLCD.setColor(0,150,0);
+  Serial.print('a');Serial.print(newX);Serial.print( "   ");;Serial.print(timemins);Serial.print( "   ");Serial.println(temp);
+  myGLCD.fillCircle(newX, newY, radius );
 
-  //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
-  //Serial.print ("newX:");Serial.print (newX);Serial.print ("pixelspermin:");Serial.print (PixelsPerMin);Serial.print(" newY:");Serial.println(newY);
-  //tft.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
+  //Serial.println ("AddLineTandT line iD:");Serial.println (lineID);Serial.println(" time:");Serial.println(timemins);Serial.println("temp:");Serial.println(temp);Serial.println(" color:");Serial.println(LineColorforLineID[lineID]);
+  //Serial.println ("newX:");Serial.println (newX);Serial.println ("pixelspermin:");Serial.println (PixelsPerMin);Serial.println(" newY:");Serial.println(newY);
+  //myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
   LastXforLineID[lineID] = newX;
   LastYforLineID[lineID] = newY;
 
@@ -318,11 +336,12 @@ void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int r
 void AddPointbyTimeandTemp(double timemins, int temp, int color, int radius) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = YforATemp(temp);
-  tft.fillCircle(newX, newY, radius, color);
+  myGLCD.setColor(color);
+  myGLCD.fillCircle(newX, newY, radius);
 
-  //Serial.print ("AddLineTandT line iD:");Serial.print (lineID);Serial.print(" time:");Serial.print(timemins);Serial.print("temp:");Serial.print(temp);Serial.print(" color:");Serial.println(LineColorforLineID[lineID]);
-  //Serial.print ("newX:");Serial.print (newX);Serial.print ("pixelspermin:");Serial.print (PixelsPerMin);Serial.print(" newY:");Serial.println(newY);
-  //tft.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
+  //Serial.println ("AddLineTandT line iD:");Serial.println (lineID);Serial.println(" time:");Serial.println(timemins);Serial.println("temp:");Serial.println(temp);Serial.println(" color:");Serial.println(LineColorforLineID[lineID]);
+  //Serial.println ("newX:");Serial.println (newX);Serial.println ("pixelspermin:");Serial.println (PixelsPerMin);Serial.println(" newY:");Serial.println(newY);
+  //myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY, LineColorforLineID[lineID]);
 
 }
 
@@ -331,8 +350,9 @@ void ReDrawROLLAVGLINEFromArray(int color) {
   LastYforLineID[1] = 240;
   for (int X = 0; X < 320; X++) {
     if (myLastGraphYPixels[X] > 0 ) {
-      //  Serial.print ("DrawRealTime ");Serial.print(" color:");Serial.println(color);
-      tft.drawLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X], color);
+      //  Serial.println ("DrawRealTime ");Serial.println(" color:");Serial.println(color);
+      myGLCD.setColor(color);
+      myGLCD.drawLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X]);
       BoldLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X], color);
       LastXforLineID[1] = X;
       LastYforLineID[1] = myLastGraphYPixels[X];
@@ -341,61 +361,63 @@ void ReDrawROLLAVGLINEFromArray(int color) {
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void BoldLine(int x, int y, int newX, int newY, int color) {
-  tft.drawLine(x, y + 1, newX, newY + 1, color);
-  tft.drawLine(x + 1, y + 1, newX + 1, newY + 1, color);
-  tft.drawLine(x + 1, y, newX + 1, newY, color);
+  myGLCD.setColor(color);
+  myGLCD.drawLine(x, y + 1, newX, newY + 1);
+  
+  myGLCD.drawLine(x + 1, y + 1, newX + 1, newY + 1);
+  myGLCD.drawLine(x + 1, y, newX + 1, newY);
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double timemins2, int temp2, int color) {
   if (log == true)
   {
-    //Serial.print ("timemins1:");
-    //Serial.print (timemins1);
-    //Serial.print(" temp1:");
+    //Serial.println ("timemins1:");
+    //Serial.println (timemins1);
+    //Serial.println(" temp1:");
     //Serial.println(temp1);
-    //Serial.print(" timemins2:");
-    //Serial.print (timemins2);
-    //Serial.print (" color:");
+    //Serial.println(" timemins2:");
+    //Serial.println (timemins2);
+    //Serial.println (" color:");
     //Serial.println(color);
   }
-  tft.drawLine(PixelsPerMin * timemins1, YforATemp(temp1), PixelsPerMin * timemins2, YforATemp(temp2), color);
+  myGLCD.setColor(color);
+  myGLCD.drawLine(PixelsPerMin * timemins1, YforATemp(temp1), PixelsPerMin * timemins2, YforATemp(temp2));
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void  displayState(int state) {
-  tft.setCursor(30, 0);
-  tft.setTextSize(2);
-  tft.setTextColor(WHITE, BLACK);
+  myGLCD.setFont(SmallFont);
+  myGLCD.setColor(VGA_WHITE);
   switch (state) {
     case STATEROASTING:
-      tft.setTextColor(WHITE, RED);
+      myGLCD.setColor(WHITE);
       strncpy(StateName, "Roasting", 8);
-      tft.println("Roasting");
+      myGLCD.print("Roasting",30, 0);
       break;
     case STATESTOPPED:
       strncpy(StateName, "Stopped ", 8);
-      tft.println("Stopped ");
+      myGLCD.print("Stopped ",30, 0);
       break;
     case STATECOOLING:
-      tft.setTextColor(WHITE, BLUE);
+      myGLCD.setColor(VGA_WHITE);
       strncpy(StateName, "Cooling ", 8);
-      tft.println( "Cooling ");
+      myGLCD.print( "Cooling ",30, 0);
       break;
     case STATEOVERHEATED:
       strncpy(StateName, "HotCoil  ", 9);
-      tft.println ("HotCoil ");
+      myGLCD.print ("HotCoil ",30, 0);
       break;
     case STATENOFANCURRENT:
       strncpy(StateName, "NoFanCur   ", 8);
-      tft.println ("HotFan ");
+      myGLCD.print ("HotFan ",30, 0);
       break;
     case STATEFANONLY:
       strncpy(StateName, "FanOnly ", 8);
-      tft.println ("FanOnly ");
+      myGLCD.print ("FanOnly ",30, 0);
       break;
     default:
       strncpy(StateName, "unk   ", 8);
-      tft.println ("unk     ");
+      myGLCD.print ("unk     ",30, 0);
       break;
   }
 }
@@ -409,14 +431,14 @@ int YforATemp(int temp) {
     temp = 0;
   }  
   if (temp <= TempYSplit) {
-    result = (240 - ((double)temp / TempPerPixL));
+    result = (myGLCD.getDisplayYSize() - ((double)temp / TempPerPixL));
   }
   else if (temp <= TempYSplit2) {
-    result = ((240 - PixelYSplit) - ((double)(temp - TempYSplit) / TempPerPixM));
+    result = ((myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempYSplit) / TempPerPixM));
     //460 x 460 x 460 /240  = 379.687
-    //return (240 -  ((double)temp * (double)temp * double(temp)) / IYscale);
+    //return (myGLCD.getDisplayYSize() -  ((double)temp * (double)temp * double(temp)) / IYscale);
   } else {
-    result = ((240 -  PixelYSplit2) - ((double)(temp - TempYSplit2) / TempPerPixH));
+    result = ((myGLCD.getDisplayYSize() -  PixelYSplit2) + ((double)(TempYSplit2 - temp  ) / TempPerPixH));
   }
   if (result < 0) {
     return 1;

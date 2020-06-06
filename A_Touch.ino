@@ -41,18 +41,18 @@ void ProcessRawTouch(struct TSPoint *p)
 
   // 240 / 320
   //        A        B
-  mappedx = map(p->y, TsSetting.xmin, TsSetting.xmax, 0, tft.width());
+  mappedx = map(p->y, TsSetting.xmin, TsSetting.xmax, 0, myGLCD.getDisplayYSize());
   //lower A to increase report X pixes at left side of screen 3 ~ 3px
   //lower D to increase report X pixel at right side of scrreen
   //        C       D
-  mappedy = map(p->x, TsSetting.ymin, TsSetting.ymax, 0, tft.height());
+  mappedy = map(p->x, TsSetting.ymin, TsSetting.ymax, 0, myGLCD.getDisplayXSize());
   //lower D to increase Reporter Y Pixels at top of screen 5 ~ 1px
   //lower C to increase reportd Y pixels at bottom of screen 2 ~ 1px
   //Serial.print ("x:");Serial.print (x);Serial.print (" y:");Serial.println (y);
   //map(value,fromlow,fromhigh,tolow,tohight)
   //Serial.print("touch  x:");Serial.print (p.y);Serial.print (" y:");Serial.println(p.x);
 
-  if (ShowTouch) tft.drawPixel(mappedx, 240 - mappedy, YELLOW);
+//  if (ShowTouch) tft.drawPixel(mappedx, 240 - mappedy, YELLOW);
   //Serial.print("   raw x:"); Serial.print (p.y); Serial.print (" y:"); Serial.println(p.x);
   //Serial.print("mapped x:"); Serial.print (mappedx); Serial.print (" y:"); Serial.print(mappedy); Serial.print (" invy:"); Serial.println(240 - mappedy);
   //
