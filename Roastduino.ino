@@ -1,3 +1,6 @@
+#include <EEPROM.h>
+
+#include <UTouchCD.h>
 #include <Chrono.h>
 #include <Time.h>
 #include <TimeLib.h>
@@ -11,6 +14,7 @@
 #include "TouchScreen.h"
 #include "B_MyTypes.h"
 #include <UTFT.h>
+#include <UTouch.h>
 
 // Declare which fonts we will be using
 extern uint8_t SmallFont[];
@@ -22,6 +26,7 @@ extern uint8_t BigFont[];
 
 // Remember to change the model parameter to suit your display module!
 UTFT myGLCD(SSD1963_800480,38,39,40,41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
+UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout, byte irq
 
 
 // ===========
@@ -167,9 +172,8 @@ int PIDWindowSize ;
 point MySetpointsTouchXY[6];
 
 double MyMinuteTemperature[30];
-int MySetpointsEprom[]    = {3, 4, 5, 6, 7, 8};  //these are EEprom memory locations - not data
-int MySpanMinutesEprom[]  = {10, 11, 12, 13, 14, 15};  //these are EEprom memory locations - not data
-setpoint MySetPoints[6] = {{0, 120}, {3, 410}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
+int MySetpointsEprom[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory locations - not data
+setpoint MySetPoints[6] = {{0, 0}, {3, 390}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
 int SetPointCount = 6;  //0,1,2,3,4,5
 int TimeScreenLeft = 15;
 int EndingSetPoint = 4;
@@ -238,6 +242,8 @@ long PixelsPerMin;
 buttonsetdef myHorizontalButtonControl;
 
 buttonsetdef myButtonVertMenu1;
+buttonsetdef myButtonVertMenu2;
+int VerticalMenuShowing = 0;
 
 int DUMMY;
 
@@ -247,7 +253,7 @@ uint16_t LastYforLineID[4];
 uint16_t LineColorforLineID[4];
 int myLastGraphYPixels[320];
 int myLastGraphTemps[320];
-
+int  moveamount = -1;
 double RoastMinutes = 0;
 int TCoil;
 int TBean1;
@@ -290,66 +296,48 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-  Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
+//  Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
 
   int accumulated = 0;
   for (int X = 0; X < SetPointCount; X++) {
     Serial.println(X); Serial.println( " ");
     if (X > 0) {
-      //  =  ReadIntEprom(MySpanMinutesEprom[X], 1 , 10, 2);
+      MySetPoints[X].Temperature  =  ReadTempEprom(MySetpointsEprom[X], MySetPoints[X].TemperatureDefault);
+      //MySetPoints[X].Temperature = MySetPoints[X].TemperatureDefault;
       MySetPoints[X].SpanMinutes =  MySetPoints[X].Minutes -MySetPoints[X-1].Minutes;
+      Serial.print(X); Serial.print(":"); Serial.println(MySetPoints[X].Temperature);
       accumulated = accumulated + MySetPoints[X].SpanMinutes;
       MySetPoints[X].Minutes = accumulated;
+      MySetPoints[X].TemperatureNew = 0;
     }
     else
     { MySetPoints[X].SpanMinutes = 0;
       MySetPoints[X].Minutes = 0;
+      MySetPoints[X].Temperature = 0;
+      MySetPoints[X].TemperatureNew = 0;
+
     }
-    Serial.println(MySetPoints[X].SpanMinutes);
-    Serial.println( " ");
-
-    Serial.println(MySetPoints[X].Minutes);
-    Serial.println( " ");
-
-    if (X > 0) {
-      //MySetPoints[X].Temperature = ReadTempEprom(MySetpointsEprom[X] , MySetPoints[X].Temperature);
-      if (MySetPoints[X].Temperature < MySetPoints[X - 1].Temperature) {
-        MySetPoints[X].Temperature = MySetPoints[X - 1].Temperature * 1.1;
-        Serial.println (" correcting low value of "); Serial.println (X); Serial.println(" to ");
-        Serial.println (MySetPoints[X].Temperature);
-      }
-    }
-    else
-    {
-      MySetPoints[X].Temperature = 150;
-      
-    }
-    Serial.println(MySetPoints[X].Temperature);
-
-
   }
-  //TempRoastDone = MySetPoints[EndingSetPoint].Temperature;
-  //TimeRoastDone = MySetPoints[EndingSetPoint].Minutes;
 
-  //Serial.println (LastXforLineID[2]);
   PixelsPerMin =  (int)(800 / TimeScreenLeft);
 
   SecondTimer.restart(0);
   FlashTimer.restart(0);
 
   myGLCD.InitLCD();
- // -------------------------------------------------------------
+ 
+  // -------------------------------------------------------------
   pinMode(8, OUTPUT);  //backlight 
   digitalWrite(8, HIGH);//on
 // -------------------------------------------------------------
-  myGLCD.setFont(SmallFont);
+  myTouch.InitTouch();
+  myTouch.setPrecision(PREC_MEDIUM);
 
-  Serial.print("DisplayX:");Serial.print(myGLCD.getDisplayXSize());Serial.print(" DisplayY:");Serial.println(myGLCD.getDisplayYSize());
+  myGLCD.setFont(SmallFont);
 
   graphProfile();
 
-
-  
+   
 
   State = STATESTOPPED;
   // Serial.println ("setup complete");
@@ -359,11 +347,7 @@ void setup() {
 
 void loop()
 {
- delay(10000);
  
- graphProfile();
-  
-  return;
   theloop();
 
 }

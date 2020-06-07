@@ -51,6 +51,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="Libraries\UTouch\0.0.0\UTouch\UTouch-0.0.0.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -88,7 +89,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\Roastduino;$(ProjectDir)..\ArduinoIDE\libraries\Chrono;$(ProjectDir)..\ArduinoIDE\libraries\Time-master;$(ProjectDir)..\ArduinoIDE\libraries\MAX6675;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM\src;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\ArduinoIDE\libraries\UTFT;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src\utility;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\variants\mega;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\avr\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\avr\include-fixed;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\avr\include\avr;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\Roastduino;$(ProjectDir)..\ArduinoIDE\libraries\Chrono;$(ProjectDir)..\ArduinoIDE\libraries\Time-master;$(ProjectDir)..\ArduinoIDE\libraries\MAX6675;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\EEPROM\src;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src;$(ProjectDir)..\ArduinoIDE\libraries\UTFT;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\libraries\Wire\src\utility;$(ProjectDir)Libraries\UTouch\0.0.0\UTouch;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\cores\arduino;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\arduino\avr\variants\mega;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\avr\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\\lib\gcc\avr\7.3.0\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\avr\include-fixed;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\avr\include\avr;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.2\include;$(ProjectDir)..\..\..\..\..\Program Files (x86)\Arduino\hardware\tools\avr\lib\gcc\avr\4.9.3\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>$(ProjectDir)__vm\.Roastduino.vsarduino.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <IgnoreStandardIncludePath>true</IgnoreStandardIncludePath>
       <PreprocessorDefinitions>__AVR_atmega2560__;__AVR_ATmega2560__;_VMDEBUG=1;F_CPU=16000000L;ARDUINO=108012;ARDUINO_AVR_MEGA2560;ARDUINO_ARCH_AVR;__cplusplus=201103L;_VMICRO_INTELLISENSE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -143,7 +144,7 @@
   </ImportGroup>
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties config.Debug.customdebug_mega_atmega2560_debugger_type="universal" config.Release.customdebug_mega_atmega2560_debugger_type="universal" />
+      <UserProperties config.Debug.arduino.upload.port="COM6" config.Debug.customdebug_mega_atmega2560_debugger_type="universal" config.Release.customdebug_mega_atmega2560_debugger_type="universal" />
     </VisualStudio>
   </ProjectExtensions>
 </Project>

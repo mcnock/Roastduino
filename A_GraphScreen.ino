@@ -7,6 +7,29 @@
 void graphProfile() {
 
   
+    int accumulated = 0;
+    for (int X = 0; X < SetPointCount; X++) {
+         if (X > 0) {
+            EEPROM.get(MySetpointsEprom[X],MySetPoints[X].Temperature);
+            //MySetPoints[X].Temperature = MySetPoints[X].TemperatureDefault;
+            MySetPoints[X].SpanMinutes = MySetPoints[X].Minutes - MySetPoints[X - 1].Minutes;
+
+            //Serial.print(X); Serial.print(":D "); Serial.println(MySetPoints[X].TemperatureDefault);
+
+            //Serial.print(X); Serial.print(":  "); Serial.println(MySetPoints[X].Temperature);
+            
+            accumulated = accumulated + MySetPoints[X].SpanMinutes;
+            MySetPoints[X].Minutes = accumulated;
+        }
+        else
+        {
+            MySetPoints[X].SpanMinutes = 0;
+            MySetPoints[X].Minutes = 0;
+            MySetPoints[X].Temperature = 0;
+        }
+    }
+
+
   TempYMax = 800; 
   TempYSplit2 = 440;
   TempYSplit2 = MySetPoints[5].Temperature ;
@@ -28,7 +51,7 @@ void graphProfile() {
 
   myGLCD.clrScr();
   
-  myGLCD.setColor(50,50,50);  
+  myGLCD.setColor(100,100,100);  
   myGLCD.setFont(BigFont);
   myGLCD.drawLine(3 * PixelsPerMin ,0,  3 * PixelsPerMin,myGLCD.getDisplayYSize()-30 );
   myGLCD.print("3min",(3 * PixelsPerMin) - 30, 460);
@@ -50,7 +73,7 @@ void graphProfile() {
   myGLCD.setFont(SmallFont);
   int yaxislable = 30;
   for (int t = 100; t < (TempYSplit - 20); t = t + 100) {
-    Serial.println(t);
+    //Serial.println(t);
     myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),YforATemp(t) );
     myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
@@ -71,6 +94,7 @@ void graphProfile() {
   }
   StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
   //set the by minute temp profile for 5 spans
+  Serial.println(MySetPoints[0].Temperature);
   
   MyMinuteTemperature[0] = 0;
   int accumulatedMinutes = 0;
@@ -82,7 +106,7 @@ void graphProfile() {
      // MyMinuteTemperature[accumulatedMinutes] =  MySetPoints[MySetPoints[xSetPoint].SpanMinutes - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
       
       MyMinuteTemperature[accumulatedMinutes] = MySetPoints[xSetPoint - 1].Temperature + (TempPerMinuteinSpan * xSpanMinute);
-
+      //Serial.println(MyMinuteTemperature[accumulatedMinutes]);
       AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTemperature[accumulatedMinutes], SETPOINTLINEID);
     }
     AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[xSetPoint].Temperature, SETPOINTLINEID, 5);
@@ -239,7 +263,7 @@ void UpdateGraphB() {
    myGLCD.print("T2",col + 90 , row);    myGLCD.print("   ",col + 120 , row); // tftPrintIntTo5Char(TBean2,col + 120 , row);
 
   row = row + rowheight;
-  myGLCD.print("Fan  T:",col , row); myGLCD.print(TFan,col + 40 , row);
+  myGLCD.print("Fan  T:",col , row); myGLCD.printNumI(TFan,col + 40 , row);
   myGLCD.print("Amp:", col + 90 , row);  myGLCD.print("***",col + 120 , row);
 
   row = row + rowheight;
@@ -263,7 +287,7 @@ void UpdateGraphC() {
   TGainValue.x =  colr + 10; TGainValue.y = row;// TGainIncrease.x = colr + 35;
   //TGainIncrease.y = row; TGainDecrease.x = colr + 55; TGainDecrease.y = row;
 
-   myGLCD.print("G:",colr , row); myGLCD.print(Gain,TGainValue.x , TGainValue.y);
+   myGLCD.print("G:",colr , row); myGLCD.printNumI(Gain,TGainValue.x , TGainValue.y);
   //myGLCD.setCursor(TGainIncrease.x, TGainIncrease.y); myGLCD.print("U"); myGLCD.setCursor(TGainDecrease.x   , TGainDecrease.y); myGLCD.print("D");
 
 
@@ -278,7 +302,7 @@ void UpdateGraphC() {
 
   row = row + rowheight;;
    myGLCD.print("ps:",colr - 10 , row); // tftPrintIntTo5Char(LoopsPerSecond,colr  , row) ;
-   myGLCD.print("Skp",colr +  35 , row);  myGLCD.print(Readingskipped,colr + 60 , row);
+   myGLCD.print("Skp",colr +  35 , row);  myGLCD.printNumI(Readingskipped,colr + 60 , row);
 
 }
 
@@ -290,11 +314,11 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
     LastYforLineID[lineID] = YforATemp(temp);
   }
   else {
-    LastYforLineID[lineID] = 240;
+    LastYforLineID[lineID] = 480;
   }
   LineColorforLineID[lineID] = color;
   if (lineID == ROLLAVGLINEID) {
-    for (int X = 0; X < 320; X++) {
+    for (int X = 0; X < 800; X++) {
       myLastGraphYPixels[X] = -1;
       myLastGraphTemps[X] = -1;
     }
@@ -317,12 +341,35 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
     myLastGraphTemps[newX] = temp;
   }
 }
+
+void DrawMovedSetPoint(int setpoint)
+{
+    int Y = YforATemp(MySetPoints[setpoint].TemperatureNew);
+    int X = MySetPoints[setpoint].Minutes * PixelsPerMin;
+    myGLCD.setColor(ORANGE);
+    myGLCD.fillCircle(X, Y, 7);
+    myGLCD.setColor(WHITE);
+    myGLCD.drawCircle(X, Y, 7);
+    int Ytext = YforATemp(MySetPoints[setpoint].Temperature);
+    myGLCD.setBackColor(BLACK);
+    myGLCD.setColor(YELLOW);
+    myGLCD.setFont(BigFont);
+ 
+    myGLCD.print("N:", X + 8, Ytext - 15);
+    myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew, X + 30, Ytext - 15);
+    myGLCD.print("", X + 8, Ytext + 5);
+    myGLCD.printNumI(MySetPoints[setpoint].Temperature, X + 30, Ytext + 5);
+    myGLCD.print("D:", X + 8, Ytext + 25);
+    myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew - MySetPoints[setpoint].Temperature, X + 30, Ytext + 25);
+
+
+}
 void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int radius) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
   int newY = YforATemp(temp);
   myGLCD.setColor(LineColorforLineID[lineID]);
   //myGLCD.setColor(0,150,0);
-  Serial.print('a');Serial.print(newX);Serial.print( "   ");;Serial.print(timemins);Serial.print( "   ");Serial.println(temp);
+  //Serial.print('a');Serial.print(newX);Serial.print( "   ");;Serial.print(timemins);Serial.print( "   ");Serial.println(temp);
   myGLCD.fillCircle(newX, newY, radius );
 
   //Serial.println ("AddLineTandT line iD:");Serial.println (lineID);Serial.println(" time:");Serial.println(timemins);Serial.println("temp:");Serial.println(temp);Serial.println(" color:");Serial.println(LineColorforLineID[lineID]);

@@ -247,7 +247,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             port.println(cmd3AsSignedInt);
             break;
           case 'A':
-            MoveLast4Point(cmd3AsSignedInt);
+            //MoveLast4Point(cmd3AsSignedInt);
             drawprofileline();
             port.print(cmd1); port.print(cmd2); port.print(cmd3);
             ReturnSetPoints(port);
@@ -296,7 +296,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
 
           case '1': case '2': case '3': case '4': case '5':
             int cmd2AsInt = (int)cmd2 - 48;
-            MoveAPoint(cmd2AsInt, cmd3AsSignedInt);
+        //    MoveAPoint(cmd2AsInt, cmd3AsSignedInt);
             port.print(cmd1); port.print(cmd2); port.print(cmd3);
             ReturnSetPoints(port);
             drawprofileline();
@@ -400,7 +400,7 @@ void SaveTempEprom(int loc, int temp) {
     EEPROM.update(loc, (0));
   }
 
-  ;
+
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

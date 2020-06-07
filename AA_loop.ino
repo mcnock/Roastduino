@@ -1,4 +1,6 @@
 
+
+
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
@@ -6,7 +8,7 @@
 
 void theloop () {
 
-
+   
   //ReadSerial(Serial,SerialInputTimer);//for debugging
 
   //ReadSerial(Serial1,Serial1InputTimer);//for blue tooth
@@ -46,11 +48,16 @@ void theloop () {
   else {
     LoopsPerSecond ++;
   }
-//  TSPoint p = ts.getPoint();
- // if (p.z > MINTOUCHPRESSURE && p.z < MAXTOUCHPRESSURE) {
- //   ProcessRawTouch (&p);
- // }
+  if (myTouch.dataAvailable())
+  {
+      myTouch.read();
+      int16_t x = myTouch.getX();
+      int16_t y = myTouch.getY();
 
+      ProcessTouch (x,y);
+  }
+
+  return;
   //**********************************************************************************************************************************
   //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
   //********************************************************************************************************************************

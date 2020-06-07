@@ -2,39 +2,17 @@
 // MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 
+
 void ClearIntergalSum() {
   IntegralSum = 0;
 }
-
-void ProcessVertMenu2(int i) {
-  //Serial.println ("ProcessVertMenu1:");Serial.println (i);
-  switch (i) {
-    case 0:
-      MoveLast4Point(2);
-      drawprofileline();
-      //write code to raise last 3 set points
-      break;
-    case 1:
-      MoveLast4Point(-2);
-      drawprofileline() ;
-      //write code to lower last 3 set points
-      break;
-    case 2:
-
-      break;
-    case 3:
-
-      break;
-  }
-}
-
 
 void DrawHorMenu1() {
   //these ar the buttoms on top row starting about 1/2 across screen
   int height = 50;
   int width = 90;
   int row = 0;
-  int col = 300;
+  int col = 270;
   myHorizontalButtonControl.Count = 5;
   myGLCD.setBackColor(BLACK);
  
@@ -60,7 +38,6 @@ void DrawHorMenu1() {
   //Serial.println ("Drawing myHorizontalButtonControl");
   DrawButtons(myHorizontalButtonControl);
 }
-
 void EndRoastToggleAction() {
   Serial.println("Toggle end action");
   if (EndingSetPoint == 4) {
@@ -72,7 +49,6 @@ void EndRoastToggleAction() {
 
   graphProfile();
 }
-
 void FanAction() {
   Serial.println("Fan action");
 
@@ -93,7 +69,6 @@ void StartAction() {
     //Serial.println("ReStart Detected!");
   }
 }
-
 void EndAction() {
   if (State != STATESTOPPED) {
     newState = STATESTOPPED;
@@ -101,80 +76,85 @@ void EndAction() {
   }
 
 }
-
 void ShowTouchAction() {
   //Serial.println("Touch Toggle");
   ShowTouch = !ShowTouch;
 
 }
-
 void ProcessHorizontal(int i) {
   //Serial.println (i);
   switch (i) {
     case 0:
       StartAction();
-      FlashButton(myHorizontalButtonControl, i);
 
       break;
     case 1:
       EndAction();
-      FlashButton(myHorizontalButtonControl, i);
-
+  
       break;
     case 2:
       FanAction();
-      FlashButton(myHorizontalButtonControl, i);
-
+     
       break;
     case 3:
       Serial.println("Redraw graph detected");
+      for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
+      {
+          MySetPoints[xSetPoint].TemperatureNew = 0;
+      }
+
 
       RefreshAction();
-      FlashButton(myHorizontalButtonControl, i);
-
+     
       break;
     case 4:
       ShowTouchAction();
-      FlashButton(myHorizontalButtonControl, i);
-
+   
       break;
 
   }
 
 
 }
-
 void DrawVertMenu1() {
+  VerticalMenuShowing = 1;
   //these are vertical on right side starting at bottom going up
   int menuH = 50;
-  int width = 50;
+  int width = 65;
   int row =  0;//myGLCD.getDisplayYSize();
-  int col =  myGLCD.getDisplayXSize() - width ;
-  myButtonVertMenu1.Count = 7;
+  int col =  myGLCD.getDisplayXSize() - width-2 ;
+  myButtonVertMenu1.Count = 9;
   if (myButtonVertMenu1.buttondefs == 0) {
     //Serial.println ("Allocating myButtonVertMenu1");
     myButtonVertMenu1.buttondefs = (buttondef*) malloc(myButtonVertMenu1.Count * sizeof(buttondef));
     int i = 0;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN;
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "Setpts");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "*");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
     i = 1;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN;
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "sp1");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "#1");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
     i = 2;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "sp2");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "#2");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
     i = 3;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN;
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "sp3");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "#3");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
     i = 4;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN;
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "sp4");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "#4");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
     i = 5;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "sp5");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "#5");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
     i = 6;
     myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
     strcpy(myButtonVertMenu1.buttondefs[i].label, "L4");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    i = 7;
+    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i)); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = RED;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "RST");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+    i = 8;
+    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i)); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = BLACK;
+    strcpy(myButtonVertMenu1.buttondefs[i].label, "");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
+
     SetMenuBoundingRect(myButtonVertMenu1);
 
 
@@ -182,92 +162,207 @@ void DrawVertMenu1() {
   //Serial.println ("Drawing menu1 with count:");Serial.println(myButtonVertMenu1Count);
   DrawButtons(myButtonVertMenu1);
 }
+void ProcessVertMenu1(int i) {
+    //Serial.println ("ProcessVertMenu1:");Serial.println (i);
+    switch (i) {
+    case 0:
+        break;
+    case 1:
+        spSelected = i;
+        DrawVertMenu2(1);
+        break;
+    case 2:
+        spSelected = i;
+        DrawVertMenu2(2);
+        break;
+    case 3:
+        spSelected = i;
+        DrawVertMenu2(2);
+        break;
+    case 4:
+        spSelected = i;
+        DrawVertMenu2(i);
+        break;
+    case 5:
+        spSelected = i;
+        DrawVertMenu2(i);
+        break;
+    case 6:
+        spSelected = i;
+        DrawVertMenu2(i);
+        break;
+    case 7:
+       for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
+        {
+            
+           Serial.println("savingdefaults");
 
-void DrawVertMenu2() {
-  //these are vertical on right side starting at bottom going up
-  int menuH = 50;
-  int width = 50;
-  int row =  menuH;//myGLCD.getDisplayYSize();
-  int col =  myGLCD.getDisplayXSize() - (width * 2) ;
-  myButtonVertMenu1.Count = 7;
-  if (myButtonVertMenu1.buttondefs == 0) {
-    //Serial.println ("Allocating myButtonVertMenu1");
-    myButtonVertMenu1.buttondefs = (buttondef*) malloc(myButtonVertMenu1.Count * sizeof(buttondef));
-    int i = 0;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN;
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "+1"); myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    i = 1;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "+3");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    i = 2;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "+5");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    i = 3;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "-1");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    i = 4;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "-2");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    i = 5;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "-5");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    i = 6;
-    myButtonVertMenu1.buttondefs[i].x = col; myButtonVertMenu1.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu1.buttondefs[i].h = menuH; myButtonVertMenu1.buttondefs[i].w = width; myButtonVertMenu1.buttondefs[i].color = GREEN; 
-    strcpy(myButtonVertMenu1.buttondefs[i].label, "X");  myButtonVertMenu1.buttondefs[i].fontsize = 1;
-    SetMenuBoundingRect(myButtonVertMenu1);
+                MySetPoints[xSetPoint].TemperatureNew = 0;
+               EEPROM.put(MySetpointsEprom[xSetPoint], MySetPoints[xSetPoint].TemperatureDefault);
 
-  }
-  //Serial.println ("Drawing menu1 with count:");Serial.println(myButtonVertMenu1Count);
-  DrawButtons(myButtonVertMenu1);
-}
+       
+   
 
-
-
-
-
-
-
-
-void MoveLast4Point(int i) {
-  Serial.println ("MoveLast4Points"); Serial.println (i);
-  MySetPoints[2].Temperature = MySetPoints[2].Temperature + (i * 0.5);
-  SaveTempEprom(MySetpointsEprom[2] , MySetPoints[2].Temperature);
-  MySetPoints[3].Temperature = MySetPoints[3].Temperature + (i * 0.75);
-  SaveTempEprom(MySetpointsEprom[3] , MySetPoints[3].Temperature);
-  MySetPoints[4].Temperature = MySetPoints[4].Temperature + i;
-  SaveTempEprom(MySetpointsEprom[4] , MySetPoints[4].Temperature);
-  MySetPoints[5].Temperature = MySetPoints[5].Temperature + i;
-  SaveTempEprom(MySetpointsEprom[5] , MySetPoints[5].Temperature);
-  //drawprofileline();
-  delay(100);
-}
-
-void MoveAPoint(int SetPoint, int amount) {
-  if (SetPoint > 0) {
-    Serial.println(SetPoint); Serial.println("  ");
-    Serial.println(MySetPoints[SetPoint].Temperature); Serial.println(" to ");
-    MySetPoints[SetPoint].Temperature = MySetPoints[SetPoint].Temperature + amount;
-    Serial.println(MySetPoints[SetPoint].Temperature);
-    if (MySetPoints[SetPoint].Temperature < 254) {
-      MySetPoints[SetPoint].Temperature = 255;
+        }
+       graphProfile();
+        break;
+    default:
+        break;
     }
-    SaveTempEprom(MySetpointsEprom[SetPoint] , MySetPoints[SetPoint].Temperature);
+
+}
+void DrawVertMenu2(int j) {
+  //these are vertical on right side starting at bottom going up
+  VerticalMenuShowing = 2;
+  int menuH = 50;
+  int width = 65;
+  int row =  0;//myGLCD.getDisplayYSize();
+  int col =  myGLCD.getDisplayXSize() - (width)-1 ;
+  myButtonVertMenu2.Count = 9;
+  if (myButtonVertMenu2.buttondefs == 0) {
+    //Serial.println ("Allocating myButtonVertMenu1");
+    myButtonVertMenu2.buttondefs = (buttondef*) malloc(myButtonVertMenu1.Count * sizeof(buttondef));
+    int i = 0;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i)); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = GREEN;
+    strcpy(myButtonVertMenu2.buttondefs[i].label,"BCK") ; myButtonVertMenu2.buttondefs[i].fontsize = 1;
+
+    i = 1;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = RED;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, myButtonVertMenu1.buttondefs[spSelected].label); myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 2;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = YELLOW;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "+1");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 3;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = YELLOW;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "+3");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 4;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = YELLOW;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "+5");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 5;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = YELLOW;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "-1");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 6;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = YELLOW;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "-3");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 7;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i )); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = YELLOW;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "-5");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+    i = 8;
+    myButtonVertMenu2.buttondefs[i].x = col; myButtonVertMenu2.buttondefs[i].y = row + (menuH * (i)); myButtonVertMenu2.buttondefs[i].h = menuH; myButtonVertMenu2.buttondefs[i].w = width; myButtonVertMenu2.buttondefs[i].color = RED;
+    strcpy(myButtonVertMenu2.buttondefs[i].label, "Save");  myButtonVertMenu2.buttondefs[i].fontsize = 1;
+
+    SetMenuBoundingRect(myButtonVertMenu2);
+
+  }
+  //Serial.println ("Drawing menu1 with count:");Serial.println(myButtonVertMenu1Count);
+  DrawButtons(myButtonVertMenu2);
+}
+void ProcessVertMenu2(int i) {
+    Serial.println ("ProcessVertMenu2:");Serial.println (i);
+    moveamount = 0;
+    
+    switch (i) {
+    case 0:
+        for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
+        {
+            MySetPoints[xSetPoint].TemperatureNew = 0;
+        }
+        spSelected = 0;
+        DrawVertMenu1();
+        break;
+    case 2:
+        
+        moveamount=1;
+        break;
+    case 3:
+        moveamount=3;
+        break;
+    case 4:
+        moveamount=5;
+        break;
+    case 5:
+        moveamount=-1;
+        break;
+    case 6:
+        moveamount=-3;
+        break;
+    case 7:
+        moveamount = -5;
+        break;
+
+    case 8:
+        saveChangedSetpoints();
+        DrawVertMenu1();
+        break;
+    
+    default:
+        
+        break;
+    }
+
+    if (moveamount != 0 ){
+        if (spSelected >= 0 & spSelected <=5) {
+           MoveAPoint(spSelected);
+          }
+      if (spSelected == 6 ) {
+         MoveLast4Point();
+      }
+    }
+
+}
+void saveChangedSetpoints(){
+
+    for (int xSetPoint = 1; xSetPoint < 6; xSetPoint++)
+        {
+         if (MySetPoints[xSetPoint].TemperatureNew != 0)
+         {
+             MySetPoints[xSetPoint].Temperature = MySetPoints[xSetPoint].TemperatureNew;
+             MySetPoints[xSetPoint].TemperatureNew = 0;
+             
+             EEPROM.write(MySetpointsEprom[xSetPoint], MySetPoints[xSetPoint].Temperature);
+             
+
+         }
+      }
+      
+     
+        
+     
+}
+void MoveLast4Point() {
+    spSelected = 2;
+    MoveAPoint(2);
+    spSelected = 3;
+    MoveAPoint(3);
+    spSelected = 4;
+    MoveAPoint(4);
+    spSelected = 5;
+    MoveAPoint(5);
+    spSelected = 6;
+}
+void MoveAPoint(int SetPoint) {
+  if (SetPoint > 0) {
+      if (MySetPoints[SetPoint].TemperatureNew == 0) {
+         MySetPoints[SetPoint].TemperatureNew = MySetPoints[SetPoint].Temperature;
+     }
+    int lastnew = MySetPoints[SetPoint].TemperatureNew;
+    MySetPoints[SetPoint].TemperatureNew = MySetPoints[SetPoint].TemperatureNew + moveamount;
+
     delay(100);
+    DrawMovedSetPoint(SetPoint);
+    
   }
 }
-
 void MoveGain(int amount) {
   Gain = Gain + amount;
   EEPROM.update(GAIN_EP, Gain);
   delay(100);
 }
-
 void MoveIntegral(int amount) {
   Integral = Integral + (float(amount) / 20);
   delay(100);
   EEPROM.update(INTEGRAL_EP , (int)(Integral * 100));
 }
-
 void MoveIntegralSum(int amount) {
   IntegralSum = IntegralSum + amount;
   
@@ -303,85 +398,13 @@ void MoveTime(int jsetpointPlusOrMInus) {
   if (editmade == 1)
   {
 
-    EEPROM.update( MySpanMinutesEprom[i] ,  MySetPoints[i].SpanMinutes);
-    EEPROM.update( MySpanMinutesEprom[i + 1] , MySetPoints[i + 1].SpanMinutes);
+//    EEPROM.update( MySpanMinutesEprom[i] ,  MySetPoints[i].SpanMinutes);
+//    EEPROM.update( MySpanMinutesEprom[i + 1] , MySetPoints[i + 1].SpanMinutes);
 
     graphProfile();
   }
 }
-
-void ProcessVertMenu1(int i) {
-  //Serial.println ("ProcessVertMenu1:");Serial.println (i);
-  switch (i) {
-    case 0:
-      break; 
-    default:
-      spSelected = i;
-    break;
-  }
-
-}
-
-//void DrawMenu2() {
-//  //not useed in cde right now
-//  Menu2Showing = true;
-//  int width = 40;
-//  int col = 320 - width;
-//  myButtonMenu2.Count = 9;
-//  int menuH = 240 / 9;
-//  int row = 240 - menuH;
-//
-//  if (myButtonMenu2.buttondefs == 0) {
-//    //Serial.println ("Allocating myButtonMenu2");
-//    myButtonMenu2.buttondefs = (buttondef*) malloc(myButtonMenu2.Count * sizeof(buttondef));
-//    int i = 0; strcpy(myButtonMenu2.buttondefs[i].label, "Ld F"); myButtonMenu2.buttondefs[i].color = GREEN; myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 1; strcpy(myButtonMenu2.buttondefs[i].label, "Ld V");  myButtonMenu2.buttondefs[i].color = GREEN;  myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 2; strcpy(myButtonMenu2.buttondefs[i].label, "Ld FC"); myButtonMenu2.buttondefs[i].color = GREEN;  myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 3; strcpy(myButtonMenu2.buttondefs[i].label, "Ld C");  myButtonMenu2.buttondefs[i].color = GREEN;  myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 4; strcpy(myButtonMenu2.buttondefs[i].label, "Sv F");  myButtonMenu2.buttondefs[i].color = YELLOW; myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 5; strcpy(myButtonMenu2.buttondefs[i].label, "Sv V");  myButtonMenu2.buttondefs[i].color = YELLOW; myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 6; strcpy(myButtonMenu2.buttondefs[i].label, "Sv FC"); myButtonMenu2.buttondefs[i].color = YELLOW; myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 7; strcpy(myButtonMenu2.buttondefs[i].label, "Sv C");  myButtonMenu2.buttondefs[i].color = YELLOW; myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//    i = 8; strcpy(myButtonMenu2.buttondefs[i].label, "X");     myButtonMenu2.buttondefs[i].color = WHITE;  myButtonMenu2.buttondefs[i].x = col; myButtonMenu2.buttondefs[i].y = row - (menuH * i); myButtonMenu2.buttondefs[i].h = menuH; myButtonMenu2.buttondefs[i].w = width;  myButtonMenu2.buttondefs[i].fontsize = 1;
-//
-//    SetMenuBoundingRect(myButtonMenu2);
-//
-//  }
-//  DrawButtons(myButtonMenu2);
-////}
-//
-//void ProcessMenu2(int i) {
-//  //Serial.println (i);
-//  switch (i) {
-//    case 0:
-//    case 1:
-//    case 2:
-//    case 3:
-//      Load(i);
-//      FlashButton(myButtonMenu2, i);
-//      break;
-//    case 4:
-//    case 5:
-//    case 6:
-//    case 7:
-//      FlashButton(myButtonMenu2, i);
-//      Save(i);
-//      break;
-//    case 8:
-//      Menu2Showing = false;
-//      Serial.println("Close menu 2");
-//      graphProfile();
-//      break;
-//    default:
-//      Menu2Showing = false;
-//      break;
-//
-//  }
-//
-//}
-
 void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
-
   for (int i = 0 ; i < butdefset.Count; i++) {
     butdefset.buttondefs[i].Rect.xmin = butdefset.buttondefs[i].x;
     butdefset.buttondefs[i].Rect.ymin = butdefset.buttondefs[i].y;
@@ -418,18 +441,12 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
 
 }
 
-void FlashButton(buttonsetdef &butdefset, int i)
-{
-  myGLCD.setColor( YELLOW);
-  myGLCD.fillRect(butdefset.buttondefs[i].x, butdefset.buttondefs[i].y, butdefset.buttondefs[i].w, butdefset.buttondefs[i].h);
-  delay(250);
-  DrawButton(butdefset, i);
-}
+
 void DrawButton(buttonsetdef &butdefset, int i)
 {
   //draw button
-  Serial.println ("Drawing buttons x:");Serial.println (butdefset.buttondefs[i].x), Serial.println (" y:");Serial.println ( butdefset.buttondefs[i].y);Serial.println (" w:");Serial.println ( butdefset.buttondefs[i].w) ;
-  Serial.println (" h:");Serial.println ( butdefset.buttondefs[i].h);
+  //Serial.println ("Drawing buttons x:");Serial.println (butdefset.buttondefs[i].x), Serial.println (" y:");Serial.println ( butdefset.buttondefs[i].y);Serial.println (" w:");Serial.println ( butdefset.buttondefs[i].w) ;
+  //Serial.println (" h:");Serial.println ( butdefset.buttondefs[i].h);
 
   myGLCD.setColor(butdefset.buttondefs[i].color);
   myGLCD.fillRect(butdefset.buttondefs[i].x, butdefset.buttondefs[i].y, butdefset.buttondefs[i].w + butdefset.buttondefs[i].x, butdefset.buttondefs[i].h + butdefset.buttondefs[i].y);
