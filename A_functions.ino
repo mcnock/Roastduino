@@ -248,7 +248,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             break;
           case 'A':
             //MoveLast4Point(cmd3AsSignedInt);
-            drawprofileline();
+           // drawprofileline();
             port.print(cmd1); port.print(cmd2); port.print(cmd3);
             ReturnSetPoints(port);
             break;
@@ -289,7 +289,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             }
             break;
           case 'T':
-            MoveTime(cmd3AsSignedInt) ;
+          //  MoveTime(cmd3AsSignedInt) ;
             port.print(cmd1); port.print(cmd2); port.print(cmd3);
             ReturnSetPoints(port);
             break;
@@ -299,7 +299,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
         //    MoveAPoint(cmd2AsInt, cmd3AsSignedInt);
             port.print(cmd1); port.print(cmd2); port.print(cmd3);
             ReturnSetPoints(port);
-            drawprofileline();
+            //drawprofileline();
 
           default:
 
@@ -331,6 +331,7 @@ void ReturnSetPoints(Stream &port) {
 void SerialprintRect(struct rect * rect) {
   Serial.print("xmin:"); Serial.print(rect->xmin); Serial.print(" ymin:"); Serial.print(rect->ymin); Serial.print(" xmax:"); Serial.print(rect->xmax); Serial.print(" ymax:"); Serial.println(rect->ymax);
 }
+
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
     Readingskipped++;
@@ -378,31 +379,6 @@ int ReadIntEprom(int loc, int min, int max, int def) {
     return def ;
   }
 }
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-int ReadTempEprom(int loc, int def) {
-  int t;
-  t = EEPROM.read(loc) + 254;
-  if (t > 254 && t < 600) {
-    return ( t);
-  }  else {
-    //Serial.print(loc)
-    //Serial.print(" using def temp EEPROM t was"); Serial.println(t);
-    return def ;
-  }
-}
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void SaveTempEprom(int loc, int temp) {
-
-  if (temp >= 254) {
-    EEPROM.update(loc, (temp - 254));
-  }
-  else {
-    EEPROM.update(loc, (0));
-  }
-
-
-}
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 double SetpointforATime(double roastminutes) {

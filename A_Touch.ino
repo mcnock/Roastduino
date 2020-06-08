@@ -15,27 +15,29 @@ void ProcessTouch(int Xtouch, int Ytouch)
         ProcessHorizontal(i);
         return;
     }
-
-    if (VerticalMenuShowing == 1) {
-        if (InRect(Xtouch, Ytouch, &myButtonVertMenu1.bounding)) {
+  
+   
+        if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
             Serial.print("found vertical1  buttons");
-            int i = WhatMenu(Xtouch, Ytouch, &myButtonVertMenu1);
+            int i = WhatMenu(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
             //Serial.print("Vmenu1 found index: "); Serial.println(i);
-            ProcessVertMenu1(i);
+            switch (VerticalMenuShowing)
+            {
+            case (0):
+                ProcessVertMenu0(i);
+                break;
+            case(1):
+                ProcessVertMenu1(i);
+                break;
+            case(2):
+                ProcessVertMenu2(i);
+                break;
+
+            default:
+                break;
+            }
             return;
         }
-    }
-
-    if (VerticalMenuShowing == 2) {
-
-        if (InRect(Xtouch, Ytouch, &myButtonVertMenu2.bounding)) {
-            Serial.print("found vertical 2 buttons");
-            int i = WhatMenu(Xtouch, Ytouch, &myButtonVertMenu2);
-            Serial.print("Vmenu2 found index: "); Serial.println(i);
-            ProcessVertMenu2(i);
-            return;
-        }
-    }
 
 }
 

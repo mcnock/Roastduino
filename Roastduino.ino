@@ -44,43 +44,40 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 #define ORANGE  0xFD20
 #define WHITE   0xFFFF
 
-#define YM A3   // can be a digital pin
-#define XM A2  // must be an analog pin, use "An" notation!
-#define YP A1  // xx must be an analog pin, use "An" notation!
-#define XP A0   // can be a digital pin
-
-// This is calibration data for the raw touch data to the screen coordinates
-
-#define MINTOUCHPRESSURE 5
-#define MAXTOUCHPRESSURE 1000
 
 
-
-//THERMOCOUPLES
-//#define SDIp    11
-#define TSD1p    5
-#define TCS1p    6
-#define TSCKp    7
-#define TSD2p    8
-#define TCS2p    9
-#define TSD3p    10
-#define TCS3p    11
-#define TSD4p    12
-#define TCS4p    13
-
-#define SSR1p  2
-#define SSR2p  3
-#define Buzzerp   4
-#define LEDp      52
-//annalog
-#define CURFANap    A7
-#define CURHEAT2ap  A6
-#define CURHEAT1ap  A5
-#define VOLT5ap     A4
+//#5 inch display shield  does not  use 30- 34, 10,12, or 13 
 
 
-#define VIBRELAYp    31
-#define FANRELAYp    33
+#define SSR1p       2
+#define SSR2p       3
+#define VIBRELAYp    4
+#define FANRELAYp    5
+#define FanPWM       6
+#define LEDp        7
+
+
+#define TSD1p    A15
+#define TCS1p    A14
+#define TSCKp    A13
+#define TSD2p    A12
+#define TCS2p    A11
+#define TSD3p    A10
+#define TCS3p    A9
+#define TSD4p    A8
+#define TCS4p    A7
+#define CURFANap    A6
+#define CURHEAT2ap  A5
+#define CURHEAT1ap  A4
+#define FANPOTp     A3
+//#define			    A2
+//#define			    A1
+//#define			    A0
+
+
+
+
+
 
 #define INTEGRAL_EP 0
 #define TEMPSCREENTOP_EP 1
@@ -132,13 +129,7 @@ int Gain = 10; //read from eeprom
 
 
 
-point TGainValue;
-point TIntegralValue;
-point TIntegralReset;
 
-rect TouchExtent;
-rect MappedExtent;
-rect TsSetting;
 
 char Commandsp1[7] = "xxxxx ";
 int iCommandsp1 = 0;
@@ -149,11 +140,7 @@ char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
 
 
-int TTextClickBuffer = 5;
-const point TTextClickBufferOffset =  { 4 , -5 }  ;
 
-
-boolean ShowTouch = false;
 double Integral = 0.1;  //read from eeprom
 
 
@@ -176,7 +163,7 @@ int MySetpointsEprom[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory 
 setpoint MySetPoints[6] = {{0, 0}, {3, 390}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
 int SetPointCount = 6;  //0,1,2,3,4,5
 int TimeScreenLeft = 15;
-int EndingSetPoint = 4;
+int EndingSetPoint = 5;
 
 double TempYMax = 800;
 
@@ -190,23 +177,17 @@ double TempYSplit = 390;
 //double PixelYSplit = 90;
 double PixelYSplit = 180;
 
-//we have 240 units...
-//240-120 is for < 400 >> 400/120  3.333 degrees per pixel
-//120 - 0 is for < 400 - 600 >> 200/120 1.66 degrees per pixel
-//we have 480 units...
-//480-240 is for < 400 >> 400/120  6.66 degrees per pixel
-//240 - 0 is for < 400 - 600 >> 200/120 3.32 degrees per pixel
 
 
-double TempPerPixL = TempYSplit / PixelYSplit;
-double TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
-double TempPerPixH = (TempYMax - TempYSplit2) / (240.00 - PixelYSplit2);
+double TempPerPixL = 0;
+double TempPerPixM = 0;
+double TempPerPixH = 0;
 
 int CurrentSetPointTemp = 0;
 int BeforeTemp = 0;
 int BeforeTime = 0;
 
-long IYscale;
+//long IYscale;
 
 int LoopsPerSecond;
 
@@ -241,8 +222,7 @@ long PixelsPerMin;
 
 buttonsetdef myHorizontalButtonControl;
 
-buttonsetdef myButtonVertMenu1;
-buttonsetdef myButtonVertMenu2;
+buttonsetdef myButtonVertMenus[6];
 int VerticalMenuShowing = 0;
 
 int DUMMY;
@@ -280,10 +260,9 @@ void setup() {
   // Pin Configuration
   pinMode(VIBRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
   pinMode(SSR1p, OUTPUT); pinMode(SSR2p, OUTPUT);
-  pinMode(Buzzerp, OUTPUT); pinMode(LEDp, OUTPUT);
-  digitalWrite(Buzzerp, HIGH);
-
-  pinMode(VOLT5ap, INPUT); pinMode(CURFANap, INPUT);
+  pinMode(LEDp, OUTPUT);
+  
+   pinMode(CURFANap, INPUT);
   pinMode(CURHEAT1ap, INPUT); pinMode(CURHEAT2ap, INPUT);
   //define CURFANap    7///#define CURHEAT2ap  6
 
@@ -293,31 +272,10 @@ void setup() {
   delay(1000);
   MaxVread = 512; //this is the expected half way value
   RoastTime.stop();
+  
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-//  Serial.print("read Gain:");Serial.print(Gain);Serial.print(" Integral:");Serial.println(Integral);
-
-  int accumulated = 0;
-  for (int X = 0; X < SetPointCount; X++) {
-    Serial.println(X); Serial.println( " ");
-    if (X > 0) {
-      MySetPoints[X].Temperature  =  ReadTempEprom(MySetpointsEprom[X], MySetPoints[X].TemperatureDefault);
-      //MySetPoints[X].Temperature = MySetPoints[X].TemperatureDefault;
-      MySetPoints[X].SpanMinutes =  MySetPoints[X].Minutes -MySetPoints[X-1].Minutes;
-      Serial.print(X); Serial.print(":"); Serial.println(MySetPoints[X].Temperature);
-      accumulated = accumulated + MySetPoints[X].SpanMinutes;
-      MySetPoints[X].Minutes = accumulated;
-      MySetPoints[X].TemperatureNew = 0;
-    }
-    else
-    { MySetPoints[X].SpanMinutes = 0;
-      MySetPoints[X].Minutes = 0;
-      MySetPoints[X].Temperature = 0;
-      MySetPoints[X].TemperatureNew = 0;
-
-    }
-  }
 
   PixelsPerMin =  (int)(800 / TimeScreenLeft);
 
@@ -335,9 +293,11 @@ void setup() {
 
   myGLCD.setFont(SmallFont);
 
+  initializeButtonDefs();
+
   graphProfile();
 
-   
+  
 
   State = STATESTOPPED;
   // Serial.println ("setup complete");

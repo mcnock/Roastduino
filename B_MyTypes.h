@@ -30,7 +30,7 @@ typedef struct buttondef {
   int w;
   uint16_t color;
   char label[8];
-  int fontsize;
+  uint8_t fontsize;
   rect Rect;
 
 } buttondef;
@@ -39,6 +39,11 @@ typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
   buttondef* buttondefs = 0;
   int Count = 0;
+  int W = 0;
+  int H = 0;
+  int colstart = 0;
+  int rowstart = 0;
+  boolean vertical;
 } buttonsetdef;
 
 

@@ -5,7 +5,6 @@
 
 
 void graphProfile() {
-
   
     int accumulated = 0;
     for (int X = 0; X < SetPointCount; X++) {
@@ -13,11 +12,6 @@ void graphProfile() {
             EEPROM.get(MySetpointsEprom[X],MySetPoints[X].Temperature);
             //MySetPoints[X].Temperature = MySetPoints[X].TemperatureDefault;
             MySetPoints[X].SpanMinutes = MySetPoints[X].Minutes - MySetPoints[X - 1].Minutes;
-
-            //Serial.print(X); Serial.print(":D "); Serial.println(MySetPoints[X].TemperatureDefault);
-
-            //Serial.print(X); Serial.print(":  "); Serial.println(MySetPoints[X].Temperature);
-            
             accumulated = accumulated + MySetPoints[X].SpanMinutes;
             MySetPoints[X].Minutes = accumulated;
         }
@@ -29,7 +23,6 @@ void graphProfile() {
         }
     }
 
-
   TempYMax = 800; 
   TempYSplit2 = 440;
   TempYSplit2 = MySetPoints[5].Temperature ;
@@ -40,36 +33,23 @@ void graphProfile() {
   TempPerPixL = TempYSplit / PixelYSplit;
   TempPerPixM = (TempYSplit2 - TempYSplit) / (PixelYSplit2 - PixelYSplit);
   TempPerPixH = (TempYMax - TempYSplit2) / (480 - PixelYSplit2);
-
-  //TimeScreenLeft = MySetPoints[5].Minutes + 1;
-
-  PixelsPerMin =  (int)(800 / (TimeScreenLeft + 1));
-  
+  PixelsPerMin =  (int)(800 / TimeScreenLeft);
   myGLCD.setBackColor(BLACK);
- 
   myGLCD.fillRect(0, 0, 800, 480);
-
   myGLCD.clrScr();
-  
   myGLCD.setColor(100,100,100);  
   myGLCD.setFont(BigFont);
   myGLCD.drawLine(3 * PixelsPerMin ,0,  3 * PixelsPerMin,myGLCD.getDisplayYSize()-30 );
   myGLCD.print("3min",(3 * PixelsPerMin) - 30, 460);
   myGLCD.drawLine(6 * PixelsPerMin , 0, 6 * PixelsPerMin , myGLCD.getDisplayYSize()-30);
   myGLCD.print("6min",(6 * PixelsPerMin) - 30, 460);
-
   myGLCD.drawLine(9 * PixelsPerMin , 0, 9 * PixelsPerMin, myGLCD.getDisplayYSize()-30);
   myGLCD.print("9min",(9 * PixelsPerMin) - 30, 460);
   myGLCD.drawLine(12 * PixelsPerMin ,0,12 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
   myGLCD.print("12min",(12 * PixelsPerMin) - 30, 460);
-  myGLCD.drawLine(15 * PixelsPerMin ,0,15 * PixelsPerMin, myGLCD.getDisplayYSize()-30);
-  myGLCD.print("15min",(15 * PixelsPerMin) - 30, 460);
-
+ 
   //draw y scale for 3 ranges
   
-
-  
-    //draw y scale
   myGLCD.setFont(SmallFont);
   int yaxislable = 30;
   for (int t = 100; t < (TempYSplit - 20); t = t + 100) {
@@ -77,22 +57,16 @@ void graphProfile() {
     myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),YforATemp(t) );
     myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
-
-  
-  
   for (int t = TempYSplit; t < (TempYSplit2); t = t + 10) {
     myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),  YforATemp(t));
     myGLCD.printNumI(t,2, YforATemp(t) - 5);
-  }
-
-  
-  
-  
+  }  
   for (int t = TempYSplit2 +10; t < TempYMax ; t = t + 100) {
     myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),  YforATemp(t));
     myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
-  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
+
+  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , BLUE);
   //set the by minute temp profile for 5 spans
   Serial.println(MySetPoints[0].Temperature);
   
@@ -103,207 +77,143 @@ void graphProfile() {
     for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[xSetPoint].SpanMinutes  ;  xSpanMinute++)
     {
       accumulatedMinutes = accumulatedMinutes + 1;
-     // MyMinuteTemperature[accumulatedMinutes] =  MySetPoints[MySetPoints[xSetPoint].SpanMinutes - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
-      
       MyMinuteTemperature[accumulatedMinutes] = MySetPoints[xSetPoint - 1].Temperature + (TempPerMinuteinSpan * xSpanMinute);
-      //Serial.println(MyMinuteTemperature[accumulatedMinutes]);
       AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTemperature[accumulatedMinutes], SETPOINTLINEID);
     }
-    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[xSetPoint].Temperature, SETPOINTLINEID, 5);
+    DrawSetPoint(xSetPoint, LineColorforLineID[SETPOINTLINEID]); 
   }
 
 
-  //create temp setpoint array between the last setpoint and the left of screen
-  // for (int Y = MySetPoints.Temperature[SetPointCount - 1] ; Y <= TimeScreenLeft; Y++) {
-  //   MyMinuteTemperature[Y] = MySetPoints[SetPointCount - 1].Temperature ;
-  //Serial.println("minutesp:");Serial.println(Y);Serial.println("  ");Serial.println(MyMinuteTemperature[Y]);
-  //  }
-
   //draw endpoint highlights
+  myGLCD.setFont(BigFont);
   myGLCD.setColor(BLUE);
-  
-  //myGLCD.setCursor((myGLCD.width() / 2), YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
-  //myGLCD.print("END:"); myGLCD.setCursor((myGLCD.width() / 2) + 24, YforATemp(MySetPoints[EndingSetPoint].Temperature) - 10);
-  //myGLCD.print(MySetPoints[EndingSetPoint].Temperature);
-  //myGLCD.drawLine(((myGLCD.width() / 2) + 20)    ,  YforATemp(MySetPoints[EndingSetPoint].Temperature), myGLCD.width());
-  //myGLCD.drawLine(0,PixelsPerMin * MySetPoints[EndingSetPoint].Temperature, 0, myGLCD.print / 2);
-  //myGLCD.drawLine(0,PixelsPerMin * MySetPoints[EndingSetPoint].Minutes, 0, myGLCD.print / 2);
-  //delay(1000);
+  int PixYEndPoint = YforATemp(MySetPoints[EndingSetPoint].Temperature);
+  myGLCD.drawLine(400, PixYEndPoint, myGLCD.getDisplayXSize()-50, PixYEndPoint);
+  myGLCD.print("SP:",500, PixYEndPoint-20);myGLCD.printNumI(MySetPoints[EndingSetPoint].Temperature, 550, PixYEndPoint-20);
 
   ReDrawROLLAVGLINEFromArray(ORANGE);
 
   DrawHorMenu1();
   
-  DrawVertMenu1();
-
-}
-void drawprofileline() {
-  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
-  //set the by minute temp profile for 5 spans
-  MyMinuteTemperature[0] = 0;
-  int accumulatedMinutes = 0;
-  for (int x = 1; x < SetPointCount; x++) {
-    double TempPerMinuteinSpan = ((double)(MySetPoints[x].Temperature - MySetPoints[x - 1].Temperature)) / MySetPoints[x].SpanMinutes ;
-    for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[x].SpanMinutes  ;  xSpanMinute++)
-    {
-      accumulatedMinutes = accumulatedMinutes + 1;
-      MyMinuteTemperature[accumulatedMinutes] =  MySetPoints[x - 1].Temperature + ( TempPerMinuteinSpan * xSpanMinute);
-      AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTemperature[accumulatedMinutes], SETPOINTLINEID);
-    }
-    AddPointbyTimeAndTempAndLineID(accumulatedMinutes, MySetPoints[x].Temperature, SETPOINTLINEID, 5);
+  if (spSelected > 0) {
+      DrawVertMenu(1);
   }
-
-
-
-
-}
-void tftPrintDouble5b(double num ) {
-
-  //+11.1
-  //12345
-  if (num < 0)
+  else
   {
-    sprintf(Buf5, "%d.%1d", (int)num, abs((int)(num * 100) % 100));
-
-  } else
-  {
-    sprintf(Buf5, " %d.%1d", (int)num, (int)(num * 100) % 100);
+      DrawVertMenu(0);
   }
-//  myGLCD.print(Buf5);
 }
-void tftPrintDouble5(double num ) {
-
-  //+1.11
-  //12345
-  if (num < 0)
-  {
-    sprintf(Buf5, "%d.%02d", (int)num, abs((int)(num * 100) % 100));
-
-  } else
-  {
-    sprintf(Buf5, " %d.%02d", (int)num, (int)(num * 100) % 100);
-  }
-  //myGLCD.print(Buf5);
-}
-void tftPrintDouble6(double num ) {
-
-  //+11.11
-  //123456
-  if (num < 0)
-  {
-    sprintf(Buf6, "%d.%02d", (int)num, abs((int)(num * 100) % 100));
-
-  } else
-  {
-    sprintf(Buf6, " %d.%02d", (int)num, (int)(num * 100) % 100);
-  }
-//  myGLCD.print(Buf6);
-}
-void tftPrintDouble7(double num ) {
-  //+111.11
-  //1234567
-
-  if (num < 0)
-  {
-    sprintf(Buf7, "%d.%02d", (int)num, abs((int)(num * 100) % 100));
-
-  } else
-  {
-    sprintf(Buf7, " %d.%02d", (int)num, (int)(num * 100) % 100);
-  }
-//  myGLCD.print(Buf7);
-}
-void tftPrintDouble(double num ) {
-
-//  myGLCD.print(num, 1);
-
-}
-void tftPrintIntTo5Char(int num) {
-  //  Serial.println("print:");Serial.println(num);
-  sprintf(Buf5, "% 5d", num);
-  //myGLCD.print(Buf5);
-  // Serial.println("printbuf:");Serial.println(num);
-}
-
 void UpdateGraphA() {
   //this is top row
+  myGLCD.setBackColor(BLACK);
+ 
   myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(BigFont);
-  int rowheight = 12;
-  int row = 25;
+  int rowheight = 30;
+  int row = 70;
   int col = 40;
- myGLCD.print("Time:",col , row);   myGLCD.print("***", col + 45 , row);
-//  myGLCD.setCursor(col + 90 , row); myGLCD.print(" sp:"); myGLCD.setCursor(col + 130 , row);   tftPrintDouble7(CurrentSetPointTemp);
-  row = row + rowheight;
-  if (Duty > 1) {
-//     myGLCD.print("Duty:",col , row);// myGLCD.setCursor(col + 40 , row); tftPrintDouble7(1.00);
-  }
+  int col2 = 120;
+  int col3 = 180;
+  int col4 = 240;
+
+   myGLCD.print("Time:",col , row);   myGLCD.print("***", col2 , row);
+   row = row + rowheight;
+   if (Duty > 1) {
+      myGLCD.print("Duty:",col , row); myGLCD.printNumF(1.0,2,col2,row);
+   }
   else {
  //   myGLCD.setCursor(col , row); myGLCD.print("Duty:"); myGLCD.setCursor(col + 40 , row); tftPrintDouble7(Duty);
-  }
-  row = row + rowheight;
-   myGLCD.print("Err:",col + 10 , row);// myGLCD.setCursor(col + 40 , row);   tftPrintDouble7(-Err);
+       myGLCD.print("Duty:", col, row); myGLCD.printNumF(Duty,2, col2, row, '.');
 
+   }
   row = row + rowheight;
-   myGLCD.print("IEr:",col + 10 , row);// myGLCD.setCursor(col + 40 , row);   tftPrintDouble7(-ErrI);
-  row = row + rowheight;
+   myGLCD.print("Err:",col , row);   myGLCD.printNumF(-Err,2,col2,row);
+
+   // row = row + rowheight;
+  // myGLCD.print("IEr:",col + 10 , row);// myGLCD.setCursor(col + 40 , row);   tftPrintDouble7(-ErrI);
+  //row = row + rowheight;
 
 }
 void UpdateGraphB() {
 
-  int rowheight = 11;
+  int rowheight = 30;
+  myGLCD.setBackColor(BLACK);
+  myGLCD.setColor(VGA_WHITE);  
+  myGLCD.setFont(BigFont);
+  int row = 320 ;
+  int col =  300 ;
+  int col2 = 370;
+  int col3 = 500;
+  int col4 = 600;
 
-  myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(BigFont);
-  int row = 160 ;
-  int col = 135 ;
-
-   myGLCD.print("Tvg:",col , row); //myGLCD.setCursor(col + 40 , row,col + 40 , row); //tftPrintIntTo5Char(TBeanAvgRoll.mean());
-
-  row = row + rowheight; ;
-   myGLCD.print("T1:",col , row);   myGLCD.print("   ",col + 40 , row); // tftPrintIntTo5Char(TBean1,col + 40 , row);
-   myGLCD.print("T2",col + 90 , row);    myGLCD.print("   ",col + 120 , row); // tftPrintIntTo5Char(TBean2,col + 120 , row);
-
-  row = row + rowheight;
-  myGLCD.print("Fan  T:",col , row); myGLCD.printNumI(TFan,col + 40 , row);
-  myGLCD.print("Amp:", col + 90 , row);  myGLCD.print("***",col + 120 , row);
-
-  row = row + rowheight;
-
- myGLCD.print("Heat T:",col , row); myGLCD.print("Amp1:",col + 90 , row);  myGLCD.printNumI(CurrentHeat1,col + 120 , row);
-
-  row = row + rowheight;;
-
- myGLCD.print("Volts:",col , row);  myGLCD.printNumI(MaxVoltage,col + 40 , row);
-  myGLCD.print("Amp2:",col + 90 , row); myGLCD.printNumI(CurrentHeat2,col + 120 , row);
-
+  row = 360;
+   myGLCD.print("Tvg:",col , row);          myGLCD.printNumI(TBeanAvgRoll.mean(),col2,row,4,'0');
+   row = row + rowheight; 
+   myGLCD.print("T1:",col , row);           myGLCD.printNumI(TBean1, col2, row, 4, ' ');
+   row = row + rowheight;
+   myGLCD.print("T2:", col, row);           myGLCD.printNumI(TBean2, col2, row, 4, '0');
+   row = row + rowheight;
+   row = 330;
+   myGLCD.print("Fan:", col3 , row);    myGLCD.print("***",col4 , row);
+   row = row + rowheight;
+   myGLCD.print("Coil1:",col3  , row);  myGLCD.printNumI(CurrentHeat1,col4 ,row, 4, '0');
+   row = row + rowheight;
+   myGLCD.print("Coil2:",col3 , row);   myGLCD.printNumI(CurrentHeat2,col4 , row, 4, '0');
+   row = row + rowheight;
+   myGLCD.print("Volts:", col3, row);   myGLCD.printNumI(MaxVoltage, col4, row, 4, '0');
 
 }
 void UpdateGraphC() {
-  int rowheight = 11;
-  myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(SmallFont);
+  int rowheight = 20;
   int row = 180 ;
-  int colr = 40 ;
+  int col = 40 ;
+  int col2 = 80;
 
 
-  TGainValue.x =  colr + 10; TGainValue.y = row;// TGainIncrease.x = colr + 35;
-  //TGainIncrease.y = row; TGainDecrease.x = colr + 55; TGainDecrease.y = row;
+   myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(SmallFont);
+   myGLCD.print("Gain:",col , row); myGLCD.printNumI(Gain,col2 , row);
+   row = row + rowheight;
+   myGLCD.print("Int:", col, row);  myGLCD.printNumF(Integral,2,col2,row);
+   row = row + rowheight;
+   myGLCD.print("l/s:",col , row);  myGLCD.printNumI(LoopsPerSecond,col2 , row) ;
+   row = row + rowheight;
+   myGLCD.print("Skp", col, row);  myGLCD.printNumI(Readingskipped,col2 , row);
 
-   myGLCD.print("G:",colr , row); myGLCD.printNumI(Gain,TGainValue.x , TGainValue.y);
-  //myGLCD.setCursor(TGainIncrease.x, TGainIncrease.y); myGLCD.print("U"); myGLCD.setCursor(TGainDecrease.x   , TGainDecrease.y); myGLCD.print("D");
-
-
-  row = row + rowheight;;
-  TIntegralValue.x  = colr + 5; TIntegralValue.y  = row;//  TIntegralIncrease.x = colr + 35 ;
- // TIntegralIncrease.y = row; TIntegralDecrease.x = colr + 55; TIntegralDecrease.y = row;
-  TIntegralReset.y = row; TIntegralReset.x = colr + 75; //TIntegralReset.y = row;
-
-   myGLCD.print("I:",colr - 5 , row);  myGLCD.printNumI(Integral , TIntegralValue.x , TIntegralValue.y) ;
- // myGLCD.setCursor(TIntegralIncrease.x  , TIntegralIncrease.y); myGLCD.print("U"); myGLCD.setCursor(TIntegralDecrease.x , TIntegralDecrease.y); myGLCD.print("D");
-   myGLCD.print("R",TIntegralReset.x , TIntegralReset.y);
-
-  row = row + rowheight;;
-   myGLCD.print("ps:",colr - 10 , row); // tftPrintIntTo5Char(LoopsPerSecond,colr  , row) ;
-   myGLCD.print("Skp",colr +  35 , row);  myGLCD.printNumI(Readingskipped,colr + 60 , row);
-
+}
+void  UpdateState(int state) {
+  myGLCD.setFont(BigFont);
+  myGLCD.setColor(VGA_WHITE);
+  switch (state) {
+    case STATEROASTING:
+      myGLCD.setColor(RED);
+      strncpy(StateName, "Roasting", 8);
+      myGLCD.print("Roasting",50, 0);
+      break;
+    case STATESTOPPED:
+      strncpy(StateName, "Stopped ", 8);
+      myGLCD.print("Stopped ",50, 0);
+      break;
+    case STATECOOLING:
+      myGLCD.setColor(VGA_WHITE);
+      strncpy(StateName, "Cooling ", 8);
+      myGLCD.print( "Cooling ",50, 0);
+      break;
+    case STATEOVERHEATED:
+      strncpy(StateName, "HotCoil  ", 9);
+      myGLCD.print ("HotCoil ",50, 0);
+      break;
+    case STATENOFANCURRENT:
+      strncpy(StateName, "NoFanCur   ", 8);
+      myGLCD.print ("HotFan ",50, 0);
+      break;
+    case STATEFANONLY:
+      strncpy(StateName, "FanOnly ", 8);
+      myGLCD.print ("FanOnly ",50, 0);
+      break;
+    default:
+      strncpy(StateName, "unk   ", 8);
+      myGLCD.print ("unk     ",50, 0);
+      break;
+  }
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -331,7 +241,7 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   int newY = YforATemp(temp);
   //Serial.println ("AddLineTandT line iD:");Serial.println (lineID);Serial.println(" time:");Serial.println(timemins);Serial.println("temp:");Serial.println(temp);Serial.println(" color:");Serial.println(LineColorforLineID[lineID]);
   //Serial.println ("newX:");Serial.println (newX);Serial.println ("pixelspermin:");Serial.println (PixelsPerMin);Serial.println(" newY:");Serial.println(newY);
-  myGLCD.setColor(0,0,255  );//LineColorforLineID[lineID]);
+  myGLCD.setColor(LineColorforLineID[lineID]);//LineColorforLineID[lineID]);
   myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY );
   LastXforLineID[lineID] = newX;
   LastYforLineID[lineID] = newY;
@@ -341,15 +251,26 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
     myLastGraphTemps[newX] = temp;
   }
 }
+void DrawSetPoint(int setpoint, uint16_t color)
+{
+    int Y = YforATemp(MySetPoints[setpoint].Temperature);
+    int X = MySetPoints[setpoint].Minutes * PixelsPerMin;
+    myGLCD.setColor(color);
+    myGLCD.fillCircle(X, Y, 7);
+    myGLCD.printNumI(MySetPoints[setpoint].Temperature, X - 15, Y - 20);
+
+
+}
 
 void DrawMovedSetPoint(int setpoint)
 {
     int Y = YforATemp(MySetPoints[setpoint].TemperatureNew);
     int X = MySetPoints[setpoint].Minutes * PixelsPerMin;
-    myGLCD.setColor(ORANGE);
+    myGLCD.setColor(YELLOW);
     myGLCD.fillCircle(X, Y, 7);
     myGLCD.setColor(WHITE);
     myGLCD.drawCircle(X, Y, 7);
+
     int Ytext = YforATemp(MySetPoints[setpoint].Temperature);
     myGLCD.setBackColor(BLACK);
     myGLCD.setColor(YELLOW);
@@ -357,11 +278,12 @@ void DrawMovedSetPoint(int setpoint)
  
     myGLCD.print("N:", X + 8, Ytext - 15);
     myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew, X + 30, Ytext - 15);
-    myGLCD.print("", X + 8, Ytext + 5);
-    myGLCD.printNumI(MySetPoints[setpoint].Temperature, X + 30, Ytext + 5);
     myGLCD.print("D:", X + 8, Ytext + 25);
     myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew - MySetPoints[setpoint].Temperature, X + 30, Ytext + 25);
 
+    myGLCD.setColor(BLUE);
+
+    myGLCD.printNumI(MySetPoints[setpoint].Temperature, X + 30, Ytext + 5);
 
 }
 void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int radius) {
@@ -432,42 +354,6 @@ void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double time
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void  displayState(int state) {
-  myGLCD.setFont(SmallFont);
-  myGLCD.setColor(VGA_WHITE);
-  switch (state) {
-    case STATEROASTING:
-      myGLCD.setColor(WHITE);
-      strncpy(StateName, "Roasting", 8);
-      myGLCD.print("Roasting",30, 0);
-      break;
-    case STATESTOPPED:
-      strncpy(StateName, "Stopped ", 8);
-      myGLCD.print("Stopped ",30, 0);
-      break;
-    case STATECOOLING:
-      myGLCD.setColor(VGA_WHITE);
-      strncpy(StateName, "Cooling ", 8);
-      myGLCD.print( "Cooling ",30, 0);
-      break;
-    case STATEOVERHEATED:
-      strncpy(StateName, "HotCoil  ", 9);
-      myGLCD.print ("HotCoil ",30, 0);
-      break;
-    case STATENOFANCURRENT:
-      strncpy(StateName, "NoFanCur   ", 8);
-      myGLCD.print ("HotFan ",30, 0);
-      break;
-    case STATEFANONLY:
-      strncpy(StateName, "FanOnly ", 8);
-      myGLCD.print ("FanOnly ",30, 0);
-      break;
-    default:
-      strncpy(StateName, "unk   ", 8);
-      myGLCD.print ("unk     ",30, 0);
-      break;
-  }
-}
 
 int UpdateMySetPointSpan(struct setpoint *setpoint)
 {

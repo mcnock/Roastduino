@@ -35,10 +35,10 @@ void theloop () {
       //the program is not running correctly.  Shut the relays down
       digitalWrite(SSR1p, LOW);
       digitalWrite(SSR2p, LOW);
-      digitalWrite(Buzzerp, LOW); digitalWrite(LEDp, HIGH); //error on
+      digitalWrite(LEDp, HIGH); //error on
     }
     else {
-      digitalWrite(Buzzerp, HIGH);  //error off
+      
       digitalWrite(LEDp, LOW);
       bNewSecond = true;//Serial.println("LoopsPerSec:");Serial.println(LoopsPerSecond);
       LoopsPerSecond = 0;
@@ -57,7 +57,6 @@ void theloop () {
       ProcessTouch (x,y);
   }
 
-  return;
   //**********************************************************************************************************************************
   //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
   //********************************************************************************************************************************
@@ -65,7 +64,7 @@ void theloop () {
 
   //we read current each loop since it is fast
   int tempread;
-  MaxVread = analogRead(VOLT5ap);
+  
   MaxVoltage = (((double)MaxVread) / 1024) * 5;
   // the center of the max voltage is 0
   tempread = analogRead(CURFANap);
@@ -95,11 +94,6 @@ void theloop () {
       TCoilRoll.push(TCoil);
     }
 
-
-
-
-
-
     double newtempratiotoaverage;
     if (TBeanAvgRoll.getCount() > 1) {
       newtempratiotoaverage = TBeanAvg / TBeanAvgRoll.mean();
@@ -124,7 +118,7 @@ void theloop () {
 
 
  //update roast time
- if (State == STATEROASTING or State == STATECOOLING)
+ if (State == STATEROASTING || State == STATECOOLING)
  {
     RoastMinutes = ((double)RoastTime.elapsed()) / 60;
  }
@@ -308,13 +302,13 @@ void theloop () {
 
   if (newState > 0) {
     //Serial.println("newstate detected  Will update tft immediately");
-    displayState(State);  newState = 0;
+    UpdateState(State);  newState = 0;
   }
 
   //we update the area when we get new temps
   if    (bNewSecond) {
     //Serial.println("update after reach new temp");
-    displayState(State);
+    UpdateState(State);
 
     UpdateGraphA();
 
