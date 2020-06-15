@@ -9,6 +9,18 @@
 void theloop () {
 
    
+  if (myTouch.dataAvailable())
+  {
+      myTouch.read();
+      int16_t x = myTouch.getX();
+      int16_t y = myTouch.getY();
+
+      ProcessTouch (x,y);
+  }
+  
+  if (State == STATESTOPPED && VerticalMenuShowing == 3)  {
+      return;
+  }
   //ReadSerial(Serial,SerialInputTimer);//for debugging
 
   //ReadSerial(Serial1,Serial1InputTimer);//for blue tooth
@@ -16,7 +28,7 @@ void theloop () {
  // int minuteToStart = 0;
   boolean bNewSecond = false;
   
- 
+   
   //Serial.println(roastMinutes);
   if (FlashTimer.elapsed() > 100) {
     if (Flasher == false) {
@@ -48,33 +60,29 @@ void theloop () {
   else {
     LoopsPerSecond ++;
   }
-  if (myTouch.dataAvailable())
-  {
-      myTouch.read();
-      int16_t x = myTouch.getX();
-      int16_t y = myTouch.getY();
-
-      ProcessTouch (x,y);
-  }
-
+  
   //**********************************************************************************************************************************
   //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
   //********************************************************************************************************************************
-  float tempraw;
 
-  //we read current each loop since it is fast
-  int tempread;
   
-  MaxVoltage = (((double)MaxVread) / 1024) * 5;
-  // the center of the max voltage is 0
-  tempread = analogRead(CURFANap);
-  //Serial.println("volt:");Serial.println(maxVread);Serial.println("fan:");Serial.println(tempread);
+  
+  FanPressureRoll.push(((double)analogRead(fanPressurep)-538.00)/538*2.2);
+ 
+  //we read current each loop since it is fast
+  
+    //Serial.print("fan:");Serial.println(tempread);
   //185 millamps per volt
-  CurrentFan = (((double)(tempread - (MaxVread / 2) ) * 5)) / 125;
-  if (CurrentFan < 0) {
-    CurrentFan = 0;
+  //DC
+  CurrentFan = ((((double)(analogRead(CURFANap) - (MaxVread / 2)) * 5)) / 125) - 10.59;
+  
+  if (CurrentFan >= 0) {
+      AvgFanCurrent.push(CurrentFan); CurrentFan = AvgFanCurrent.mean();
   }
+
   AvgFanCurrent.push(CurrentFan); CurrentFan = AvgFanCurrent.mean();
+  
+  //AC
   CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
   CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
   CurrentHeat1 = sqrt( AvgCoil1Amp.mean());
@@ -82,18 +90,20 @@ void theloop () {
 
 
   if (bNewSecond) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
-    TCoil = 0;// getCleanTemp(thermocouple1.readFahrenheit(), 1);
+    TCoil = getCleanTemp(thermocouple4.readFahrenheit(), 1);
     //Serial.println("Coil teamp:");Serial.println(TCoil);
+    if (TCoil > 100) {
+        TCoilRoll.push(TCoil);
+    }
+
+    
     //TFan =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
     TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
     TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
-    //Serial.println(TBean1);Serial.println (TBean2);Serial.println(TCoil);Serial.println(TFan);
+    //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
 
-    if (TCoil > 100) {
-      TCoilRoll.push(TCoil);
-    }
-
+    
     double newtempratiotoaverage;
     if (TBeanAvgRoll.getCount() > 1) {
       newtempratiotoaverage = TBeanAvg / TBeanAvgRoll.mean();
@@ -180,6 +190,8 @@ void theloop () {
   else if (newState == STATEROASTING) {
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
+      //save the fan speed that was chooosen
+      EEPROM.write(FANSPEED_EP,FanSpeedPWM);
       TCoilRoll.clear();
       TBeanAvgRoll.clear();
       //Serial.println("Starting Fans and Vibration - and waiting 5 seconds");
@@ -207,6 +219,12 @@ void theloop () {
   }
   else if (newState == STATEFANONLY) {
     State = STATEFANONLY;
+    FanSpeedPWM = EEPROM.read(FANSPEED_EP);
+    analogWrite(FanPWMp, FanSpeedPWM);
+    updateFanOutputResistance();
+    UpdateFanPWMBut();
+    analogWrite(FanPWMp, FanSpeedPWM);          
+    
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
   }
   else if (newState == STATEOVERHEATED) {
@@ -323,8 +341,8 @@ void theloop () {
     AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
     AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
 
-    //UpdateGraphB(TBean2, TBean1, TCoil, CurrentHeat1, CurrentHeat2, TFan, CurrentFan, MaxVoltage);
-
+    UpdateFanPWMBut();
+    
     UpdateGraphB();
 
     UpdateGraphC();

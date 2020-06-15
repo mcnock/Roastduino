@@ -44,6 +44,7 @@ typedef struct buttonsetdef {
   int colstart = 0;
   int rowstart = 0;
   boolean vertical;
+  boolean visable;
 } buttonsetdef;
 
 

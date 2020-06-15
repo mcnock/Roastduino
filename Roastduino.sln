@@ -9,7 +9,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UTouch-0.0.0", "Libraries\U
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Libraries\UTouch\0.0.0\UTouch\UTouch-0.0.0.vcxitems*{c5f80730-f44f-4478-bdae-6634efc2ca88}*SharedItemsImports = 4
 		Libraries\UTouch\0.0.0\UTouch\UTouch-0.0.0.vcxitems*{e6bb54e1-9ac0-4ddb-b917-6f010e9d90f5}*SharedItemsImports = 9
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

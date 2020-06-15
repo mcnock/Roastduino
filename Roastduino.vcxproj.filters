@@ -29,11 +29,5 @@
     <ClInclude Include="B_MyTypes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Chrono.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="TouchScreen.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

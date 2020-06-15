@@ -53,8 +53,8 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
     port.print (" Discarding found CR/LF in 3 or 4 character");
     return;
   }
-  Serial.println ("Passes");
-  Serial.print(cmd0) + Serial.print(cmd1) + Serial.print(cmd2) + Serial.println(cmd3);
+  //Serial.println ("Passes");
+  //Serial.print(cmd0) + Serial.print(cmd1) + Serial.print(cmd2) + Serial.println(cmd3);
 
 
 
@@ -90,7 +90,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             port.println ("Duty-12");
             break;
           case 'A':
-            Serial.println("here2");
+            //Serial.println("here2");
             port.print ("GA");
             port.print (StateName);
             port.print (":");
@@ -150,7 +150,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             port.println ("Setpoint:AccumMinutes:Tempurature");
             break;
           case 'B':
-            Serial.print("here");
+            //Serial.print("here");
             port.print ("GB");
             ReturnSetPoints(port);
             break;
@@ -313,6 +313,63 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
   }
 
 }
+
+
+void updateFanOutputResistance() {
+
+    FanSpeedResistanceCurrent = analogRead(FanPWMp) / 254;
+    
+    if (FanSpeedResistanceLast == 0){
+        digitalWrite(FanOutDirp, LOW);
+        digitalWrite(FanOutCsp, LOW);
+        for (int i = 0; i < 100; i++) {
+            digitalWrite(FanOutIncp, LOW);
+            delayMicroseconds(1);
+            digitalWrite(FanOutIncp, HIGH);
+            delayMicroseconds(1);
+        }
+
+        digitalWrite(FanOutDirp, HIGH);
+        for (int i = 0; i < FanSpeedResistanceCurrent; i++) {
+            digitalWrite(FanOutIncp, LOW);
+            delayMicroseconds(1);
+            digitalWrite(FanOutIncp, HIGH);
+            delayMicroseconds(1);
+        }
+        digitalWrite(FanOutCsp, HIGH);
+        FanSpeedResistanceLast = FanSpeedResistanceCurrent;
+    }
+    else if(FanSpeedResistanceCurrent != FanSpeedResistanceLast) {
+        int Delta = FanSpeedResistanceCurrent = FanSpeedResistanceLast;
+        digitalWrite(FanOutCsp, LOW);
+
+        if (Delta > 0)
+        {
+            digitalWrite(FanOutDirp, HIGH);
+
+        }
+        else
+        {
+            digitalWrite(FanOutDirp, LOW);
+            Delta = abs(Delta);
+        }
+
+
+        for (int i = 0; i < Delta; i++) {
+            digitalWrite(FanOutIncp, LOW);
+            delayMicroseconds(1);
+            digitalWrite(FanOutIncp, HIGH);
+            delayMicroseconds(1);
+
+        }
+    }
+}
+
+
+
+    
+    
+
 void ReturnSetPoints(Stream &port) {
   for (int x = 0; x < SetPointCount; x++) {
     if (x > 0) {
@@ -329,23 +386,23 @@ void ReturnSetPoints(Stream &port) {
 }
 
 void SerialprintRect(struct rect * rect) {
-  Serial.print("xmin:"); Serial.print(rect->xmin); Serial.print(" ymin:"); Serial.print(rect->ymin); Serial.print(" xmax:"); Serial.print(rect->xmax); Serial.print(" ymax:"); Serial.println(rect->ymax);
+ // Serial.print("xmin:"); Serial.print(rect->xmin); Serial.print(" ymin:"); Serial.print(rect->ymin); Serial.print(" xmax:"); Serial.print(rect->xmax); Serial.print(" ymax:"); Serial.println(rect->ymax);
 }
 
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
     Readingskipped++;
-    //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
+    Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature > 1000) {
     Readingskipped++;
-    //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
+    Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature < 40) {
     Readingskipped++;
-    //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
+    Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
     return -1;
   }
   else {

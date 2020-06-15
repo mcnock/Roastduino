@@ -9,7 +9,7 @@ void graphProfile() {
     int accumulated = 0;
     for (int X = 0; X < SetPointCount; X++) {
          if (X > 0) {
-            EEPROM.get(MySetpointsEprom[X],MySetPoints[X].Temperature);
+            EEPROM.get(SETPOINTTEMP_EP[X],MySetPoints[X].Temperature);
             //MySetPoints[X].Temperature = MySetPoints[X].TemperatureDefault;
             MySetPoints[X].SpanMinutes = MySetPoints[X].Minutes - MySetPoints[X - 1].Minutes;
             accumulated = accumulated + MySetPoints[X].SpanMinutes;
@@ -68,7 +68,7 @@ void graphProfile() {
 
   StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , BLUE);
   //set the by minute temp profile for 5 spans
-  Serial.println(MySetPoints[0].Temperature);
+ // Serial.println(MySetPoints[0].Temperature);
   
   MyMinuteTemperature[0] = 0;
   int accumulatedMinutes = 0;
@@ -93,8 +93,9 @@ void graphProfile() {
 
   ReDrawROLLAVGLINEFromArray(ORANGE);
 
-  DrawHorMenu1();
-  
+  DrawControlMenu();
+  DrawFanMenu();
+
   if (spSelected > 0) {
       DrawVertMenu(1);
   }
@@ -139,27 +140,28 @@ void UpdateGraphB() {
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(VGA_WHITE);  
   myGLCD.setFont(BigFont);
-  int row = 320 ;
+  int row = 270 ;
   int col =  300 ;
   int col2 = 370;
   int col3 = 500;
   int col4 = 600;
 
-  row = 360;
-   myGLCD.print("Tvg:",col , row);          myGLCD.printNumI(TBeanAvgRoll.mean(),col2,row,4,'0');
+   myGLCD.print("Tvg:",col , row);          myGLCD.printNumI(TBeanAvgRoll.mean(),col2,row,4,' ');
    row = row + rowheight; 
    myGLCD.print("T1:",col , row);           myGLCD.printNumI(TBean1, col2, row, 4, ' ');
    row = row + rowheight;
-   myGLCD.print("T2:", col, row);           myGLCD.printNumI(TBean2, col2, row, 4, '0');
+   myGLCD.print("T2:", col, row);           myGLCD.printNumI(TBean2, col2, row, 4, ' ');
    row = row + rowheight;
-   row = 330;
-   myGLCD.print("Fan:", col3 , row);    myGLCD.print("***",col4 , row);
+   myGLCD.print("Coil:", col, row);         myGLCD.printNumI(TCoilRoll.mean(), col2, row, 4, ' ');
+   
+   row = 270;
+   myGLCD.print("Fan A:", col3 , row);    myGLCD.printNumF(CurrentFan,2,col4 , row);
    row = row + rowheight;
    myGLCD.print("Coil1:",col3  , row);  myGLCD.printNumI(CurrentHeat1,col4 ,row, 4, '0');
    row = row + rowheight;
    myGLCD.print("Coil2:",col3 , row);   myGLCD.printNumI(CurrentHeat2,col4 , row, 4, '0');
    row = row + rowheight;
-   myGLCD.print("Volts:", col3, row);   myGLCD.printNumI(MaxVoltage, col4, row, 4, '0');
+   myGLCD.print("Fan P:", col3, row);   myGLCD.printNumF((double)FanPressureRoll.mean(),2, col4, row);
 
 }
 void UpdateGraphC() {
@@ -179,7 +181,8 @@ void UpdateGraphC() {
    myGLCD.print("Skp", col, row);  myGLCD.printNumI(Readingskipped,col2 , row);
 
 }
-void  UpdateState(int state) {
+
+void UpdateState(int state) {
   myGLCD.setFont(BigFont);
   myGLCD.setColor(VGA_WHITE);
   switch (state) {
@@ -215,6 +218,24 @@ void  UpdateState(int state) {
       break;
   }
 }
+
+void UpdateFanPWMBut() {
+
+    
+
+        sprintf(myFanButtonControl.buttondefs[2].label, "%4df", FanSpeedPWM);
+   
+        DrawButtonText(myFanButtonControl, 2);
+   
+
+    
+}
+
+
+
+
+
+
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color) {
@@ -353,11 +374,6 @@ void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double time
   myGLCD.drawLine(PixelsPerMin * timemins1, YforATemp(temp1), PixelsPerMin * timemins2, YforATemp(temp2));
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
-int UpdateMySetPointSpan(struct setpoint *setpoint)
-{
-}
 int YforATemp(int temp) {
   int result = 0;
   if ( temp < 0 ) {
