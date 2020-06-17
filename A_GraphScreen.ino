@@ -19,7 +19,8 @@ void graphProfile() {
         {
             MySetPoints[X].SpanMinutes = 0;
             MySetPoints[X].Minutes = 0;
-            MySetPoints[X].Temperature = 0;
+            MySetPoints[X].Temperature = 300;
+            
         }
     }
 
@@ -66,13 +67,14 @@ void graphProfile() {
     myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
 
-  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , BLUE);
+  StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
   //set the by minute temp profile for 5 spans
- // Serial.println(MySetPoints[0].Temperature);
+  Serial.println(MySetPoints[0].Temperature);
   
-  MyMinuteTemperature[0] = 0;
+  MyMinuteTemperature[0] = MySetPoints[0].Temperature;
   int accumulatedMinutes = 0;
   for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++) {
+    //Serial.println(xSetPoint);
     double TempPerMinuteinSpan = ((double)(MySetPoints[xSetPoint].Temperature - MySetPoints[xSetPoint - 1].Temperature)) / MySetPoints[xSetPoint].SpanMinutes ;
     for (int xSpanMinute = 1 ; xSpanMinute <= MySetPoints[xSetPoint].SpanMinutes  ;  xSpanMinute++)
     {
@@ -129,8 +131,8 @@ void UpdateGraphA() {
   row = row + rowheight;
    myGLCD.print("Err:",col , row);   myGLCD.printNumF(-Err,2,col2,row);
 
-   // row = row + rowheight;
-  // myGLCD.print("IEr:",col + 10 , row);// myGLCD.setCursor(col + 40 , row);   tftPrintDouble7(-ErrI);
+  row = row + rowheight;
+  myGLCD.print("IEr:",col  , row); myGLCD.printNumF(-ErrI, 2,col2,row);
   //row = row + rowheight;
 
 }
@@ -179,6 +181,8 @@ void UpdateGraphC() {
    myGLCD.print("l/s:",col , row);  myGLCD.printNumI(LoopsPerSecond,col2 , row) ;
    row = row + rowheight;
    myGLCD.print("Skp", col, row);  myGLCD.printNumI(Readingskipped,col2 , row);
+   row = row + rowheight;
+   myGLCD.print("FanD", col, row);  myGLCD.printNumI(FanSpeedPWMDecrease,col2 , row);
 
 }
 
@@ -233,13 +237,16 @@ void UpdateFanPWMBut() {
 
 
 
-
-
-
-
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color) {
-  //Serial.println ("StartLineTandT id:");Serial.println (lineID);Serial.println(" color:");Serial.println(color);
+  //Serial.println ("StartLineTandT id:");
+  
+ // Serial.println (temp);
+ // Serial.println (lineID);
+ // Serial.println(" color:");
+  //Serial.println(color);
+ // Serial.println("X");
+  
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   if (temp > 0) {
     LastYforLineID[lineID] = YforATemp(temp);
@@ -248,6 +255,7 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
     LastYforLineID[lineID] = 480;
   }
   LineColorforLineID[lineID] = color;
+  
   if (lineID == ROLLAVGLINEID) {
     for (int X = 0; X < 800; X++) {
       myLastGraphYPixels[X] = -1;

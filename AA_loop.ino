@@ -188,18 +188,36 @@ void theloop () {
     }
   }
   else if (newState == STATEROASTING) {
-    digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
+      //Serial.println("D");
+     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
       //save the fan speed that was chooosen
-      EEPROM.write(FANSPEED_EP,FanSpeedPWM);
+      if (FanSpeedPWM >0){
+        EEPROM.write(FANSPEED_EP,FanSpeedPWM);
+        //Serial.println("E");
+      }
+      FanSpeedPWMStart= FanSpeedPWM; 
       TCoilRoll.clear();
+      //Serial.println("EE");
+ 
       TBeanAvgRoll.clear();
-      //Serial.println("Starting Fans and Vibration - and waiting 5 seconds");
+       //Serial.println("EEE");
+ 
+     //Serial.println("Starting Fans and Vibration - and waiting 5 seconds");
       delay(2000);
+      //Serial.println("F");
+ 
       Readingskipped = 0;
+      
       StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
-      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , YELLOW);
+      //Serial.println("G");
+ 
+      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , PURPLE);
+      //Serial.println("H");
+ 
       StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
+        //Serial.println("GI");
+ 
       graphProfile();
       delay(2000);
       //Serial.println("2 Starting Heaters ");
@@ -223,7 +241,6 @@ void theloop () {
     analogWrite(FanPWMp, FanSpeedPWM);
     updateFanOutputResistance();
     UpdateFanPWMBut();
-    analogWrite(FanPWMp, FanSpeedPWM);          
     
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
   }
@@ -246,14 +263,18 @@ void theloop () {
 
   if (State == STATEROASTING) {
     //CALC THE ERR AND INTEGRAL
+    //Serial.println("A");
+    DecreaseFanPWMforATime(RoastMinutes);
     CurrentSetPointTemp =  SetpointforATime(RoastMinutes);
     Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint
     //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
-    if (RoastMinutes > MySetPoints[2].Minutes ) { //only calc intergral error if we are above the 1st setpoint
+    if (RoastMinutes > MySetPoints[1].Minutes ) { //only calc intergral error if we are above the 1st setpoint
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
         if (Dutyraw < 1 && ErrI < Gain ) {
+           //    Serial.println("B");
+ 
           //only add/remove from the integral if reasonable
           IntegralSum =  IntegralSum + double(Err);
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.

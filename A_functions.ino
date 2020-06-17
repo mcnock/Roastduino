@@ -314,62 +314,67 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
 
 }
 
-
 void updateFanOutputResistance() {
-
-    FanSpeedResistanceCurrent = analogRead(FanPWMp) / 254;
+    //Serial.println("start");
+    FanSpeedResistanceCurrent = (FanSpeedPWM *100) / 254;
+    //Serial.print("FanSpeedPWM:");Serial.println(FanSpeedPWM);
     
+    //Serial.print("LastRes");Serial.println(FanSpeedResistanceLast);
+    //Serial.print("NewRes");Serial.println(FanSpeedResistanceCurrent);
+
     if (FanSpeedResistanceLast == 0){
+        //Serial.println("hereA");
         digitalWrite(FanOutDirp, LOW);
         digitalWrite(FanOutCsp, LOW);
         for (int i = 0; i < 100; i++) {
             digitalWrite(FanOutIncp, LOW);
-            delayMicroseconds(1);
+            delay(1);
             digitalWrite(FanOutIncp, HIGH);
-            delayMicroseconds(1);
+            delay(1);
         }
 
         digitalWrite(FanOutDirp, HIGH);
         for (int i = 0; i < FanSpeedResistanceCurrent; i++) {
             digitalWrite(FanOutIncp, LOW);
-            delayMicroseconds(1);
+            delay(1);
             digitalWrite(FanOutIncp, HIGH);
-            delayMicroseconds(1);
+            delay(1);
         }
         digitalWrite(FanOutCsp, HIGH);
         FanSpeedResistanceLast = FanSpeedResistanceCurrent;
     }
     else if(FanSpeedResistanceCurrent != FanSpeedResistanceLast) {
-        int Delta = FanSpeedResistanceCurrent = FanSpeedResistanceLast;
+        int Delta = FanSpeedResistanceCurrent - FanSpeedResistanceLast;
         digitalWrite(FanOutCsp, LOW);
-
+        //Serial.println("hereB");
         if (Delta > 0)
         {
+            //Serial.println("up");
             digitalWrite(FanOutDirp, HIGH);
 
         }
         else
         {
+            //Serial.println("down");
             digitalWrite(FanOutDirp, LOW);
             Delta = abs(Delta);
         }
 
 
         for (int i = 0; i < Delta; i++) {
+            //Serial.print(i);    
             digitalWrite(FanOutIncp, LOW);
-            delayMicroseconds(1);
+            delay(1);
             digitalWrite(FanOutIncp, HIGH);
-            delayMicroseconds(1);
+            delay(1);
 
         }
+        //Serial.println("");
+        FanSpeedResistanceLast = FanSpeedResistanceCurrent;
+   
     }
 }
-
-
-
-    
-    
-
+  
 void ReturnSetPoints(Stream &port) {
   for (int x = 0; x < SetPointCount; x++) {
     if (x > 0) {
@@ -438,6 +443,19 @@ int ReadIntEprom(int loc, int min, int max, int def) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+int  DecreaseFanPWMforATime(double roastminutes) {
+      if (roastminutes < FanSpeedPWNDecreaseByMinutes){
+          FanSpeedPWM = FanSpeedPWMStart - (FanSpeedPWMDecrease/FanSpeedPWNDecreaseByMinutes)*roastminutes ; 
+      }
+     else
+     {
+          FanSpeedPWM -FanSpeedPWMStart - FanSpeedPWMDecrease;
+     }
+ UpdateFanPWMBut();
+ updateFanOutputResistance();
+
+  }
+
 double SetpointforATime(double roastminutes) {
   int setpoint;
   double r = (roastminutes - (int)roastminutes);

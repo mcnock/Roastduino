@@ -80,7 +80,6 @@ void ProcessControlMenu(int i) {
 
 }
 
-
 void DrawFanMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
   int height = 50;
@@ -129,10 +128,10 @@ void DrawFanMenu() {
 }
 
 void ProcessFanMenu(int i) {
-  //Serial.println (i);
+ //Serial.print("ProcessFanMenu:"); Serial.println (i);
   switch (i) {
     case 0:
-      //increase quickly
+      //decrease quickly
       FanSpeedPWM = FanSpeedPWM - 5;
       
       if(FanSpeedPWM <= 0){ 
@@ -168,6 +167,8 @@ void ProcessFanMenu(int i) {
       if (FanSpeedPWM >= 254) 
       {
            FanSpeedPWM = 254;}
+
+           
       analogWrite(FANSPEED_EP, FanSpeedPWM);
       UpdateFanPWMBut();  
       updateFanOutputResistance();
@@ -180,13 +181,11 @@ void ProcessFanMenu(int i) {
   
 }
 
-
 void initializeButtonDefs()
 {
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 5; i++)
     {
        // Serial.print("VMenu");Serial.println(i);
-
         buttonsetdef* bsd = &myButtonVertMenus[i];
         bsd->Count = 9;
         bsd->rowstart = 0;
@@ -240,7 +239,6 @@ void initializeButtonDefs()
         case 3:
             if (bsd->buttondefs == 0) {
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
-
                 strcpy(bsd->buttondefs[0].label, ">>");   bsd->buttondefs[0].color = GREEN;
                 strcpy(bsd->buttondefs[1].label, "1ON");     bsd->buttondefs[1].color = ORANGE;
                 strcpy(bsd->buttondefs[2].label, "1OFF");    bsd->buttondefs[2].color = ORANGE;
@@ -250,6 +248,20 @@ void initializeButtonDefs()
                 strcpy(bsd->buttondefs[6].label, "VOFF");    bsd->buttondefs[6].color = ORANGE;
                 strcpy(bsd->buttondefs[7].label, "FON");    bsd->buttondefs[7].color = ORANGE;
                 strcpy(bsd->buttondefs[8].label, "FOFF");    bsd->buttondefs[8].color = ORANGE;
+                SetMenuBoundingRect(myButtonVertMenus[i]);
+            }
+      case 4:
+            if (bsd->buttondefs == 0) {
+                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+                strcpy(bsd->buttondefs[0].label, ">>");   bsd->buttondefs[0].color = GREEN;
+                strcpy(bsd->buttondefs[1].label, "G+1");     bsd->buttondefs[1].color = ORANGE;
+                strcpy(bsd->buttondefs[2].label, "G-1");    bsd->buttondefs[2].color = ORANGE;
+                strcpy(bsd->buttondefs[3].label, "Int+.1");    bsd->buttondefs[3].color = ORANGE;
+                strcpy(bsd->buttondefs[4].label, "Int-.1");    bsd->buttondefs[4].color = ORANGE;
+                strcpy(bsd->buttondefs[5].label, "FD+1");    bsd->buttondefs[5].color = ORANGE;
+                strcpy(bsd->buttondefs[6].label, "FD-1");    bsd->buttondefs[6].color = ORANGE;
+                strcpy(bsd->buttondefs[7].label, "");    bsd->buttondefs[7].color = BLACK;
+                strcpy(bsd->buttondefs[8].label, "");    bsd->buttondefs[8].color = BLACK;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
 
@@ -540,7 +552,6 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
 
 }
 
-
 void DrawButton(buttonsetdef& butdefset, int i)
 {
     //draw button
@@ -556,6 +567,7 @@ void DrawButton(buttonsetdef& butdefset, int i)
  
 
 }
+
 void DrawButtonText(buttonsetdef& butdefset, int i){
    myGLCD.setFont(BigFont);
     int xOffset = (butdefset.buttondefs[i].w - (strlen(butdefset.buttondefs[i].label) * myGLCD.getFontXsize()))/2;

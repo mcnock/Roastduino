@@ -21,15 +21,25 @@ UTFT myGLCD(SSD1963_800480,38,39,40,41);  //(byte model, int RS, int WR, int CS,
 UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout, byte irq
 
 // Assign human-readable names to some common 16-bit color values:
-#define BLACK   0x0000
-#define BLUE    0x001F
-#define RED     0xF800
-#define GREEN   0x07E0
-#define CYAN    0x07FF
-#define MAGENTA 0xF81F
-#define YELLOW  0xFFE0
-#define ORANGE  0xFD20
+
+#define BLACK    0x0000
 #define WHITE   0xFFFF
+#define RED     0xF800
+#define ORANGE   0xFBE0
+#define GREEN   0x0400
+#define BLUE    0x001F
+#define SILVER    0xC618
+#define GRAY    0x8410
+#define MAROON    0x8000
+#define YELLOW    0xFFE0
+#define OLIVE   0x8400
+#define LIME    0x07E0
+#define AQUA    0x07FF
+#define TEAL    0x0410
+#define NAVY    0x0010
+#define FUCHSIA   0xF81F
+#define PURPLE    0x8010
+#define VGA_TRANSPARENT 0xFFFFFFFF
 
 //PIN  definitions
 //#5 inch display shield  does not  use 30- 34, 10,12, or 13 
@@ -51,23 +61,23 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 //#define available 33
 //#define available 34
 
-#define TSD1p    A8
+#define TSD1p    A8 
 #define TCS1p    A9
-#define TSD2p    A10
+#define TSD2p    A10  //could share A8
 #define TCS2p    A11
-#define TSD3p    A12
-#define TCS3p    A13
-#define TSD4p    A14
-#define TCS4p    A15
+#define TSD3p    A12  //could share A8
+#define TCS3p    A13  
+#define TSD4p    A14  //could share A8
+#define TCS4p    A15  
 
 #define TSCKp    A7
 
 #define CURFANap    A6
 #define CURHEAT2ap  A5
-#define CURHEAT1ap  A4
-#define FanOutCsp   A3 
-#define FanOutIncp	A2
-#define FanOutDirp  A1
+#define CURHEAT1ap  A4 
+#define FanOutIncp	A3
+#define FanOutDirp  A2
+#define FanOutCsp   A1
 #define	fanPressurep A0
 
 
@@ -117,7 +127,7 @@ MAX6675 thermocouple2(TSCKp, TCS2p,  TSD2p);
 MAX6675 thermocouple3(TSCKp, TCS3p,  TSD3p);
 MAX6675 thermocouple4(TSCKp, TCS4p,  TSD4p);
 //global variablers for temp control
-int Gain = 10; //read from eeprom
+int Gain = 100; //read from eeprom
 
 
 //for python serial  commands
@@ -129,8 +139,15 @@ int iCommandsp = 0;
 int spSelected = 0;
 
 int FanSpeedPWM=0;
+int FanSpeedPWMStart=0;
+
+int FanSpeedPWMDecrease = 20;
+int FanSpeedPWNDecreaseByMinutes = 6;
+
 int FanSpeedResistanceLast=0;
 int FanSpeedResistanceCurrent = 0;
+
+
 double Integral = 0.1;  //read from eeprom
 long unsigned IntegralLastTime = 0;
 long unsigned IntegralSum = 0;
@@ -145,7 +162,7 @@ int PIDIntegralUdateTimeValue ;
 int PIDWindowSize ;
 
 double MyMinuteTemperature[30];
-setpoint MySetPoints[6] = {{0, 0}, {3, 390}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
+setpoint MySetPoints[6] = {{0, 100}, {3, 390}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
 int SetPointCount = 6;  //0,1,2,3,4,5
 int TimeScreenLeft = 15;
 int EndingSetPoint = 5;
@@ -205,8 +222,8 @@ int VerticalMenuShowing = 0;
 uint16_t LastXforLineID[4];
 uint16_t LastYforLineID[4];
 uint16_t LineColorforLineID[4];
-int myLastGraphYPixels[320];
-int myLastGraphTemps[320];
+int myLastGraphYPixels[800];
+int myLastGraphTemps[800];
 int  moveamount = -1;
 double RoastMinutes = 0;
 int TCoil;
@@ -234,7 +251,10 @@ void setup() {
  
   pinMode(CURFANap, INPUT);
   pinMode(CURHEAT1ap, INPUT); pinMode(CURHEAT2ap, INPUT);
-  
+  pinMode(FanOutIncp, OUTPUT);
+  pinMode(FanOutDirp, OUTPUT);
+  pinMode(FanOutCsp, OUTPUT);
+
   pinMode(TSD1p, INPUT_PULLUP);
   pinMode(TSD2p, INPUT_PULLUP);
   pinMode(TSD3p, INPUT_PULLUP);
@@ -262,7 +282,8 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-
+  Integral = 0.1;
+  Gain = 100;
   SecondTimer.restart(0);
   FlashTimer.restart(0);
 
@@ -275,12 +296,19 @@ void setup() {
   myTouch.setPrecision(PREC_MEDIUM);
 // -------------------------------------------------------------
 
-  myGLCD.setFont(SmallFont);
   initializeButtonDefs();
 
   State = STATESTOPPED;
+
+   
+  
   graphProfile();
 
+  FanSpeedPWM = EEPROM.read(FANSPEED_EP);
+  analogWrite(FanPWMp, FanSpeedPWM);
+  updateFanOutputResistance();
+  UpdateFanPWMBut();
+  
   
 
 }
