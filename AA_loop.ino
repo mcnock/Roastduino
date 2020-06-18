@@ -4,7 +4,6 @@
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
-// Get the temperature
 
 void theloop () {
 
@@ -66,7 +65,7 @@ void theloop () {
   //********************************************************************************************************************************
 
   
-  
+ //read pressure
   FanPressureRoll.push(((double)analogRead(fanPressurep)-538.00)/538*2.2);
  
   //we read current each loop since it is fast
@@ -74,27 +73,23 @@ void theloop () {
     //Serial.print("fan:");Serial.println(tempread);
   //185 millamps per volt
   //DC
-  CurrentFan = ((((double)(analogRead(CURFANap) - (MaxVread / 2)) * 5)) / 125) - 10.59;
-  
-  if (CurrentFan >= 0) {
-      AvgFanCurrent.push(CurrentFan); CurrentFan = AvgFanCurrent.mean();
-  }
-
-  AvgFanCurrent.push(CurrentFan); CurrentFan = AvgFanCurrent.mean();
-  
+  CurrentFan = ((((double)(analogRead(CURFANap) - (MaxVread / 2)) * 5)) / 125) ; AvgFanCurrent.push(CurrentFan); 
+  CurrentFan = AvgFanCurrent.mean() - AmpFanOffset;
   //AC
   CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
   CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
-  CurrentHeat1 = sqrt( AvgCoil1Amp.mean());
-  CurrentHeat2 = sqrt( AvgCoil2Amp.mean());
+  CurrentHeat1 = sqrt( AvgCoil1Amp.mean()) - AmpCoil1Offset;
+  CurrentHeat2 = sqrt( AvgCoil2Amp.mean()) - AmpCoil2Offset;
+ 
+      
+  
 
 
   if (bNewSecond) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
     TCoil = getCleanTemp(thermocouple4.readFahrenheit(), 1);
     //Serial.println("Coil teamp:");Serial.println(TCoil);
-    if (TCoil > 100) {
-        TCoilRoll.push(TCoil);
-    }
+    TCoilRoll.push(TCoil);
+    
 
     
     //TFan =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
@@ -188,38 +183,23 @@ void theloop () {
     }
   }
   else if (newState == STATEROASTING) {
-      //Serial.println("D");
-     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
+    //Serial.println("D");
+    digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
-      //save the fan speed that was chooosen
-      if (FanSpeedPWM >0){
-        EEPROM.write(FANSPEED_EP,FanSpeedPWM);
-        //Serial.println("E");
-      }
+      EEPROM.write(FANSPEED_EP,FanSpeedPWM);
       FanSpeedPWMStart= FanSpeedPWM; 
-      TCoilRoll.clear();
-      //Serial.println("EE");
- 
-      TBeanAvgRoll.clear();
-       //Serial.println("EEE");
- 
-     //Serial.println("Starting Fans and Vibration - and waiting 5 seconds");
-      delay(2000);
-      //Serial.println("F");
- 
-      Readingskipped = 0;
+      FanSpeedPWMAutoEnd= FanSpeedPWMStart - FanSpeedPWMAutoDecrease; 
+      FanSpeedPWMAutoMode = true;
       
+      TCoilRoll.clear();
+      TBeanAvgRoll.clear();
+      delay(1000);
+      Readingskipped = 0;
       StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
-      //Serial.println("G");
- 
       StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , PURPLE);
-      //Serial.println("H");
- 
       StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
-        //Serial.println("GI");
- 
       graphProfile();
-      delay(2000);
+      delay(1000);
       //Serial.println("2 Starting Heaters ");
       RoastTime.restart(0);
       RoastMinutes = 0;
@@ -241,7 +221,6 @@ void theloop () {
     analogWrite(FanPWMp, FanSpeedPWM);
     updateFanOutputResistance();
     UpdateFanPWMBut();
-    
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
   }
   else if (newState == STATEOVERHEATED) {

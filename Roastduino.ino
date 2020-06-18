@@ -109,6 +109,7 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 #define ROLLAVGLINEID 1
 #define AVGLINEID 2
 #define COILLINEID 3
+#define FANSPEEDLINEID 4
 
 #define RELAYON    LOW
 #define RELAYOFF  HIGH
@@ -140,8 +141,10 @@ int spSelected = 0;
 
 int FanSpeedPWM=0;
 int FanSpeedPWMStart=0;
+int FanSpeedPWMAutoEnd=0;
+int FanSpeedPWMAutoDecrease = 20;
+bool FanSpeedPWMAutoMode = false;
 
-int FanSpeedPWMDecrease = 20;
 int FanSpeedPWNDecreaseByMinutes = 6;
 
 int FanSpeedResistanceLast=0;
@@ -200,6 +203,9 @@ Chrono PIDIntegralUdateTime(Chrono::MILLIS);
 Average<float> AvgFanCurrent(30);
 Average<float> AvgCoil1Amp(30);
 Average<float> AvgCoil2Amp(30);
+float AmpFanOffset;
+float AmpCoil1Offset;
+float AmpCoil2Offset;
 
 //temps are read  once per second
 Average<float> FanPressureRoll(5);
@@ -219,9 +225,10 @@ int VerticalMenuShowing = 0;
 
 
 //used when drawing lines. We support up to 3 lines (see line ID constants)
-uint16_t LastXforLineID[4];
-uint16_t LastYforLineID[4];
-uint16_t LineColorforLineID[4];
+uint16_t LastXforLineID[5];
+uint16_t LastYforLineID[5];
+uint16_t LineColorforLineID[5];
+
 int myLastGraphYPixels[800];
 int myLastGraphTemps[800];
 int  moveamount = -1;
@@ -296,7 +303,7 @@ void setup() {
   myTouch.setPrecision(PREC_MEDIUM);
 // -------------------------------------------------------------
 
-  initializeButtonDefs();
+  initializeVerticalMenus();
 
   State = STATESTOPPED;
 
@@ -305,6 +312,7 @@ void setup() {
   graphProfile();
 
   FanSpeedPWM = EEPROM.read(FANSPEED_EP);
+  FanSpeedPWMStart = FanSpeedPWM;
   analogWrite(FanPWMp, FanSpeedPWM);
   updateFanOutputResistance();
   UpdateFanPWMBut();

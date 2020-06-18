@@ -90,7 +90,6 @@ void DrawFanMenu() {
   myGLCD.setBackColor(BLACK);
  
   if (myFanButtonControl.buttondefs == 0) {
-  
     //Serial.println ("Allocating myControlMenuDef");
     myFanButtonControl.buttondefs = (buttondef*) malloc(myFanButtonControl.Count * sizeof(buttondef));
     int i = 0;
@@ -129,9 +128,11 @@ void DrawFanMenu() {
 
 void ProcessFanMenu(int i) {
  //Serial.print("ProcessFanMenu:"); Serial.println (i);
+  FanSpeedPWMAutoMode = false;
   switch (i) {
     case 0:
       //decrease quickly
+      
       FanSpeedPWM = FanSpeedPWM - 5;
       
       if(FanSpeedPWM <= 0){ 
@@ -181,8 +182,7 @@ void ProcessFanMenu(int i) {
   
 }
 
-void initializeButtonDefs()
-{
+void initializeVerticalMenus(){
     for (int i = 0; i < 5; i++)
     {
        // Serial.print("VMenu");Serial.println(i);
@@ -254,12 +254,12 @@ void initializeButtonDefs()
             if (bsd->buttondefs == 0) {
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
                 strcpy(bsd->buttondefs[0].label, ">>");   bsd->buttondefs[0].color = GREEN;
-                strcpy(bsd->buttondefs[1].label, "G+1");     bsd->buttondefs[1].color = ORANGE;
-                strcpy(bsd->buttondefs[2].label, "G-1");    bsd->buttondefs[2].color = ORANGE;
-                strcpy(bsd->buttondefs[3].label, "Int+.1");    bsd->buttondefs[3].color = ORANGE;
-                strcpy(bsd->buttondefs[4].label, "Int-.1");    bsd->buttondefs[4].color = ORANGE;
-                strcpy(bsd->buttondefs[5].label, "FD+1");    bsd->buttondefs[5].color = ORANGE;
-                strcpy(bsd->buttondefs[6].label, "FD-1");    bsd->buttondefs[6].color = ORANGE;
+                strcpy(bsd->buttondefs[1].label, "Amps");     bsd->buttondefs[1].color = ORANGE;
+                strcpy(bsd->buttondefs[2].label, "C1-Zero");    bsd->buttondefs[2].color = ORANGE;
+                strcpy(bsd->buttondefs[3].label, "C2-Zero");    bsd->buttondefs[3].color = ORANGE;
+                strcpy(bsd->buttondefs[4].label, "Fan-Zero");    bsd->buttondefs[4].color = ORANGE;
+                strcpy(bsd->buttondefs[5].label, "Clear");    bsd->buttondefs[5].color = ORANGE;
+                strcpy(bsd->buttondefs[6].label, "");    bsd->buttondefs[6].color = BLACK;
                 strcpy(bsd->buttondefs[7].label, "");    bsd->buttondefs[7].color = BLACK;
                 strcpy(bsd->buttondefs[8].label, "");    bsd->buttondefs[8].color = BLACK;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
@@ -269,12 +269,12 @@ void initializeButtonDefs()
     }
 }
 
-
   void DrawVertMenu(int i) {
     VerticalMenuShowing = i;
     DrawButtons(myButtonVertMenus[i]);
 }
 
+//start of vertical menu
 void ProcessVertMenu0(int i) {
     //Serial.println ("ProcessVertMenu1:");Serial.println (i);
     switch (i) {
@@ -286,11 +286,13 @@ void ProcessVertMenu0(int i) {
     }
 
 }
+
+//select a setpoint to adjust menu
 void ProcessVertMenu1(int i) {
     //Serial.println ("ProcessVertMenu1:");Serial.println (i);
     switch (i) {
     case 0:        spSelected = -1;
-        DrawVertMenu(3);
+        DrawVertMenu(4);
         break;
     case 1:
     case 2:
@@ -321,10 +323,10 @@ void ProcessVertMenu1(int i) {
 
 }
 
+//adjust a setpoint's value menu
 void ProcessVertMenu2(int i) {
    //Serial.println ("ProcessVertMenu2:");Serial.println (i);
     moveamount = 0;
-    
     switch (i) {
     case 0:
         for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
@@ -375,6 +377,7 @@ void ProcessVertMenu2(int i) {
 
 }
 
+//debug relays menu
 void ProcessVertMenu3(int i) {
    // Serial.print("ProcessVertMenu3:");Serial.println(i);
     moveamount = 0;
@@ -408,6 +411,39 @@ void ProcessVertMenu3(int i) {
         break;
     case 8:
         digitalWrite(FANRELAYp, RELAYOFF); 
+        break;
+    }
+}
+
+//zero currents menu
+void ProcessVertMenu4(int i) {
+   // Serial.print("ProcessVertMenu3:");Serial.println(i);
+    moveamount = 0;
+    switch (i) {
+    case 0:
+        DrawVertMenu(3);
+        break;
+    case 1:
+        break;
+    case 2:
+        AmpCoil1Offset = CurrentHeat1;
+        break;
+    case 3:
+        AmpCoil2Offset = CurrentHeat2;
+        break;
+    case 4:
+        AmpFanOffset = CurrentFan;
+        break;
+    case 5:
+        AmpFanOffset =0;
+        AmpCoil1Offset = 0;
+        AmpCoil2Offset =0;
+        break;
+    case 6:
+        break;
+    case 7:
+        break;
+    case 8:
         break;
     }
 }
@@ -569,7 +605,7 @@ void DrawButton(buttonsetdef& butdefset, int i)
 }
 
 void DrawButtonText(buttonsetdef& butdefset, int i){
-   myGLCD.setFont(BigFont);
+    myGLCD.setFont(BigFont);
     int xOffset = (butdefset.buttondefs[i].w - (strlen(butdefset.buttondefs[i].label) * myGLCD.getFontXsize()))/2;
     int yOffset = (butdefset.buttondefs[i].h - myGLCD.getFontXsize()) / 2;
     myGLCD.setColor(BLACK);

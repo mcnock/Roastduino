@@ -315,14 +315,8 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
 }
 
 void updateFanOutputResistance() {
-    //Serial.println("start");
-    FanSpeedResistanceCurrent = (FanSpeedPWM *100) / 254;
-    //Serial.print("FanSpeedPWM:");Serial.println(FanSpeedPWM);
-    
-    //Serial.print("LastRes");Serial.println(FanSpeedResistanceLast);
-    //Serial.print("NewRes");Serial.println(FanSpeedResistanceCurrent);
-
-    if (FanSpeedResistanceLast == 0){
+     FanSpeedResistanceCurrent = (FanSpeedPWM *100) / 254;
+     if (FanSpeedResistanceLast == 0){
         //Serial.println("hereA");
         digitalWrite(FanOutDirp, LOW);
         digitalWrite(FanOutCsp, LOW);
@@ -332,7 +326,6 @@ void updateFanOutputResistance() {
             digitalWrite(FanOutIncp, HIGH);
             delay(1);
         }
-
         digitalWrite(FanOutDirp, HIGH);
         for (int i = 0; i < FanSpeedResistanceCurrent; i++) {
             digitalWrite(FanOutIncp, LOW);
@@ -443,16 +436,29 @@ int ReadIntEprom(int loc, int min, int max, int def) {
 }
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-int  DecreaseFanPWMforATime(double roastminutes) {
-      if (roastminutes < FanSpeedPWNDecreaseByMinutes){
-          FanSpeedPWM = FanSpeedPWMStart - (FanSpeedPWMDecrease/FanSpeedPWNDecreaseByMinutes)*roastminutes ; 
-      }
+
+int  FanPWMForATime(double minutes) {
+     if (FanSpeedPWMAutoMode == true){
+       if (minutes < FanSpeedPWNDecreaseByMinutes){
+            return (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/FanSpeedPWNDecreaseByMinutes)*minutes) ; 
+        }
+       else
+       {
+           return ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
+       }
+     }
      else
      {
-          FanSpeedPWM -FanSpeedPWMStart - FanSpeedPWMDecrease;
+        return FanSpeedPWM;
+  
      }
- UpdateFanPWMBut();
- updateFanOutputResistance();
+}
+
+int  DecreaseFanPWMforATime(double roastminutes) {
+     FanSpeedPWM = FanPWMForATime(roastminutes) ; 
+    
+    UpdateFanPWMBut();
+    updateFanOutputResistance();
 
   }
 

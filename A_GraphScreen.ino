@@ -66,10 +66,11 @@ void graphProfile() {
     myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),  YforATemp(t));
     myGLCD.printNumI(t,2 , YforATemp(t) - 5);
   }
-
+  Serial.println(FanPWMForATime(0));
   StartLinebyTimeAndTemp (0, MySetPoints[0].Temperature, SETPOINTLINEID , WHITE);
+  //StartLinebyTimeAndY (0, FanPWMForATime(0), FANSPEEDLINEID , WHITE);
   //set the by minute temp profile for 5 spans
-  Serial.println(MySetPoints[0].Temperature);
+  
   
   MyMinuteTemperature[0] = MySetPoints[0].Temperature;
   int accumulatedMinutes = 0;
@@ -81,9 +82,16 @@ void graphProfile() {
       accumulatedMinutes = accumulatedMinutes + 1;
       MyMinuteTemperature[accumulatedMinutes] = MySetPoints[xSetPoint - 1].Temperature + (TempPerMinuteinSpan * xSpanMinute);
       AddLinebyTimeAndTemp(accumulatedMinutes, MyMinuteTemperature[accumulatedMinutes], SETPOINTLINEID);
+      Serial.println(FanPWMForATime(accumulatedMinutes));
+  
+      //AddLinebyTimeAndY(accumulatedMinutes, FanPWMForATime(accumulatedMinutes), FANSPEEDLINEID);
+      
     }
     DrawSetPoint(xSetPoint, LineColorforLineID[SETPOINTLINEID]); 
   }
+
+  
+
 
 
   //draw endpoint highlights
@@ -182,8 +190,31 @@ void UpdateGraphC() {
    row = row + rowheight;
    myGLCD.print("Skp", col, row);  myGLCD.printNumI(Readingskipped,col2 , row);
    row = row + rowheight;
-   myGLCD.print("FanD", col, row);  myGLCD.printNumI(FanSpeedPWMDecrease,col2 , row);
+   myGLCD.print("FanD", col, row);  myGLCD.printNumI(FanSpeedPWMAutoDecrease,col2 , row);
 
+}
+void UpdateFanPWMBut() {
+  int rowheight = 20;
+  int row = myFanButtonControl.bounding.ymax + 20;
+  int col = myFanButtonControl.bounding.xmin;
+  int col1 = col + (myFanButtonControl.bounding.xmax - myFanButtonControl.bounding.xmin)/3  ;
+  int col2 = col1 + (myFanButtonControl.bounding.xmax - myFanButtonControl.bounding.xmin)/3  ;
+
+   if (FanSpeedPWMAutoMode == true)
+   {
+      myGLCD.setColor(VGA_WHITE);  myGLCD.setFont(SmallFont);
+   }
+   else
+   {
+      myGLCD.setColor(RED);  myGLCD.setFont(SmallFont);
+   
+   }
+   myGLCD.printNumI(FanSpeedPWMStart,col , row);
+   myGLCD.printNumI(FanSpeedPWM,col1 , row);
+   myGLCD.printNumI(FanSpeedPWMAutoEnd,col2 , row);
+   
+
+    
 }
 
 void UpdateState(int state) {
@@ -223,22 +254,12 @@ void UpdateState(int state) {
   }
 }
 
-void UpdateFanPWMBut() {
 
-    
-
-        sprintf(myFanButtonControl.buttondefs[2].label, "%4df", FanSpeedPWM);
-   
-        DrawButtonText(myFanButtonControl, 2);
-   
-
-    
-}
 
 
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color) {
+void StartLinebyTimeAndY(double timemins, int Y, int lineID, uint16_t color) {
   //Serial.println ("StartLineTandT id:");
   
  // Serial.println (temp);
@@ -248,14 +269,23 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
  // Serial.println("X");
   
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
-  if (temp > 0) {
-    LastYforLineID[lineID] = YforATemp(temp);
-  }
-  else {
-    LastYforLineID[lineID] = 480;
-  }
+  LastYforLineID[lineID] = Y;
+  
   LineColorforLineID[lineID] = color;
   
+  
+}
+
+void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t color) {
+
+  int Y = 0;
+  if (temp > 0) {
+    Y = YforATemp(temp);
+  }
+  else {
+    Y = 480;
+  }
+  StartLinebyTimeAndY(timemins, Y, lineID, color);
   if (lineID == ROLLAVGLINEID) {
     for (int X = 0; X < 800; X++) {
       myLastGraphYPixels[X] = -1;
@@ -264,16 +294,21 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
   }
 }
 
-
-void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
+void AddLinebyTimeAndY(double timemins, int newY, int lineID) {
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  int newY = YforATemp(temp);
-  //Serial.println ("AddLineTandT line iD:");Serial.println (lineID);Serial.println(" time:");Serial.println(timemins);Serial.println("temp:");Serial.println(temp);Serial.println(" color:");Serial.println(LineColorforLineID[lineID]);
-  //Serial.println ("newX:");Serial.println (newX);Serial.println ("pixelspermin:");Serial.println (PixelsPerMin);Serial.println(" newY:");Serial.println(newY);
+  
   myGLCD.setColor(LineColorforLineID[lineID]);//LineColorforLineID[lineID]);
   myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY );
   LastXforLineID[lineID] = newX;
   LastYforLineID[lineID] = newY;
+
+}
+
+void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
+  int newY = YforATemp(temp);
+  uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
+  
+  AddLinebyTimeAndY(timemins, newY, lineID);
   if (lineID == ROLLAVGLINEID) {
     BoldLine(LastXforLineID[lineID], LastYforLineID[lineID] + 1, newX, newY + 1, LineColorforLineID[lineID]);
     myLastGraphYPixels[newX] = newY;
