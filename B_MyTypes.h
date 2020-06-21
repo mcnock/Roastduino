@@ -28,12 +28,14 @@ typedef struct buttondef {
   int y;
   int h;
   int w;
-  uint16_t color;
+  uint16_t color ;
   char label[8];
   uint8_t fontsize;
   rect Rect;
 
 } buttondef;
+
+typedef int (*ClickHandler) (const int MenuID);
 
 typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
@@ -45,7 +47,12 @@ typedef struct buttonsetdef {
   int rowstart = 0;
   boolean vertical;
   boolean visable;
+  ClickHandler ClickHandler;
+  int nextMenu;
+  int backMenu;
+  int inputfrompriormenu;
 } buttonsetdef;
+
 
 
 typedef struct  setpoint {

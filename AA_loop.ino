@@ -74,12 +74,12 @@ void theloop () {
   //185 millamps per volt
   //DC
   CurrentFan = ((((double)(analogRead(CURFANap) - (MaxVread / 2)) * 5)) / 125) ; AvgFanCurrent.push(CurrentFan); 
-  CurrentFan = AvgFanCurrent.mean() - AmpFanOffset;
+  CurrentFan = AvgFanCurrent.mean() - CurrentFanOffset;
   //AC
   CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
   CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
-  CurrentHeat1 = sqrt( AvgCoil1Amp.mean()) - AmpCoil1Offset;
-  CurrentHeat2 = sqrt( AvgCoil2Amp.mean()) - AmpCoil2Offset;
+  CurrentHeat1 = sqrt( AvgCoil1Amp.mean()) - CurrentHeat1Offset;
+  CurrentHeat2 = sqrt( AvgCoil2Amp.mean()) - CurrentHeat2Offset;
  
       
   
@@ -190,13 +190,18 @@ void theloop () {
       FanSpeedPWMStart= FanSpeedPWM; 
       FanSpeedPWMAutoEnd= FanSpeedPWMStart - FanSpeedPWMAutoDecrease; 
       FanSpeedPWMAutoMode = true;
-      
+
+      //CurrentHeat1Offset = CurrentHeat1Offset + CurrentHeat1;
+      AvgCoil1Amp.clear();
+      //]CurrentHeat2Offset = CurrentHeat2Offset + CurrentHeat2;
+      AvgCoil2Amp.clear(); 
+    
       TCoilRoll.clear();
       TBeanAvgRoll.clear();
       delay(1000);
       Readingskipped = 0;
       StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
-      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , PURPLE);
+      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , MAROON);
       StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
       graphProfile();
       delay(1000);
@@ -217,6 +222,9 @@ void theloop () {
   }
   else if (newState == STATEFANONLY) {
     State = STATEFANONLY;
+    CurrentFanOffset = CurrentFanOffset + CurrentFan ;    
+    AvgFanCurrent.clear();
+       
     FanSpeedPWM = EEPROM.read(FANSPEED_EP);
     analogWrite(FanPWMp, FanSpeedPWM);
     updateFanOutputResistance();
@@ -249,27 +257,29 @@ void theloop () {
     //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
-    if (RoastMinutes > MySetPoints[1].Minutes ) { //only calc intergral error if we are above the 1st setpoint
+    if (RoastMinutes > MySetPoints[2].Minutes ) { //only calc intergral error if we are above the 1st setpoint
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
-        if (Dutyraw < 1 && ErrI < Gain ) {
-           //    Serial.println("B");
- 
-          //only add/remove from the integral if reasonable
+        if (Duty < 1 && ErrI < Gain ) {
           IntegralSum =  IntegralSum + double(Err);
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
           //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);          
           PIDIntegralUdateTime.restart(0);
         }
       }
+    Duty = ((double)(Err + ErrI) / (double)Gain) ;
+ 
     }
     else { //clear out the integral before set point 1.
-      PIDIntegralUdateTime.restart(0);
-      IntegralSum = 0;
-      IntegralLastTime = 0;
+
+      Duty = Dutyraw;  
+         
       ErrI = 0;
+      IntegralSum= 0;
+      PIDIntegralUdateTime.restart(0);
+      IntegralLastTime = 0;
+     
     }
 
-    Duty = ((double)(Err + ErrI) / (double)Gain) ;
     //APPLY THE ERROR WITH THE PID WINDOW
     PIDWindowSize = 1000;
     unsigned long now = millis();

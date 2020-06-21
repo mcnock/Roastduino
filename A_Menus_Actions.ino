@@ -1,3 +1,11 @@
+#define Vmenubase  0
+#define VmenuSetPointSelect  1
+#define VmenuSetPointValue   2
+#define VmenuDebug       3  
+#define VmenuZeroAmps        4
+#define VmenuOnOff           5
+
+
 //-------------------------------------------------  ---------------------------------------------------------------------------------------------------
 // MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -15,7 +23,6 @@ void DrawControlMenu() {
   int col = 270;
   myControlMenuDef.vertical = false;
   myControlMenuDef.Count = 5;
-
  
   if (myControlMenuDef.buttondefs == 0) {
     //Serial.println ("Allocating myControlMenuDef");
@@ -35,18 +42,18 @@ void DrawControlMenu() {
     myControlMenuDef.buttondefs[i].w = width; myControlMenuDef.buttondefs[i].color = WHITE; strcpy(myControlMenuDef.buttondefs[i].label, "Refr");
     myControlMenuDef.buttondefs[i].fontsize = 2;
     i = 4; myControlMenuDef.buttondefs[i].x = col + (width * i); myControlMenuDef.buttondefs[i].y = row; myControlMenuDef.buttondefs[i].h = height;
-    myControlMenuDef.buttondefs[i].w = width; myControlMenuDef.buttondefs[i].color = WHITE; strcpy(myControlMenuDef.buttondefs[i].label, "Tch"); 
+    myControlMenuDef.buttondefs[i].w = width; myControlMenuDef.buttondefs[i].color = BLACK; strcpy(myControlMenuDef.buttondefs[i].label, ""); 
     myControlMenuDef.buttondefs[i].fontsize = 2;
     //Serial.println("ControlMenu");
+    myControlMenuDef.ClickHandler = ProcessControlMenu;
     SetMenuBoundingRect(myControlMenuDef);
-
   }
   //Serial.println ("Drawing myControlMenuDef");
   DrawButtons(myControlMenuDef);
 }
 
 void ProcessControlMenu(int i) {
-  //Serial.println (i);
+  Serial.print("ProcessConrol");Serial.println (i);
   switch (i) {
     case 0:
       StartAction();
@@ -61,7 +68,7 @@ void ProcessControlMenu(int i) {
      
       break;
     case 3:
-      Serial.println("Redraw graph detected");
+      //Serial.println("Redraw graph detected");
       for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
       {
           MySetPoints[xSetPoint].TemperatureNew = 0;
@@ -84,9 +91,9 @@ void DrawFanMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
   int height = 50;
   int width = 50;
-  int row = 390;
-  int col = 400;
-  myFanButtonControl.Count = 6;
+  int row = 400;
+  int col = 30;
+  myFanButtonControl.Count = 5;
   myGLCD.setBackColor(BLACK);
  
   if (myFanButtonControl.buttondefs == 0) {
@@ -102,24 +109,20 @@ void DrawFanMenu() {
     myFanButtonControl.buttondefs[i].fontsize = 2;
 
     i = 2; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
-    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label,""); 
-    myFanButtonControl.buttondefs[i].fontsize = 2;
-
-    i = 3; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
     myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, ">"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
 
-    i = 4; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
+    i = 3; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
     myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, ">>"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
     SetMenuBoundingRect(myFanButtonControl);
     
-    i = 5; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
+    i = 4; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
     myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, "S"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
     SetMenuBoundingRect(myFanButtonControl);
 
-
+    myControlMenuDef.ClickHandler = ProcessFanMenu;
   }
   //Serial.println ("Drawing myControlMenuDef");
 
@@ -153,8 +156,6 @@ void ProcessFanMenu(int i) {
       delay(10);
       break;
     case 2:
-      break;
-    case 3:
       FanSpeedPWM = FanSpeedPWM + 1 ;
       if (FanSpeedPWM >= 254) {
         FanSpeedPWM = 254;}
@@ -163,7 +164,7 @@ void ProcessFanMenu(int i) {
       updateFanOutputResistance();
       delay(10);
       break;
-    case 4:
+    case 3:
       FanSpeedPWM = FanSpeedPWM + 5 ;
       if (FanSpeedPWM >= 254) 
       {
@@ -175,17 +176,18 @@ void ProcessFanMenu(int i) {
       updateFanOutputResistance();
       delay(10);
       break;
-    case 5:
+    case 4:
       EEPROM.write(FANSPEED_EP,FanSpeedPWM);
       break;
   }
   
 }
 
-void initializeVerticalMenus(){
-    for (int i = 0; i < 5; i++)
+void initializeButtonDefs(){
+    for (int i = 0; i < 6; i++)
     {
        // Serial.print("VMenu");Serial.println(i);
+        int j= 0;
         buttonsetdef* bsd = &myButtonVertMenus[i];
         bsd->Count = 9;
         bsd->rowstart = 0;
@@ -194,11 +196,12 @@ void initializeVerticalMenus(){
         bsd->vertical = true;
         bsd->colstart = myGLCD.getDisplayXSize() - bsd->W - 2;
         switch (i) {
-        case 0:
+        case Vmenubase:
             if (bsd->buttondefs == 0) {
+              
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
                 strcpy(bsd->buttondefs[0].label, ">>"); bsd->buttondefs[0].color = GREEN;
-                strcpy(bsd->buttondefs[1].label, "");    bsd->buttondefs[1].color = BLACK;
+                strcpy(bsd->buttondefs[1].label, "<<");    bsd->buttondefs[1].color = GREEN;
                 strcpy(bsd->buttondefs[2].label, "");    bsd->buttondefs[2].color = BLACK;
                 strcpy(bsd->buttondefs[3].label, "");    bsd->buttondefs[3].color = BLACK;
                 strcpy(bsd->buttondefs[4].label, "");    bsd->buttondefs[4].color = BLACK;
@@ -206,80 +209,121 @@ void initializeVerticalMenus(){
                 strcpy(bsd->buttondefs[6].label, "");    bsd->buttondefs[6].color = BLACK;
                 strcpy(bsd->buttondefs[7].label, "");   bsd->buttondefs[7].color = BLACK;
                 strcpy(bsd->buttondefs[8].label, "");     bsd->buttondefs[8].color = BLACK;
+                bsd->ClickHandler = ProcessBaseVMenu;
+                bsd->nextMenu = VmenuSetPointSelect;
+                bsd->backMenu = VmenuDebug;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
-        case 1:
+        case VmenuSetPointSelect:
             if (bsd->buttondefs == 0) {
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
                 strcpy(bsd->buttondefs[0].label, ">>");    bsd->buttondefs[0].color = GREEN;
-                strcpy(bsd->buttondefs[1].label, "sp1");    bsd->buttondefs[1].color = GREEN;
-                strcpy(bsd->buttondefs[2].label, "sp2");    bsd->buttondefs[2].color = GREEN;
-                strcpy(bsd->buttondefs[3].label, "sp3");    bsd->buttondefs[3].color = GREEN;
-                strcpy(bsd->buttondefs[4].label, "sp4");    bsd->buttondefs[4].color = GREEN;
-                strcpy(bsd->buttondefs[5].label, "sp5");    bsd->buttondefs[5].color = GREEN;
-                strcpy(bsd->buttondefs[6].label, "ls4");    bsd->buttondefs[6].color = GREEN;
-                strcpy(bsd->buttondefs[7].label, "RST");     bsd->buttondefs[7].color = RED;
-                strcpy(bsd->buttondefs[8].label, "");        bsd->buttondefs[8].color = BLACK;
+                strcpy(bsd->buttondefs[1].label, "<<");    bsd->buttondefs[1].color = GREEN;
+                strcpy(bsd->buttondefs[2].label, "sp1");    bsd->buttondefs[2].color = MAROON;
+                strcpy(bsd->buttondefs[3].label, "sp2");    bsd->buttondefs[3].color = MAROON;
+                strcpy(bsd->buttondefs[4].label, "sp3");    bsd->buttondefs[4].color = MAROON;
+                strcpy(bsd->buttondefs[5].label, "sp4");    bsd->buttondefs[5].color = MAROON;
+                strcpy(bsd->buttondefs[6].label, "sp5");    bsd->buttondefs[6].color = MAROON;
+                strcpy(bsd->buttondefs[7].label, "ls4");    bsd->buttondefs[7].color = MAROON;
+                strcpy(bsd->buttondefs[8].label, "FanD");    bsd->buttondefs[8].color = YELLOW;
+                bsd->ClickHandler = ProcessSetPointSelectVMenu; 
+                bsd->nextMenu = VmenuZeroAmps;
+                bsd->backMenu = Vmenubase;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
-        case 2:
+        case VmenuSetPointValue:
             if (bsd->buttondefs == 0) {
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
-                strcpy(bsd->buttondefs[0].label, "BCK");   bsd->buttondefs[0].color = GREEN;
+                strcpy(bsd->buttondefs[0].label, "<<");   bsd->buttondefs[0].color = GREEN;
                 strcpy(bsd->buttondefs[1].label,  "");     bsd->buttondefs[1].color = RED;
-                strcpy(bsd->buttondefs[2].label, "+1");    bsd->buttondefs[2].color = GREEN;
-                strcpy(bsd->buttondefs[3].label, "+3");    bsd->buttondefs[3].color = GREEN;
-                strcpy(bsd->buttondefs[4].label, "+5");    bsd->buttondefs[4].color = GREEN;
-                strcpy(bsd->buttondefs[5].label, "-1");    bsd->buttondefs[5].color = GREEN;
-                strcpy(bsd->buttondefs[6].label, "-3");    bsd->buttondefs[6].color = GREEN;
-                strcpy(bsd->buttondefs[7].label, "-5");    bsd->buttondefs[7].color = GREEN;
+                strcpy(bsd->buttondefs[2].label, "+1");    bsd->buttondefs[2].color = MAROON;
+                strcpy(bsd->buttondefs[3].label, "+3");    bsd->buttondefs[3].color = MAROON;
+                strcpy(bsd->buttondefs[4].label, "+5");    bsd->buttondefs[4].color = MAROON;
+                strcpy(bsd->buttondefs[5].label, "-1");    bsd->buttondefs[5].color = MAROON;
+                strcpy(bsd->buttondefs[6].label, "-3");    bsd->buttondefs[6].color = MAROON;
+                strcpy(bsd->buttondefs[7].label, "-5");    bsd->buttondefs[7].color = MAROON;
                 strcpy(bsd->buttondefs[8].label, "SAVE");    bsd->buttondefs[8].color = RED;
+                bsd->ClickHandler = ProcessSetPointAdjustmentVMenu; 
+                bsd->nextMenu = -1;
+                bsd->backMenu = VmenuSetPointSelect;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
-        case 3:
+      case VmenuZeroAmps:
             if (bsd->buttondefs == 0) {
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
                 strcpy(bsd->buttondefs[0].label, ">>");   bsd->buttondefs[0].color = GREEN;
-                strcpy(bsd->buttondefs[1].label, "1ON");     bsd->buttondefs[1].color = ORANGE;
-                strcpy(bsd->buttondefs[2].label, "1OFF");    bsd->buttondefs[2].color = ORANGE;
-                strcpy(bsd->buttondefs[3].label, "2ON");    bsd->buttondefs[3].color = ORANGE;
-                strcpy(bsd->buttondefs[4].label, "2OFF");    bsd->buttondefs[4].color = ORANGE;
-                strcpy(bsd->buttondefs[5].label, "VON");    bsd->buttondefs[5].color = ORANGE;
-                strcpy(bsd->buttondefs[6].label, "VOFF");    bsd->buttondefs[6].color = ORANGE;
-                strcpy(bsd->buttondefs[7].label, "FON");    bsd->buttondefs[7].color = ORANGE;
-                strcpy(bsd->buttondefs[8].label, "FOFF");    bsd->buttondefs[8].color = ORANGE;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
-            }
-      case 4:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
-                strcpy(bsd->buttondefs[0].label, ">>");   bsd->buttondefs[0].color = GREEN;
-                strcpy(bsd->buttondefs[1].label, "Amps");     bsd->buttondefs[1].color = ORANGE;
-                strcpy(bsd->buttondefs[2].label, "C1-Zero");    bsd->buttondefs[2].color = ORANGE;
-                strcpy(bsd->buttondefs[3].label, "C2-Zero");    bsd->buttondefs[3].color = ORANGE;
-                strcpy(bsd->buttondefs[4].label, "Fan-Zero");    bsd->buttondefs[4].color = ORANGE;
-                strcpy(bsd->buttondefs[5].label, "Clear");    bsd->buttondefs[5].color = ORANGE;
-                strcpy(bsd->buttondefs[6].label, "");    bsd->buttondefs[6].color = BLACK;
+                strcpy(bsd->buttondefs[1].label, "<<");     bsd->buttondefs[1].color = GREEN;
+                strcpy(bsd->buttondefs[2].label, "0 Fn");    bsd->buttondefs[2].color = ORANGE;
+                strcpy(bsd->buttondefs[3].label, "0 C1");    bsd->buttondefs[3].color = ORANGE;
+                strcpy(bsd->buttondefs[4].label, "0 C2");    bsd->buttondefs[4].color = ORANGE;
+                strcpy(bsd->buttondefs[5].label, "0ALL");    bsd->buttondefs[5].color = ORANGE;
+                strcpy(bsd->buttondefs[6].label, "CLR0");    bsd->buttondefs[6].color = ORANGE;
                 strcpy(bsd->buttondefs[7].label, "");    bsd->buttondefs[7].color = BLACK;
                 strcpy(bsd->buttondefs[8].label, "");    bsd->buttondefs[8].color = BLACK;
+                bsd->ClickHandler = ProcessZeroAmpMetersVMenu; 
+                bsd->nextMenu = VmenuDebug;
+                bsd->backMenu = VmenuSetPointSelect;
+
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
+      case VmenuDebug:
+            if (bsd->buttondefs == 0) {
+               j = 0;
+                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+                strcpy(bsd->buttondefs[j].label, ">>");   bsd->buttondefs[j].color = GREEN;
+                j++;strcpy(bsd->buttondefs[j].label, "<<");     bsd->buttondefs[j].color = GREEN;
+                j++;strcpy(bsd->buttondefs[j].label, "TOG");     bsd->buttondefs[j].color = ORANGE;
+                j++;strcpy(bsd->buttondefs[j].label, "C1");     bsd->buttondefs[j].color = ORANGE;
+                j++;strcpy(bsd->buttondefs[j].label, "C2");    bsd->buttondefs[j].color = ORANGE;
+                j++;strcpy(bsd->buttondefs[j].label, "Vib");    bsd->buttondefs[j].color = ORANGE;
+                j++;strcpy(bsd->buttondefs[j].label, "Fan");    bsd->buttondefs[j].color = ORANGE;
+                j++;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                j++;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                bsd->ClickHandler = ProcessDebugVMenu;
+                bsd->nextMenu = Vmenubase;
+                bsd->backMenu = VmenuZeroAmps;
 
+                SetMenuBoundingRect(myButtonVertMenus[i]);
+            }
+      case VmenuOnOff:
+            if (bsd->buttondefs == 0) {
+                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+                j=0;strcpy(bsd->buttondefs[j].label, "<<");   bsd->buttondefs[j].color = GREEN;
+                j=1;strcpy(bsd->buttondefs[j].label,  "");     bsd->buttondefs[j].color = RED;
+                j=2;strcpy(bsd->buttondefs[j].label, "ON");    bsd->buttondefs[j].color = GREEN;
+                j=3;strcpy(bsd->buttondefs[j].label, "OFF");    bsd->buttondefs[j].color = GREEN;
+                j=4;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                j=5;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                j=6;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                j=7;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                j=8;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                
+                
+                bsd->ClickHandler = ProcessOnOffVMenu; 
+                bsd->nextMenu = -1;
+                bsd->backMenu = VmenuDebug;
+                SetMenuBoundingRect(myButtonVertMenus[i]);
+            }
+ 
         }
     }
+    
 }
 
-  void DrawVertMenu(int i) {
+
+ void DrawVertMenu(int i) {
     VerticalMenuShowing = i;
     DrawButtons(myButtonVertMenus[i]);
 }
 
-//start of vertical menu
-void ProcessVertMenu0(int i) {
+void ProcessBaseVMenu(int i) {
     //Serial.println ("ProcessVertMenu1:");Serial.println (i);
     switch (i) {
     case 0:
-        DrawVertMenu(1);
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu);
+        break;
+    case 1:
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].backMenu);
         break;
     default:
         break;
@@ -287,35 +331,40 @@ void ProcessVertMenu0(int i) {
 
 }
 
-//select a setpoint to adjust menu
-void ProcessVertMenu1(int i) {
+void ProcessSetPointSelectVMenu(int i) {
     //Serial.println ("ProcessVertMenu1:");Serial.println (i);
     switch (i) {
-    case 0:        spSelected = -1;
-        DrawVertMenu(4);
+    case 0:        
+        spSelected = -1;
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu);
         break;
     case 1:
+        spSelected = -1;
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].backMenu);
+        break;
     case 2:
     case 3:
     case 4:
     case 5:
     case 6:
         spSelected = i;   
-        strcpy(myButtonVertMenus[2].buttondefs[1].label, myButtonVertMenus[1].buttondefs[i].label);
-        DrawVertMenu(2);
+        strcpy(myButtonVertMenus[VmenuSetPointValue].buttondefs[1].label, myButtonVertMenus[1].buttondefs[i].label);
+        myButtonVertMenus[VmenuSetPointValue].inputfrompriormenu = i;
+        DrawVertMenu(VmenuSetPointValue);
         break;
     case 7:
        for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
         {
-            
-           //Serial.println("savingdefaults");
-
-                MySetPoints[xSetPoint].TemperatureNew = 0;
+               MySetPoints[xSetPoint].TemperatureNew = 0;
                EEPROM.put(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].TemperatureDefault);
-
         }
        spSelected = 0;
        graphProfile();
+        break;
+    case 8:
+        spSelected = 9;
+        strcpy(myButtonVertMenus[2].buttondefs[1].label, myButtonVertMenus[1].buttondefs[i].label);
+        DrawVertMenu(2);
         break;
     default:
         break;
@@ -323,10 +372,10 @@ void ProcessVertMenu1(int i) {
 
 }
 
-//adjust a setpoint's value menu
-void ProcessVertMenu2(int i) {
+void ProcessSetPointAdjustmentVMenu(int i) {
    //Serial.println ("ProcessVertMenu2:");Serial.println (i);
     moveamount = 0;
+    
     switch (i) {
     case 0:
         for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
@@ -334,10 +383,10 @@ void ProcessVertMenu2(int i) {
             MySetPoints[xSetPoint].TemperatureNew = 0;
         }
         spSelected = 0;
-        DrawVertMenu(1);
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].backMenu);
+    
         break;
     case 2:
-        
         moveamount=1;
         break;
     case 3:
@@ -355,14 +404,11 @@ void ProcessVertMenu2(int i) {
     case 7:
         moveamount = -5;
         break;
-
     case 8:
         saveChangedSetpoints();
-        DrawVertMenu(1);
+        DrawVertMenu(Vmenubase);
         break;
-    
     default:
-        
         break;
     }
 
@@ -370,76 +416,123 @@ void ProcessVertMenu2(int i) {
         if (spSelected >= 0 & spSelected <=5) {
            MoveAPoint(spSelected);
           }
-      if (spSelected == 6 ) {
-         MoveLast4Point();
-      }
+        if (spSelected == 6 ) {
+          MoveLast4Point();
+       }
+       if (spSelected == 9 ) {
+          FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + moveamount;
+           updateFanOutputResistance();
+            UpdateFanPWMBut();
+            spSelected = 0;
+       }
     }
 
 }
 
-//debug relays menu
-void ProcessVertMenu3(int i) {
+void ProcessDebugVMenu(int i) {
    // Serial.print("ProcessVertMenu3:");Serial.println(i);
-    moveamount = 0;
     switch (i) {
-    case 0:
-        DrawVertMenu(0);
+        case 0:        
+          DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu);
         break;
     case 1:
-        // Serial.println(digitalRead(SSR1p));
-
-        digitalWrite(SSR1p, HIGH);
-        // Serial.println(digitalRead(SSR1p));
-        break;
-    case 2:
-        digitalWrite(SSR1p, LOW);
+          DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].backMenu);
         break;
     case 3:
-        digitalWrite(SSR2p, HIGH);
-        break;
     case 4:
-        digitalWrite(SSR2p, LOW);
-        break;
     case 5:
-        digitalWrite(VIBRELAYp, RELAYON);
-        break;
     case 6:
-        digitalWrite(VIBRELAYp, RELAYOFF); 
+        strcpy(myButtonVertMenus[VmenuOnOff].buttondefs[1].label, myButtonVertMenus[VerticalMenuShowing].buttondefs[i].label);
+        myButtonVertMenus[VmenuOnOff].inputfrompriormenu = i;
+        DrawVertMenu(VmenuOnOff);
         break;
     case 7:
-        digitalWrite(FANRELAYp, RELAYON);
         break;
     case 8:
-        digitalWrite(FANRELAYp, RELAYOFF); 
         break;
     }
 }
-
-//zero currents menu
-void ProcessVertMenu4(int i) {
-   // Serial.print("ProcessVertMenu3:");Serial.println(i);
-    moveamount = 0;
+void ProcessOnOffVMenu(int i) {
+   int ONOFF = HIGH; 
     switch (i) {
-    case 0:
-        DrawVertMenu(3);
+        case 0:        
+          DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].backMenu);
         break;
     case 1:
         break;
-    case 2:
-        AmpCoil1Offset = CurrentHeat1;
+    case 2: //on
+        ONOFF = HIGH;
         break;
-    case 3:
-        AmpCoil2Offset = CurrentHeat2;
+    case 3: //off
+        ONOFF = LOW;
         break;
     case 4:
-        AmpFanOffset = CurrentFan;
         break;
     case 5:
-        AmpFanOffset =0;
-        AmpCoil1Offset = 0;
-        AmpCoil2Offset =0;
         break;
     case 6:
+        break;
+    case 7:
+        break;
+    case 8:
+        break;
+    }
+
+    if (i == 2 || i == 3){
+      switch (myButtonVertMenus[VerticalMenuShowing].inputfrompriormenu){
+        case 3: //ss 1
+            digitalWrite(SSR1p, ONOFF);
+            break;
+        case 4: //ss 2
+            digitalWrite(SSR2p, ONOFF);
+            break;
+        case 5: //vib
+            digitalWrite(VIBRELAYp, !ONOFF);
+            break;
+        case 6: //fan
+            digitalWrite(FANRELAYp, !ONOFF);
+            break;
+        }
+            
+
+    }
+}
+void ProcessZeroAmpMetersVMenu(int i) {
+   Serial.print("ProcessVertMenu4:");Serial.println(i);
+    moveamount = 0;
+    switch (i) {
+    case 0:
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu);
+        break;
+    case 1:
+        DrawVertMenu(myButtonVertMenus[VerticalMenuShowing].backMenu);
+        break;
+    case 2:
+        CurrentFanOffset = CurrentFanOffset + CurrentFan ;
+        AvgFanCurrent.clear();
+        break;
+    case 3:
+        CurrentHeat1Offset =   CurrentHeat1Offset + CurrentHeat1;
+        AvgCoil1Amp.clear();
+        break;
+    case 4:
+        CurrentHeat2Offset = CurrentHeat2Offset + CurrentHeat2;
+        AvgCoil2Amp.clear(); 
+        break;
+    case 5:
+        CurrentFanOffset = CurrentFanOffset + CurrentFan ;
+        AvgFanCurrent.clear();
+        CurrentHeat1Offset =   CurrentHeat1Offset + CurrentHeat1;
+        AvgCoil1Amp.clear();
+        CurrentHeat2Offset = CurrentHeat2Offset + CurrentHeat2;
+        AvgCoil2Amp.clear(); 
+    
+        break;
+    case 6:
+        CurrentFanOffset = 0; 
+        CurrentHeat1Offset = 0; 
+        CurrentHeat2Offset = 0;
+        
         break;
     case 7:
         break;

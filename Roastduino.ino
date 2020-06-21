@@ -14,7 +14,8 @@
 // Declare which fonts we will be using
 extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
-
+extern uint8_t SevenSegmentFull[];
+extern uint8_t Grotesk24x48[];
 
 // Remember to change the model parameter to suit your display module!
 UTFT myGLCD(SSD1963_800480,38,39,40,41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
@@ -24,21 +25,27 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 
 #define BLACK    0x0000
 #define WHITE   0xFFFF
-#define RED     0xF800
-#define ORANGE   0xFBE0
-#define GREEN   0x0400
-#define BLUE    0x001F
-#define SILVER    0xC618
-#define GRAY    0x8410
-#define MAROON    0x8000
-#define YELLOW    0xFFE0
-#define OLIVE   0x8400
-#define LIME    0x07E0
-#define AQUA    0x07FF
-#define TEAL    0x0410
-#define NAVY    0x0010
-#define FUCHSIA   0xF81F
-#define PURPLE    0x8010
+
+#define BLUE     0xF800  //255 0 0  red
+#define RED    0x001F    //0  0  255  blud
+
+#define ORANGE   0x0339  //0,102,204 med blue
+#define BLUEMED  0xCB20  //204,102, 0 orange
+
+#define LIME    0x07E0  //0,255,0
+#define GREEN   0x05E0  //0,190,0
+
+#define YELLOW  0x0FFF  //pair 255,255,0 (aqua)
+#define AQUA  0x07FF  //pair 0,255,255 (yellow)
+
+#define TAN           0x9E7F // 152,204,255
+#define LGBLUE        0xFE73 // 255,204,152 (tan)
+
+#define PINK    0xFB3F  // 255,100,255
+
+#define MAROON    0x0010  //128,0,255
+#define BLUEDEEP  0xF810  //255,0,128
+
 #define VGA_TRANSPARENT 0xFFFFFFFF
 
 //PIN  definitions
@@ -142,10 +149,10 @@ int spSelected = 0;
 int FanSpeedPWM=0;
 int FanSpeedPWMStart=0;
 int FanSpeedPWMAutoEnd=0;
-int FanSpeedPWMAutoDecrease = 20;
+int FanSpeedPWMAutoDecrease = 50;
 bool FanSpeedPWMAutoMode = false;
 
-int FanSpeedPWNDecreaseByMinutes = 6;
+int FanSpeedPWNDecreaseByMinutes = 8;
 
 int FanSpeedResistanceLast=0;
 int FanSpeedResistanceCurrent = 0;
@@ -203,9 +210,6 @@ Chrono PIDIntegralUdateTime(Chrono::MILLIS);
 Average<float> AvgFanCurrent(30);
 Average<float> AvgCoil1Amp(30);
 Average<float> AvgCoil2Amp(30);
-float AmpFanOffset;
-float AmpCoil1Offset;
-float AmpCoil2Offset;
 
 //temps are read  once per second
 Average<float> FanPressureRoll(5);
@@ -220,7 +224,7 @@ int Readingskipped;
 
 buttonsetdef myControlMenuDef;
 buttonsetdef myFanButtonControl;
-buttonsetdef myButtonVertMenus[6];
+buttonsetdef myButtonVertMenus[10];
 int VerticalMenuShowing = 0;
 
 
@@ -237,9 +241,13 @@ int TCoil;
 int TBean1;
 int TBean2;
 int TFan;
-double MaxVoltage, MaxVread, CurrentFan, CurrentHeat1, CurrentHeat2;
-int TBeanAvg;
+double MaxVoltage, MaxVread;
+double CurrentFan;
+double CurrentHeat1, CurrentHeat2;
+double CurrentHeat1Offset, CurrentHeat2Offset;
+double CurrentFanOffset = 0;
 
+int TBeanAvg;
 
 boolean Flasher;
 
@@ -290,7 +298,7 @@ void setup() {
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
   Integral = 0.1;
-  Gain = 100;
+  Gain = 50;
   SecondTimer.restart(0);
   FlashTimer.restart(0);
 
@@ -303,7 +311,7 @@ void setup() {
   myTouch.setPrecision(PREC_MEDIUM);
 // -------------------------------------------------------------
 
-  initializeVerticalMenus();
+  initializeButtonDefs();
 
   State = STATESTOPPED;
 
@@ -317,8 +325,6 @@ void setup() {
   updateFanOutputResistance();
   UpdateFanPWMBut();
   
-  
-
 }
 
 

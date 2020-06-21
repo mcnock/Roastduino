@@ -7,12 +7,13 @@
 void ProcessTouch(int Xtouch, int Ytouch)
 {
     int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
-    //Serial.print("touch detected X"); Serial.print(Xtouch);Serial.print(" Y");  Serial.println(Ytouch);
+    //Serial.print("touch detected X"); Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
     if (InRect(Xtouch, Ytouch, &myControlMenuDef.bounding)) {
         //Serial.println("found hor1 buttons");
         int i = WhatMenu(Xtouch, Ytouch, &myControlMenuDef);
         //Serial.print("menu control found: "); Serial.println(i);
+        //myControlMenuDef.ClickHandler(i);
         ProcessControlMenu(i);
         return;
     }
@@ -20,6 +21,7 @@ void ProcessTouch(int Xtouch, int Ytouch)
         //Serial.println("found hor2 buttons");
         int j = WhatMenu(Xtouch, Ytouch, &myFanButtonControl);
         //Serial.print("menu control found: "); Serial.println(i);
+        //myControlMenuDef.ClickHandler(j);
         ProcessFanMenu(j);
         return;
     }  
@@ -28,23 +30,12 @@ void ProcessTouch(int Xtouch, int Ytouch)
         //Serial.print("found vertical1  buttons");
         int k = WhatMenu(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
         //Serial.print("Vmenu1 found index: "); Serial.println(i);
-        switch (VerticalMenuShowing)
-        {
-        case (0):
-            ProcessVertMenu0(k);
-            break;
-        case(1):
-            ProcessVertMenu1(k);
-            break;
-        case(2):
-            ProcessVertMenu2(k);
-            break;
-        case(3):
-            ProcessVertMenu3(k);
-            break;
-        default:
-            break;
-        }
+        //if (VerticalMenuShowing ==4){
+         //   ProcessZeroAmpMetersVMenu(k)  ;
+       // }
+        //else{
+        myButtonVertMenus[VerticalMenuShowing].ClickHandler(k);
+        //}
         return;
     }
 
