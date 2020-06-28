@@ -102,7 +102,7 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 #define OVERHEATFAN     250
 #define OVERHEATCOIL    1100
 #define BAUD            57600
-#define TEMPCOOLINGDONE 170
+#define TEMPCOOLINGDONE 250
 
 #define STATEROASTING          1
 #define STATESTOPPED           2
@@ -144,12 +144,12 @@ int iCommandsp1 = 0;
 char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
 
-int spSelected = 0;
+int spSelected = -1;
 
 int FanSpeedPWM=0;
 int FanSpeedPWMStart=0;
 int FanSpeedPWMAutoEnd=0;
-int FanSpeedPWMAutoDecrease = 50;
+int FanSpeedPWMAutoDecrease = 100;
 bool FanSpeedPWMAutoMode = false;
 
 int FanSpeedPWNDecreaseByMinutes = 8;
@@ -258,7 +258,7 @@ void setup() {
 //Serial1.begin(9600);
   Serial.begin(9600);
   Serial.println ("setup starting");
-
+  delay(2000);
   // Pin Configuration
   pinMode(VIBRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
   pinMode(SSR1p, OUTPUT); pinMode(SSR2p, OUTPUT);
@@ -298,7 +298,7 @@ void setup() {
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
   Integral = 0.1;
-  Gain = 50;
+  Gain = 75;
   SecondTimer.restart(0);
   FlashTimer.restart(0);
 
@@ -310,8 +310,9 @@ void setup() {
   myTouch.InitTouch();
   myTouch.setPrecision(PREC_MEDIUM);
 // -------------------------------------------------------------
+  delay(2000);
 
-  initializeButtonDefs();
+  intializeVMenus();
 
   State = STATESTOPPED;
 

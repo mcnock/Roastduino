@@ -18,6 +18,7 @@ void theloop () {
   }
   
   if (State == STATESTOPPED && VerticalMenuShowing == 3)  {
+      
       return;
   }
   //ReadSerial(Serial,SerialInputTimer);//for debugging
@@ -187,21 +188,18 @@ void theloop () {
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
       EEPROM.write(FANSPEED_EP,FanSpeedPWM);
-      FanSpeedPWMStart= FanSpeedPWM; 
-      FanSpeedPWMAutoEnd= FanSpeedPWMStart - FanSpeedPWMAutoDecrease; 
+      SetFanPWMForATime(0);
       FanSpeedPWMAutoMode = true;
-
       //CurrentHeat1Offset = CurrentHeat1Offset + CurrentHeat1;
       AvgCoil1Amp.clear();
       //]CurrentHeat2Offset = CurrentHeat2Offset + CurrentHeat2;
       AvgCoil2Amp.clear(); 
-    
       TCoilRoll.clear();
       TBeanAvgRoll.clear();
       delay(1000);
       Readingskipped = 0;
       StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
-      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , MAROON);
+      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , LGBLUE);
       StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
       graphProfile();
       delay(1000);
@@ -217,20 +215,20 @@ void theloop () {
   }
   else if (newState == STATECOOLING) {
     State = STATECOOLING;
+    SetFanPWMForATime(2);
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
     delay(1000);
   }
   else if (newState == STATEFANONLY) {
     State = STATEFANONLY;
     CurrentFanOffset = CurrentFanOffset + CurrentFan ;    
-    AvgFanCurrent.clear();
-       
-    FanSpeedPWM = EEPROM.read(FANSPEED_EP);
-    analogWrite(FanPWMp, FanSpeedPWM);
-    updateFanOutputResistance();
-    UpdateFanPWMBut();
-    digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
-  }
+    AvgFanCurrent.clear();   
+    SetFanPWMForATime(0);   
+    //Serial.println("VIB on");
+    digitalWrite(VIBRELAYp, RELAYON);
+    //Serial.println("Fan on");
+    digitalWrite(FANRELAYp, RELAYON); 
+    }
   else if (newState == STATEOVERHEATED) {
     State = STATEOVERHEATED;
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
@@ -251,13 +249,13 @@ void theloop () {
   if (State == STATEROASTING) {
     //CALC THE ERR AND INTEGRAL
     //Serial.println("A");
-    DecreaseFanPWMforATime(RoastMinutes);
+    SetFanPWMForATime(RoastMinutes);
     CurrentSetPointTemp =  SetpointforATime(RoastMinutes);
     Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint
     //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
-    if (RoastMinutes > MySetPoints[2].Minutes ) { //only calc intergral error if we are above the 1st setpoint
+    if (RoastMinutes > MySetPoints[1].Minutes ) { //only calc intergral error if we are above the 1st setpoint
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
         if (Duty < 1 && ErrI < Gain ) {
           IntegralSum =  IntegralSum + double(Err);
@@ -266,18 +264,14 @@ void theloop () {
           PIDIntegralUdateTime.restart(0);
         }
       }
-    Duty = ((double)(Err + ErrI) / (double)Gain) ;
- 
+      Duty = ((double)(Err + ErrI) / (double)Gain) ;
     }
     else { //clear out the integral before set point 1.
-
-      Duty = Dutyraw;  
-         
+      Duty = Dutyraw;     
       ErrI = 0;
       IntegralSum= 0;
       PIDIntegralUdateTime.restart(0);
       IntegralLastTime = 0;
-     
     }
 
     //APPLY THE ERROR WITH THE PID WINDOW
@@ -340,17 +334,22 @@ void theloop () {
 
     UpdateGraphA();
 
-    AddPointbyTimeAndTempAndLineID(RoastMinutes, TBeanAvg, AVGLINEID, 1);
-
+    if (State == STATEROASTING || State == STATECOOLING){
+          AddPointbyTimeAndTempAndLineID(RoastMinutes, TBeanAvg, AVGLINEID, 2);
+    }
   }
 
   if (LcdUdateTime.elapsed() > 3000) {
     //Serial.println("slow update. once per:");Serial.println(3000);Serial.println(" millseconds");
     // void UpdateGraphB(int temp1, int temp2, int tempCoil, double ampHeater1, double ampHeater2, int tempFan, double ampFan, double volts)
     //Serial.println("TBean2:");Serial.println(TBean2);Serial.println("TBean1:");Serial.println (TBean1);Serial.getDisplayYSize()("TCoil:");Serial.getDisplayYSize()(TCoil);Serial.getDisplayYSize()("TFan:");Serial.println(TFan);
-    AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
-    AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+    //Serial.println("3 seconds");
+    
+    if (State == STATEROASTING || State == STATECOOLING){
 
+        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+        AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+    }
     UpdateFanPWMBut();
     
     UpdateGraphB();

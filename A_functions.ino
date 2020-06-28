@@ -437,30 +437,29 @@ int ReadIntEprom(int loc, int min, int max, int def) {
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-int  FanPWMForATime(double minutes) {
-     if (FanSpeedPWMAutoMode == true){
-       if (minutes < FanSpeedPWNDecreaseByMinutes){
-            return (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/FanSpeedPWNDecreaseByMinutes)*minutes) ; 
+void   SetFanPWMForATime(double minutes) {
+
+     if (minutes == 0){
+            FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
+            FanSpeedPWM = FanSpeedPWMStart;
+     }
+     else if (FanSpeedPWMAutoMode == true){
+        if (minutes < FanSpeedPWNDecreaseByMinutes){
+            FanSpeedPWM = (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/FanSpeedPWNDecreaseByMinutes)*minutes) ; 
         }
        else
        {
-           return ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
+           FanSpeedPWM = ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
        }
-     }
-     else
-     {
-        return FanSpeedPWM;
-  
-     }
+    }
+    OutputFanSpeedPwm();
 }
 
-int  DecreaseFanPWMforATime(double roastminutes) {
-     FanSpeedPWM = FanPWMForATime(roastminutes) ; 
-    
-    UpdateFanPWMBut();
-    updateFanOutputResistance();
-
-  }
+void OutputFanSpeedPwm(){
+      analogWrite(FanPWMp, FanSpeedPWM);
+      UpdateFanPWMBut();
+      updateFanOutputResistance();
+}
 
 double SetpointforATime(double roastminutes) {
   int setpoint;

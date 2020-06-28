@@ -19,9 +19,11 @@ void graphProfile() {
         }
         else
         {
+            //EEPROM.get(SETPOINTTEMP_EP[X],MySetPoints[X].Temperature);
+            MySetPoints[X].Temperature = 390;
             MySetPoints[X].SpanMinutes = 0;
             MySetPoints[X].Minutes = 0;
-            MySetPoints[X].Temperature = 400;        
+                    
         }
     }
 
@@ -128,12 +130,12 @@ void graphProfile() {
   DrawFanMenu();
 
  //if sp is  selected, assume user is adjusting setpoint redraw the menu
-  if (spSelected > 0) {
-      DrawVertMenu(1);
+  if (spSelected >= 0) {
+      DrawVMenu(1);
   }
   else
   {
-      DrawVertMenu(0);
+      DrawVMenu(0);
   }
 }
 
@@ -329,9 +331,12 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
   }
 }
 
-void AddLinebyTimeAndY(double timemins, int newY, int lineID) {
+void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
+  int newY = YforATemp(temp);
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  
+  //Serial.print("AddLineByTimeAndTemp X:");
+  //Serial.print(LastXforLineID[lineID]); Serial.print(" ");Serial.print(newX); Serial.print(" Y:");
+  //Serial.print(LastYforLineID[lineID]); Serial.print(" ");Serial.print(newY); Serial.println(" ");
   myGLCD.setColor(LineColorforLineID[lineID]);//LineColorforLineID[lineID]);
   myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY );
   LastXforLineID[lineID] = newX;
@@ -339,17 +344,6 @@ void AddLinebyTimeAndY(double timemins, int newY, int lineID) {
 
 }
 
-void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
-  int newY = YforATemp(temp);
-  uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  
-  AddLinebyTimeAndY(timemins, newY, lineID);
-  if (lineID == ROLLAVGLINEID) {
-    BoldLine(LastXforLineID[lineID], LastYforLineID[lineID] + 1, newX, newY + 1, LineColorforLineID[lineID]);
-    myLastGraphYPixels[newX] = newY;
-    myLastGraphTemps[newX] = temp;
-  }
-}
 void DrawSetPoint(int setpoint, uint16_t color)
 {
     int Y = YforATemp(MySetPoints[setpoint].Temperature);
@@ -363,26 +357,41 @@ void DrawSetPoint(int setpoint, uint16_t color)
 
 void DrawMovedSetPoint(int setpoint)
 {
-    int Y = YforATemp(MySetPoints[setpoint].TemperatureNew);
-    int X = MySetPoints[setpoint].Minutes * PixelsPerMin;
+    int spYnew = YforATemp(MySetPoints[setpoint].TemperatureNew);
+    int spX = MySetPoints[setpoint].Minutes * PixelsPerMin;
     myGLCD.setColor(YELLOW);
-    myGLCD.fillCircle(X, Y, 7);
+    myGLCD.fillCircle(spX, spYnew, 7);
     myGLCD.setColor(WHITE);
-    myGLCD.drawCircle(X, Y, 7);
+    myGLCD.drawCircle(spX, spYnew, 7);
 
-    int Ytext = YforATemp(MySetPoints[setpoint].Temperature);
+    int spYold = YforATemp(MySetPoints[setpoint].Temperature);
     myGLCD.setBackColor(BLACK);
-    myGLCD.setColor(YELLOW);
     myGLCD.setFont(BigFont);
+
+    int Row1Y = spYold - 15;
+    int Row2Y = spYold + 5;
+    int Row3Y = spYold + 25;
+    int col1  = spX + 8;
+    int col2  = col1 + (myGLCD.getFontXsize() * 2);
+    int col3  =  col2 + (myGLCD.getFontXsize() * 1);
+
+    
+    //myGLCD.setColor(WHITE);
+    //myGLCD.printNumI(MySetPoints[setpoint].Temperature, col2, Row1Y);
+    myGLCD.setColor(YELLOW);
+    myGLCD.print("N:", col1, Row1Y); myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew, col2,Row1Y );
+
  
-    myGLCD.print("N:", X + 8, Ytext - 15);
-    myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew, X + 30, Ytext - 15);
-    myGLCD.print("D:", X + 8, Ytext + 25);
-    myGLCD.printNumI(MySetPoints[setpoint].TemperatureNew - MySetPoints[setpoint].Temperature, X + 30, Ytext + 25);
-
-    myGLCD.setColor(BLUE);
-
-    myGLCD.printNumI(MySetPoints[setpoint].Temperature, X + 30, Ytext + 5);
+    int delta = MySetPoints[setpoint].TemperatureNew - MySetPoints[setpoint].Temperature;
+    
+    myGLCD.print("D:",col1, Row2Y);
+    if (delta > 0){
+      myGLCD.print("+", col2, Row2Y);
+    }
+    if (delta < 0){
+      myGLCD.print("-", col2, Row2Y);
+    }
+    myGLCD.printNumI(abs(delta), col3, Row2Y);
 
 }
 void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int radius) {
