@@ -314,6 +314,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
 
 }
 
+
 void updateFanOutputResistance() {
      FanSpeedResistanceCurrent = (FanSpeedPWM *100) / 254;
      if (FanSpeedResistanceLast == 0){
@@ -437,21 +438,30 @@ int ReadIntEprom(int loc, int min, int max, int def) {
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-void   SetFanPWMForATime(double minutes) {
-
-     if (minutes == 0){
-            FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
-            FanSpeedPWM = FanSpeedPWMStart;
+int  CalcFanPWMForATime(double minutes){
+     //Serial.println(minutes);
+     if (minutes == double(0.00)){
+            //Serial.println("zeir minutes dedtected");
+            //Serial.println(minutes);
+            return FanSpeedPWMStart;
      }
-     else if (FanSpeedPWMAutoMode == true){
-        if (minutes < FanSpeedPWNDecreaseByMinutes){
-            FanSpeedPWM = (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/FanSpeedPWNDecreaseByMinutes)*minutes) ; 
+     else if (minutes <= FanSpeedPWNDelayDecreaseByMinutes){
+            return FanSpeedPWMStart;
+        }
+     else if (minutes < FanSpeedPWNDecreaseByMinutes){
+            return  (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/(FanSpeedPWNDecreaseByMinutes - FanSpeedPWNDelayDecreaseByMinutes))* (minutes-FanSpeedPWNDelayDecreaseByMinutes)) ; 
         }
        else
        {
-           FanSpeedPWM = ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
+           return ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
        }
-    }
+    
+}
+void   SetFanPWMForATime(double minutes) {
+      //Serial.println("Call From SetFan");
+     //Serial.println(minutes);
+           
+    FanSpeedPWM = CalcFanPWMForATime(minutes);
     OutputFanSpeedPwm();
 }
 

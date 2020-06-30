@@ -137,6 +137,7 @@ void graphProfile() {
   {
       DrawVMenu(0);
   }
+  DrawFanDecrease(AQUA);
 }
 
 void UpdateGraphA() {
@@ -152,7 +153,7 @@ void UpdateGraphA() {
   int col3 = 180;
   int col4 = 240;
 
-   myGLCD.print("Time:",col , row);   myGLCD.print("***", col2 , row);
+   myGLCD.print("Time:",col , row);   myGLCD.printNumF(RoastMinutes,2,col2 , row);
    row = row + rowheight;
    if (Duty > 1) {
       myGLCD.print("Duty:",col , row); myGLCD.printNumF(1.0,2,col2,row);
@@ -223,23 +224,23 @@ void UpdateGraphC() {
 void UpdateFanPWMBut() {
   myGLCD.setFont(BigFont);
   int rowheight = 20;
-  int row = myFanButtonControl.bounding.ymax + 10;
+  int row = myFanButtonControl.bounding.ymax + 8;
   int col = myFanButtonControl.bounding.xmin + 15;
   int col1 = col + (myFanButtonControl.bounding.xmax - myFanButtonControl.bounding.xmin)/3  ;
   int col2 = col1 + (myFanButtonControl.bounding.xmax - myFanButtonControl.bounding.xmin)/3  ;
 
    if (FanSpeedPWMAutoMode == true)
    {
-      myGLCD.setColor(VGA_WHITE) ;
+      myGLCD.setColor(LGBLUE) ;
    }
    else
    {
-      myGLCD.setColor(BLUE);
+      myGLCD.setColor(AQUA);
    
    }
    myGLCD.printNumI(FanSpeedPWMStart,col , row);
    myGLCD.printNumI(FanSpeedPWM,col1 , row);
-   myGLCD.printNumI(FanSpeedPWMAutoEnd,col2 , row);
+   myGLCD.printNumI((FanSpeedPWMStart-FanSpeedPWMAutoDecrease),col2 , row);
    
 
     
@@ -292,7 +293,29 @@ void UpdateState(int state) {
 }
 
 
-
+void DrawFanDecrease(uint16_t color){
+  myGLCD.setColor(color);
+  int Col1 = (PixelsPerMin * 6);
+  int Y1 = YforATemp(CalcFanPWMForATime(0));
+  int X1 = (PixelsPerMin * 6);
+  int Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDelayDecreaseByMinutes));
+  int X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDelayDecreaseByMinutes)/4 );
+  //Serial.println(X2);
+  myGLCD.drawLine(X1, Y1, X2, Y2 );
+  X1 = X2; Y1 = Y2;
+  Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDecreaseByMinutes));
+  X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDecreaseByMinutes)/4 );
+  //Serial.println(FanSpeedPWNDecreaseByMinutes);
+  //Serial.println(X2);
+  myGLCD.drawLine(X1, Y1, X2, Y2 );
+  X1 = X2; Y1 = Y2;
+  Y2 = YforATemp(CalcFanPWMForATime(MySetPoints[EndingSetPoint].Minutes));
+  X2 =  Col1 + ((PixelsPerMin * MySetPoints[EndingSetPoint].Minutes)/4 );
+  //Serial.println(MySetPoints[6].Minutes);
+  //Serial.println(X2);
+  myGLCD.drawLine(X1, Y1, X2, Y2 );
+  
+}
 
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------

@@ -127,6 +127,7 @@ void theloop () {
  if (State == STATEROASTING || State == STATECOOLING)
  {
     RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+    //Serial.println(RoastMinutes);
  }
   //**************************************************************************************************
   //DETERIM NEW STATE BASE ON TEMPERATURE or TIME
@@ -177,6 +178,8 @@ void theloop () {
       State = STATESTOPPED;
       digitalWrite(FANRELAYp, RELAYOFF); digitalWrite(VIBRELAYp, RELAYOFF);
       RoastTime.stop();
+      FanSpeedPWMAutoMode = false;
+      FanSpeedPWM = 0;
     }
     else {
       newState = STATECOOLING;
@@ -187,7 +190,11 @@ void theloop () {
     //Serial.println("D");
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
-      EEPROM.write(FANSPEED_EP,FanSpeedPWM);
+      if (FanSpeedPWM > 0)
+      {   
+          FanSpeedPWMStart = FanSpeedPWM ;      
+          EEPROM.write(FANSPEED_EP,FanSpeedPWMStart);
+      }
       SetFanPWMForATime(0);
       FanSpeedPWMAutoMode = true;
       //CurrentHeat1Offset = CurrentHeat1Offset + CurrentHeat1;
@@ -215,12 +222,15 @@ void theloop () {
   }
   else if (newState == STATECOOLING) {
     State = STATECOOLING;
-    SetFanPWMForATime(2);
+    SetFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
+    FanSpeedPWMAutoMode = false;
+
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
     delay(1000);
   }
   else if (newState == STATEFANONLY) {
     State = STATEFANONLY;
+    FanSpeedPWM = FanSpeedPWMStart ;
     CurrentFanOffset = CurrentFanOffset + CurrentFan ;    
     AvgFanCurrent.clear();   
     SetFanPWMForATime(0);   
@@ -249,7 +259,6 @@ void theloop () {
   if (State == STATEROASTING) {
     //CALC THE ERR AND INTEGRAL
     //Serial.println("A");
-    SetFanPWMForATime(RoastMinutes);
     CurrentSetPointTemp =  SetpointforATime(RoastMinutes);
     Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint
     //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
@@ -335,6 +344,7 @@ void theloop () {
     UpdateGraphA();
 
     if (State == STATEROASTING || State == STATECOOLING){
+      
           AddPointbyTimeAndTempAndLineID(RoastMinutes, TBeanAvg, AVGLINEID, 2);
     }
   }
@@ -346,7 +356,7 @@ void theloop () {
     //Serial.println("3 seconds");
     
     if (State == STATEROASTING || State == STATECOOLING){
-
+        SetFanPWMForATime(RoastMinutes);
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
     }

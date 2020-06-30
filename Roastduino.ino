@@ -36,7 +36,7 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 #define GREEN   0x05E0  //0,190,0
 
 #define YELLOW  0x0FFF  //pair 255,255,0 (aqua)
-#define AQUA  0x07FF  //pair 0,255,255 (yellow)
+#define AQUA    0x07FF  //pair 0,255,255 (yellow)
 
 #define TAN           0x9E7F // 152,204,255
 #define LGBLUE        0xFE73 // 255,204,152 (tan)
@@ -148,15 +148,14 @@ int spSelected = -1;
 
 int FanSpeedPWM=0;
 int FanSpeedPWMStart=0;
-int FanSpeedPWMAutoEnd=0;
-int FanSpeedPWMAutoDecrease = 100;
+//int FanSpeedPWMAutoEnd=0;
+int FanSpeedPWMAutoDecrease = 90;
 bool FanSpeedPWMAutoMode = false;
-
+int FanSpeedPWNDelayDecreaseByMinutes = 2;
 int FanSpeedPWNDecreaseByMinutes = 8;
 
 int FanSpeedResistanceLast=0;
 int FanSpeedResistanceCurrent = 0;
-
 
 double Integral = 0.1;  //read from eeprom
 long unsigned IntegralLastTime = 0;
@@ -301,7 +300,9 @@ void setup() {
   Gain = 75;
   SecondTimer.restart(0);
   FlashTimer.restart(0);
-
+  
+  FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
+            
 
   // -------------------------------------------------------------
   myGLCD.InitLCD();
@@ -317,13 +318,14 @@ void setup() {
   State = STATESTOPPED;
 
    
-  
+
   graphProfile();
 
-  FanSpeedPWM = EEPROM.read(FANSPEED_EP);
-  FanSpeedPWMStart = FanSpeedPWM;
-  analogWrite(FanPWMp, FanSpeedPWM);
+  FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
+  FanSpeedPWM = 0;
   updateFanOutputResistance();
+  delay(2000);
+
   UpdateFanPWMBut();
   
 }

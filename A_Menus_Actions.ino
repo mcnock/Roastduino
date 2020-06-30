@@ -53,7 +53,7 @@ void DrawControlMenu() {
 }
 
 void ProcessControlMenu(int i) {
-  Serial.print("ProcessConrol");Serial.println (i);
+  //Serial.print("ProcessConrol");Serial.println (i);
   switch (i) {
     case 0:
       StartAction();
@@ -101,24 +101,24 @@ void DrawFanMenu() {
     myFanButtonControl.buttondefs = (buttondef*) malloc(myFanButtonControl.Count * sizeof(buttondef));
     int i = 0;
     i = 0; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
-    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, "<<"); 
+    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = AQUA; strcpy(myFanButtonControl.buttondefs[i].label, "<<"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
 
     i = 1; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
-    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, "<"); 
+    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = AQUA; strcpy(myFanButtonControl.buttondefs[i].label, "<"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
 
     i = 2; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
-    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, ">"); 
+    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = AQUA; strcpy(myFanButtonControl.buttondefs[i].label, ">"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
 
     i = 3; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
-    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, ">>"); 
+    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = AQUA; strcpy(myFanButtonControl.buttondefs[i].label, ">>"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
     SetMenuBoundingRect(myFanButtonControl);
     
     i = 4; myFanButtonControl.buttondefs[i].x = col + (width * i); myFanButtonControl.buttondefs[i].y = row; myFanButtonControl.buttondefs[i].h = height;
-    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = BLUE; strcpy(myFanButtonControl.buttondefs[i].label, "S"); 
+    myFanButtonControl.buttondefs[i].w = width; myFanButtonControl.buttondefs[i].color = AQUA; strcpy(myFanButtonControl.buttondefs[i].label, "S"); 
     myFanButtonControl.buttondefs[i].fontsize = 2;
     SetMenuBoundingRect(myFanButtonControl);
 
@@ -131,54 +131,52 @@ void DrawFanMenu() {
 
 void ProcessFanMenu(int i) {
  //Serial.print("ProcessFanMenu:"); Serial.println (i);
-  FanSpeedPWMAutoMode = false;
+  int change = 0;
   switch (i) {
     case 0:
       //decrease quickly
-      
-      FanSpeedPWM = FanSpeedPWM - 5;
-      
-      if(FanSpeedPWM <= 0){ 
-        FanSpeedPWM = 0;}
-      analogWrite(FanPWMp, FanSpeedPWM);
-      UpdateFanPWMBut();
-      updateFanOutputResistance();
-      delay(10);
+      change = -5;
       break;
     case 1:
-      //increase
-      FanSpeedPWM = FanSpeedPWM - 1;
-      if (FanSpeedPWM <= 0) 
-         {FanSpeedPWM = 0;}
-      analogWrite(FanPWMp, FanSpeedPWM);
-      UpdateFanPWMBut();
-      updateFanOutputResistance();
-      delay(10);
-      break;
+      change = -1;
+       break;
     case 2:
-      FanSpeedPWM = FanSpeedPWM + 1 ;
-      if (FanSpeedPWM >= 254) {
-        FanSpeedPWM = 254;}
-      analogWrite(FanPWMp, FanSpeedPWM);    
-      UpdateFanPWMBut();
-      updateFanOutputResistance();
-      delay(10);
+      change = 1;
       break;
     case 3:
-      FanSpeedPWM = FanSpeedPWM + 5 ;
-      if (FanSpeedPWM >= 254) 
-      {
-           FanSpeedPWM = 254;}
-
-           
-      analogWrite(FANSPEED_EP, FanSpeedPWM);
-      UpdateFanPWMBut();  
-      updateFanOutputResistance();
-      delay(10);
+      change = 5;       
       break;
     case 4:
-      EEPROM.write(FANSPEED_EP,FanSpeedPWM);
+      FanSpeedPWMStart = FanSpeedPWM;
+      EEPROM.write(FANSPEED_EP,FanSpeedPWMStart);
       break;
+  }
+
+  if (change != 0){
+      
+      if (FanSpeedPWMAutoMode == true){
+           if (RoastMinutes < FanSpeedPWNDelayDecreaseByMinutes){
+                FanSpeedPWMStart = FanSpeedPWMStart + change;
+           }
+           else
+           {
+               FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease  + change;
+           }
+           //Serial.println("AMinutes");
+           //Serial.println(RoastMinutes);
+           //SetFanPWMForATime(RoastMinutes);
+           DrawFanDecrease(AQUA);
+      }
+      else
+      {
+        FanSpeedPWM = FanSpeedPWM + change;  
+        if (FanSpeedPWM > 255){FanSpeedPWM = 255;}
+        if (FanSpeedPWM < 0){FanSpeedPWM = 0;}
+        analogWrite(FanPWMp, FanSpeedPWM);
+          UpdateFanPWMBut();
+          updateFanOutputResistance();
+          delay(10);
+      }
   }
   
 }
