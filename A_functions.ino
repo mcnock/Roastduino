@@ -467,7 +467,7 @@ void   SetFanPWMForATime(double minutes) {
 
 void OutputFanSpeedPwm(){
       analogWrite(FanPWMp, FanSpeedPWM);
-      UpdateFanPWMBut();
+      UpdateFanPWMValues();
       updateFanOutputResistance();
 }
 

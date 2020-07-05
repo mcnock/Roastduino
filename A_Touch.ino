@@ -12,16 +12,12 @@ void ProcessTouch(int Xtouch, int Ytouch)
     if (InRect(Xtouch, Ytouch, &myControlMenuDef.bounding)) {
         //Serial.println("found hor1 buttons");
         int i = WhatMenu(Xtouch, Ytouch, &myControlMenuDef);
-        //Serial.print("menu control found: "); Serial.println(i);
-        //myControlMenuDef.ClickHandler(i);
         ProcessControlMenu(i);
         return;
     }
     if (InRect(Xtouch, Ytouch, &myFanButtonControl.bounding)) {
         //Serial.println("found hor2 buttons");
         int j = WhatMenu(Xtouch, Ytouch, &myFanButtonControl);
-        //Serial.print("menu control found: "); Serial.println(i);
-        //myControlMenuDef.ClickHandler(j);
         ProcessFanMenu(j);
         return;
     }  
@@ -29,13 +25,7 @@ void ProcessTouch(int Xtouch, int Ytouch)
     if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
         //Serial.print("found vertical1  buttons");
         int k = WhatMenu(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
-        //Serial.print("Vmenu1 found index: "); Serial.println(i);
-        //if (VerticalMenuShowing ==4){
-         //   ProcessZeroAmpMetersVMenu(k)  ;
-       // }
-        //else{
         myButtonVertMenus[VerticalMenuShowing].ClickHandler(k);
-        //}
         return;
     }
 

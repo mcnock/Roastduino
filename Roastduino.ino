@@ -104,13 +104,16 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 #define BAUD            57600
 #define TEMPCOOLINGDONE 250
 
-#define STATEROASTING          1
-#define STATESTOPPED           2
-#define STATECOOLING       3
-#define STATEOVERHEATED    4
-#define STATEFANONLY           6
-#define STATENOFANCURRENT   7
-#define STATECHANGED        8
+#define STATEROASTING         1
+#define STATESTOPPED          2
+#define STATECOOLING          3
+#define STATEOVERHEATED       4
+#define STATEFANONLY          6
+#define STATENOFANCURRENT     7
+#define STATECHANGED          8
+#define DEBUGTOGGLE          9
+#define DEBUGDUTY          10
+
 
 #define SETPOINTLINEID 0
 #define ROLLAVGLINEID 1
@@ -120,6 +123,20 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 
 #define RELAYON    LOW
 #define RELAYOFF  HIGH
+
+#define ValuesOnly      true
+#define All             false
+
+
+#define Vmenubase  0
+#define VmenuSetPointSelect  1
+#define VmenuSetPointValue   2
+#define VmenuDebug           3  
+#define VmenuZeroAmps        4
+#define VmenuOnOff           5
+#define VmenuDuty            6
+
+
 // ===========
 // DEFINITIONS
 // ===========
@@ -130,6 +147,11 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 int State;
 char StateName[9] = "12345678";
 int newState;
+int lastStateUpdated;
+String errmsg;
+boolean newerrmsg;
+int lenlasterrmsg;
+
 MAX6675 thermocouple1(TSCKp, TCS1p,  TSD1p);
 MAX6675 thermocouple2(TSCKp, TCS2p,  TSD2p);
 MAX6675 thermocouple3(TSCKp, TCS3p,  TSD3p);
@@ -170,6 +192,7 @@ double Dutyraw ;
 int PIDIntegralUdateTimeValue ;
 int PIDWindowSize ;
 
+boolean setpointschanged = true;
 double MyMinuteTemperature[30];
 setpoint MySetPoints[6] = {{0, 100}, {3, 390}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
 int SetPointCount = 6;  //0,1,2,3,4,5
@@ -196,7 +219,6 @@ int LoopsPerSecond;
 
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
-Chrono FlashTimer(Chrono::MILLIS);
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 
@@ -239,7 +261,7 @@ double RoastMinutes = 0;
 int TCoil;
 int TBean1;
 int TBean2;
-int TFan;
+int TBean3;
 double MaxVoltage, MaxVread;
 double CurrentFan;
 double CurrentHeat1, CurrentHeat2;
@@ -274,7 +296,6 @@ void setup() {
   pinMode(TSD3p, INPUT_PULLUP);
   pinMode(TSD4p, INPUT_PULLUP);
 
-
   pinMode(TCS1p, OUTPUT);
   pinMode(TCS2p, OUTPUT);
   pinMode(TCS3p, OUTPUT);
@@ -299,7 +320,6 @@ void setup() {
   Integral = 0.1;
   Gain = 75;
   SecondTimer.restart(0);
-  FlashTimer.restart(0);
   
   FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
             
@@ -315,9 +335,7 @@ void setup() {
 
   intializeVMenus();
 
-  State = STATESTOPPED;
-
-   
+  State = STATESTOPPED;   
 
   graphProfile();
 
@@ -326,7 +344,7 @@ void setup() {
   updateFanOutputResistance();
   delay(2000);
 
-  UpdateFanPWMBut();
+  UpdateFanPWMValues();
   
 }
 
@@ -334,5 +352,4 @@ void setup() {
 void loop()
 {
   theloop();
-
 }
