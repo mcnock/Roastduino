@@ -35,7 +35,7 @@ void graphProfile() {
       TempYMax = 800; 
       TempYSplit2 = 440;
       TempYSplit2 = MySetPoints[5].Temperature ;
-      PixelYSplit2 = 360;//180;
+      PixelYSplit2 = 400;//180;
       TempYSplit = (MySetPoints[1].Temperature) ;
       PixelYSplit = 150;//90;
     
@@ -153,12 +153,9 @@ void UpdateGraphA() {
 
    myGLCD.print("Time:",col , row);   myGLCD.printNumF(RoastMinutes,2,col2 , row);
    row = row + rowheight;
-   if (Duty > 1) {
-      myGLCD.print("Duty:",col , row); myGLCD.printNumF(1.0,2,col2,row);
-   }
-   else {
-       myGLCD.print("Duty:", col, row); myGLCD.printNumF(Duty,2, col2, row, '.');
-   }
+  
+   myGLCD.print("Duty:", col, row); myGLCD.printNumF(Duty,2, col2, row, '.');
+   
   row = row + rowheight;
   myGLCD.print("Err :",col , row);   myGLCD.printNumF(-Err,2,col2,row);
   row = row + rowheight;
@@ -168,11 +165,11 @@ void UpdateGraphA() {
    row = row + rowheight;
    myGLCD.print("Int :", col, row);  myGLCD.printNumF(Integral,2,col2,row);  
    row = row + rowheight;
-   myGLCD.print("l/s :",col , row);  myGLCD.printNumI(LoopsPerSecond,col2 , row) ;
+   myGLCD.print("l/s :",col , row);  myGLCD.printNumI(LoopsPerSecond,col2 , row, 3,' ') ;
    row = row + rowheight;
-   myGLCD.print("Skp: ", col, row);  myGLCD.printNumI(Readingskipped,col2 , row);
+   myGLCD.print("Skp: ", col, row);  myGLCD.printNumI(Readingskipped,col2 , row, 3,' ');
    row = row + rowheight;
-   myGLCD.print("FanD:", col, row);  myGLCD.printNumI(FanSpeedPWMAutoDecrease,col2 , row);
+   myGLCD.print("FanD:", col, row);  myGLCD.printNumI(FanSpeedPWMAutoDecrease,col2 , row,3,' ');
 
 }
 void UpdateRealTime(boolean OnlyChanges) {
@@ -564,8 +561,6 @@ int YforATemp(int temp) {
   }
   else if (temp <= TempYSplit2) {
     result = ((myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempYSplit) / TempPerPixM));
-    //460 x 460 x 460 /240  = 379.687
-    //return (myGLCD.getDisplayYSize() -  ((double)temp * (double)temp * double(temp)) / IYscale);
   } else {
     result = ((myGLCD.getDisplayYSize() -  PixelYSplit2) + ((double)(TempYSplit2 - temp  ) / TempPerPixH));
   }

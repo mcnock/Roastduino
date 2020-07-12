@@ -254,7 +254,9 @@ void theloop () {
     //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
-    if (RoastMinutes > MySetPoints[1].Minutes ) { //only calc intergral error if we are above the 1st setpoint
+    //if (RoastMinutes > MySetPoints[1].Minutes ) 
+    if (Duty < 1  ) 
+    { //only calc intergral error if we are above the 1st setpoint
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
         if (Duty < 1 && ErrI < Gain ) {
           IntegralSum =  IntegralSum + double(Err);
@@ -266,7 +268,7 @@ void theloop () {
       Duty = ((double)(Err + ErrI) / (double)Gain) ;
     }
     else { //clear out the integral before set point 1.
-      Duty = Dutyraw;     
+      Duty = 1;     
       ErrI = 0;
       IntegralSum= 0;
       PIDIntegralUdateTime.restart(0);

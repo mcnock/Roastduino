@@ -200,7 +200,7 @@ int TimeScreenLeft = 15;
 int EndingSetPoint = 5;
 
 double TempYMax = 800;
-double TempYSplit2 = 440;
+double TempYSplit2 = 450;
 double TempYSplit = 390;
 
 double PixelYSplit2;
@@ -317,7 +317,7 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-  Integral = 0.1;
+  Integral = 0.05;
   Gain = 75;
   SecondTimer.restart(0);
   
