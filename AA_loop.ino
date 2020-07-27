@@ -56,9 +56,33 @@ void theloop () {
 
     
     TBean3 =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
+
     TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
-    TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
+    
+    if (VerticalMenuShowing == VmenuManualtemp){  
+        if (manualtemp == -1){
+            TBeanAvgRoll.clear();
+            if (TBeanAvg > 0){
+                manualtemp = TBeanAvg;
+            }
+            else
+            {
+                manualtemp = 300;  
+            }
+        }
+        else
+        {
+            TBeanAvg = manualtemp ;
+        }        
+    }
+    else
+    {
+        Serial.println ("here");
+        TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
+        manualtemp = -1;
+    }
+    
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
     double newtempratiotoaverage;
     if (TBeanAvgRoll.getCount() > 1) {
@@ -131,7 +155,7 @@ void theloop () {
       ProcessTouch (x,y);
   }
   
-
+  
 
 
   // **************************************************************************************************************************************************************
@@ -174,7 +198,7 @@ void theloop () {
       TBeanAvgRoll.clear();
       //delay(1000);
       Readingskipped = 0;
-      StartLinebyTimeAndTemp(0, 0, AVGLINEID , BLUE);
+      StartLinebyTimeAndTemp(0, 0, AVGLINEID , YELLOW);
       StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , LGBLUE);
       StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
       graphProfile();
@@ -255,10 +279,12 @@ void theloop () {
     PIDIntegralUdateTimeValue = 5000;
     Dutyraw = ((double)(Err) / (double)Gain) ;
     //if (RoastMinutes > MySetPoints[1].Minutes ) 
-    if (Duty < 1  ) 
+    //if (Duty < 1 ) 
+    if (abs(Dutyraw) < 1 )
     { //only calc intergral error if we are above the 1st setpoint
       if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
-        if (Duty < 1 && ErrI < Gain ) {
+        //if (Duty < 1 && ErrI < Gain ) {
+        if (ErrI < Gain ) {
           IntegralSum =  IntegralSum + double(Err);
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
           //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);          
@@ -274,6 +300,13 @@ void theloop () {
       PIDIntegralUdateTime.restart(0);
       IntegralLastTime = 0;
     }
+  }
+  else
+  {
+      ErrI = 0;
+      IntegralSum= 0;
+    
+  
   }
   
  if (State == STATEROASTING || State == DEBUGDUTY) {
@@ -296,6 +329,11 @@ void theloop () {
     else {
       if ( Duty <= 0.5 && ((now - PIDWindowStartTime) <=  (Duty  * 2 * PIDWindowSize))) {
         SSR1 = HIGH;
+      }
+      if (Duty >= 1.0)
+      {
+        SSR1 = HIGH;
+        SSR2 = HIGH;
       }
       if ( Duty > 0.5 ) {
         SSR1 = HIGH;
@@ -342,7 +380,7 @@ void theloop () {
     UpdateRealTime(ValuesOnly);
     UpdateEachSecond(ValuesOnly);
     if (State == STATEROASTING || State == STATECOOLING){
-          AddPointbyTimeAndTempAndLineID(RoastMinutes, TBeanAvg, AVGLINEID, 2);
+       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvg, AVGLINEID);
     }
   }
 
@@ -354,7 +392,7 @@ void theloop () {
         AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
     }
     UpdateFanPWMValues();
-    UpdateGraphA();
+    UpdateDisplayDetailA();
     LcdUdateTime.restart(0);
   }
 

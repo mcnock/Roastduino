@@ -51,6 +51,8 @@ typedef struct buttonsetdef {
   int nextMenu;
   int backMenu;
   int inputfrompriormenu;
+  int priormenuID;
+
 } buttonsetdef;
 
 

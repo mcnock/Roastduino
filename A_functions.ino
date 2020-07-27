@@ -127,7 +127,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             port.print ("GC");
             int count;
             for (int X = 0; X < 320; X = X+3) {
-              if (myLastGraphTemps[X] > 0 ) {
+              if (myLastGraphXPixels[X] > 0 ) {
                 if (count > 0) {
                   port.print ("!");
                 } 
@@ -135,7 +135,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
                 double minutes = double(X)/PixelsPerMin;
                 port.print (minutes);
                 port.print (":");
-                port.print (myLastGraphTemps[X]);
+                port.print (myLastGraphXPixels[X]);
               }
               else
               {

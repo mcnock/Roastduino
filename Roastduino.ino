@@ -10,6 +10,7 @@
 #include "B_MyTypes.h"
 #include <UTFT.h>
 #include <UTouch.h>
+#include <stdio.h> // for function sprintf
 
 // Declare which fonts we will be using
 extern uint8_t SmallFont[];
@@ -91,6 +92,17 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 #define LEDp		 5  //bad pin will not do anthing
 
 
+#define VBUT0  0 
+#define VBUT1  1
+#define VBUT2  2
+#define VBUT3  3
+#define VBUT4  4
+#define VBUT5  5
+#define VBUT6  6
+#define VBUT7  7
+#define VBUT8  8
+
+
 //EPROM MEMORORY
 int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory locations - not data
 #define INTEGRAL_EP 0
@@ -111,11 +123,14 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 #define STATEFANONLY          6
 #define STATENOFANCURRENT     7
 #define STATECHANGED          8
-#define DEBUGTOGGLE          9
-#define DEBUGDUTY          10
+#define DEBUGTOGGLE           9
+#define DEBUGDUTY            10
 
 
-#define SETPOINTLINEID 0
+double manualtemp = 300;           
+boolean usemanualtemp = true;           
+
+#define PROFILELINEID 0
 #define ROLLAVGLINEID 1
 #define AVGLINEID 2
 #define COILLINEID 3
@@ -128,15 +143,16 @@ int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory l
 #define All             false
 
 
-#define Vmenubase  0
+#define VmenuNone           -1
+#define Vmenubase            0
 #define VmenuSetPointSelect  1
 #define VmenuSetPointValue   2
 #define VmenuDebug           3  
 #define VmenuZeroAmps        4
 #define VmenuOnOff           5
 #define VmenuDuty            6
-
-
+#define VmenuManualtemp      7
+#define VmenuCount           8
 // ===========
 // DEFINITIONS
 // ===========
@@ -200,8 +216,8 @@ int TimeScreenLeft = 15;
 int EndingSetPoint = 5;
 
 double TempYMax = 800;
-double TempYSplit2 = 450;
-double TempYSplit = 390;
+double TempSplitHigh = 460;
+double TempSplitLow = 390;
 
 double PixelYSplit2;
 double PixelYSplit;
@@ -232,10 +248,10 @@ Average<float> AvgFanCurrent(30);
 Average<float> AvgCoil1Amp(30);
 Average<float> AvgCoil2Amp(30);
 
-//temps are read  once per second
+//temps are read once per second
 Average<float> FanPressureRoll(5);
-Average<int> TBeanAvgRoll(5);
-Average<int> TCoilRoll(60); //this is minute avg
+Average<double> TBeanAvgRoll(5);
+Average<double> TCoilRoll(5); //this is minute avg
 
 int OVERHEATFANCount;
 int OVERHEATCOILCount;
@@ -243,19 +259,23 @@ int TempReachedCount;
 int TempSpikeCount;
 int Readingskipped;
 
-buttonsetdef myControlMenuDef;
-buttonsetdef myFanButtonControl;
-buttonsetdef myButtonVertMenus[10];
+buttonsetdef myHorControlMenuDef;
+buttonsetdef myHorFanButtonControl;
+buttonsetdef myButtonVertMenus[VmenuCount];
 int VerticalMenuShowing = 0;
 
 
+char s6[6];
+char s5[5];
+
+char spFormat[5] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
 uint16_t LastXforLineID[5];
 uint16_t LastYforLineID[5];
 uint16_t LineColorforLineID[5];
 
 int myLastGraphYPixels[800];
-int myLastGraphTemps[800];
+int myLastGraphXPixels[800];
 int  moveamount = -1;
 double RoastMinutes = 0;
 int TCoil;
@@ -317,7 +337,7 @@ void setup() {
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.1 ;
-  Integral = 0.05;
+  Integral = 0.01;
   Gain = 75;
   SecondTimer.restart(0);
   

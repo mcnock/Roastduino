@@ -9,16 +9,16 @@ void ProcessTouch(int Xtouch, int Ytouch)
     int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
     //Serial.print("touch detected X"); Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
-    if (InRect(Xtouch, Ytouch, &myControlMenuDef.bounding)) {
+    if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
         //Serial.println("found hor1 buttons");
-        int i = WhatMenu(Xtouch, Ytouch, &myControlMenuDef);
-        ProcessControlMenu(i);
+        int i = WhatMenu(Xtouch, Ytouch, &myHorControlMenuDef);
+        ProcessHorControlMenu(i);
         return;
     }
-    if (InRect(Xtouch, Ytouch, &myFanButtonControl.bounding)) {
+    if (InRect(Xtouch, Ytouch, &myHorFanButtonControl.bounding)) {
         //Serial.println("found hor2 buttons");
-        int j = WhatMenu(Xtouch, Ytouch, &myFanButtonControl);
-        ProcessFanMenu(j);
+        int j = WhatMenu(Xtouch, Ytouch, &myHorFanButtonControl);
+        ProcessHorFanMenu(j);
         return;
     }  
    
