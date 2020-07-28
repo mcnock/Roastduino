@@ -151,7 +151,7 @@ boolean usemanualtemp = true;
 #define VmenuZeroAmps        4
 #define VmenuOnOff           5
 #define VmenuAjd_01            6
-#define VmenuManualtemp      7
+#define VMenuAdj_1_5_10_V      7
 #define VmenuCount           8
 // ===========
 // DEFINITIONS
@@ -209,9 +209,9 @@ int PIDWindowSize ;
 
 boolean setpointschanged = true;
 double MyMinuteTemperature[30];
-setpoint MySetPoints[6] = {{0, 100}, {3, 390}, {5, 420}, {7, 425}, {10, 430}, {12, 450}};
+setpoint MySetPoints[6] = {{0, 100}, {4, 390}, {7, 420}, {10, 425}, {13, 430}, {16, 450}};
 int SetPointCount = 6;  //0,1,2,3,4,5
-int TimeScreenLeft = 15;
+int TimeScreenLeft = 20;
 int EndingSetPoint = 5;
 
 double TempYMax = 800;
@@ -263,7 +263,6 @@ buttonsetdef myHorFanButtonControl;
 buttonsetdef myButtonVertMenus[VmenuCount];
 int VerticalMenuShowing = 0;
 int VerticalMenuPrior = 0;
-int VerticalButtonPrior = 0;
 
 
 char s6[6];
@@ -278,7 +277,9 @@ uint16_t LineColorforLineID[5];
 int myLastGraphYPixels[800];
 int myLastGraphXPixels[800];
 int  moveamount = -1;
+
 double RoastMinutes = 0;
+
 int TCoil;
 int TBean1;
 int TBean2;
@@ -337,9 +338,14 @@ void setup() {
   
   Gain =      EEPROM.read(GAIN_EP);
   Integral =  (double)EEPROM.read(INTEGRAL_EP) / 100;
-  if (Integral > 1) Integral = 0.1 ;
-  Integral = 0.01;
-  Gain = 75;
+  if (Integral > 1) Integral = 0.00 ;
+  if (Gain > 100) Gain = 75 ;
+  if (Gain < 10) Gain = 10 ;
+
+
+//  Integral = 0.01;
+ // Gain = 75;
+//
   SecondTimer.restart(0);
   
   FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);

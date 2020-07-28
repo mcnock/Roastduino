@@ -32,7 +32,6 @@ typedef struct buttondef {
   char label[8];
   uint8_t fontsize;
   rect Rect;
-
 } buttondef;
 
 typedef int (*ClickHandler) (const int MenuID);
@@ -50,6 +49,7 @@ typedef struct buttonsetdef {
   ClickHandler ClickHandler;
   int nextMenu;
   int backMenu;
+  int inputbutton;
   
 
 } buttonsetdef;

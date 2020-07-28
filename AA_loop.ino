@@ -60,7 +60,7 @@ void theloop () {
     TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
     
-    if (VerticalMenuShowing == VmenuManualtemp){  
+    if (VerticalMenuShowing == VMenuAdj_1_5_10_V && myButtonVertMenus[VMenuAdj_1_5_10_V].inputbutton == 8){  
         if (manualtemp == -1){
             TBeanAvgRoll.clear();
             if (TBeanAvg > 0){
@@ -391,7 +391,7 @@ void theloop () {
         AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
     }
     UpdateFanPWMValues();
-    UpdateDisplayDetailA();
+    UpdateDisplayDetailA(true);
     LcdUdateTime.restart(0);
   }
 
