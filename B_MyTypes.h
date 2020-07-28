@@ -50,8 +50,7 @@ typedef struct buttonsetdef {
   ClickHandler ClickHandler;
   int nextMenu;
   int backMenu;
-  int inputfrompriormenu;
-  int priormenuID;
+  
 
 } buttonsetdef;
 

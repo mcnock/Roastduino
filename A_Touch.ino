@@ -11,20 +11,21 @@ void ProcessTouch(int Xtouch, int Ytouch)
 
     if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
         //Serial.println("found hor1 buttons");
-        int i = WhatMenu(Xtouch, Ytouch, &myHorControlMenuDef);
+        int i = WhatButton(Xtouch, Ytouch, &myHorControlMenuDef);
         ProcessHorControlMenu(i);
         return;
     }
     if (InRect(Xtouch, Ytouch, &myHorFanButtonControl.bounding)) {
         //Serial.println("found hor2 buttons");
-        int j = WhatMenu(Xtouch, Ytouch, &myHorFanButtonControl);
+        int j = WhatButton(Xtouch, Ytouch, &myHorFanButtonControl);
         ProcessHorFanMenu(j);
         return;
     }  
    
     if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
         //Serial.print("found vertical1  buttons");
-        int k = WhatMenu(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
+        int k = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
+        VerticalButtonPrior = k;
         myButtonVertMenus[VerticalMenuShowing].ClickHandler(k);
         return;
     }
@@ -51,7 +52,7 @@ boolean InRect(int &x, int &y, struct rect *Rect)
 }
 
 
-int WhatMenu(int &x, int &y, struct buttonsetdef *butdefset)
+int WhatButton(int &x, int &y, struct buttonsetdef *butdefset)
 {
   //Serial.print ("what menu count:"); Serial.println( butdefset->Count);
 

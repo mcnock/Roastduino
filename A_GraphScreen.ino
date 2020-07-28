@@ -165,6 +165,7 @@ void graphProfile() {
   UpdateRealTime(All);
   setpointschanged = false;
 }
+
 void UpdateDisplayDetailA() {
   //this is top row
  
@@ -176,36 +177,34 @@ void UpdateDisplayDetailA() {
   int col2 = 120;
   int col3 = 180;
   int col4 = 240;
-
+ 
   myGLCD.setFont(BigFont);
   
+   //Serial.print("RoastMinutes:");Serial.println(RoastMinutes);
+   
    myGLCD.print("Time:",col , row);   myGLCD_printNumF(RoastMinutes,col2 , row,6,2);
    row = row + rowheight;
    myGLCD.print("Set:",col , row);   myGLCD.printNumI(CurrentSetPointTemp,col2 , row,6);
    row = row + rowheight;
- 
-   myGLCD.print("Duty:", col, row); myGLCD_printNumF(Duty,col2, row, 6,2);
-   
+   //Serial.print("Duty:");Serial.println(Duty);
+   myGLCD.print("Duty:", col, row); myGLCD.printNumF(Duty, col2, row, 6,2);
+   row = row + rowheight;
+  myGLCD.print("Err :",col , row);   myGLCD.printNumI(Err,col2,row,6, ' ');
   row = row + rowheight;
-  myGLCD.print("Err :",col , row);   myGLCD.printNumI(-Err,col2,row,6, ' ');
-  row = row + rowheight;
-  myGLCD.print("IEr :",col  , row);  myGLCD.printNumI(-ErrI,col2,row, 6, ' ');
+  myGLCD.print("IEr :",col  , row);  myGLCD.printNumI(ErrI,col2,row, 6, ' ');
 
-  
+
   myGLCD.setFont(SmallFont);
-  row = row + rowheight + rowheight;
-  myGLCD.print("Gain:",col , row);  myGLCD.printNumI(Gain,col2 , row, 3, ' ');
-   
+  row = row + 90;
+  myGLCD.print("Gain:",col2 , row);  myGLCD.printNumI(Gain,col3 , row, 3, ' ');
    row = row + rowheight;
-
-   myGLCD.print("Int :", col, row);  myGLCD.printNumF(Integral,col2, row, 6, 2);  
-   
+   myGLCD.print("Int :", col2, row);  myGLCD.printNumF(Integral,col3, row, 6, 2);  
    row = row + rowheight;
-   myGLCD.print("l/s :",col , row);  myGLCD.printNumI(LoopsPerSecond,col2 , row, 3,' ') ;
+   myGLCD.print("l/s :",col2 , row);  myGLCD.printNumI(LoopsPerSecond,col3 , row, 3,' ') ;
    row = row + rowheight;
-   myGLCD.print("Skp : ", col, row);  myGLCD.printNumI(Readingskipped,col2 , row, 3,' ');
+   myGLCD.print("Skp : ", col2, row);  myGLCD.printNumI(Readingskipped,col3 , row, 3,' ');
    row = row + rowheight;
-   myGLCD.print("FanD:", col, row);  myGLCD.printNumI(FanSpeedPWMAutoDecrease,col2 , row,3,' ');
+   myGLCD.print("FanD:", col2, row);  myGLCD.printNumI(FanSpeedPWMAutoDecrease,col3 , row,3,' ');
 
 }
 void UpdateRealTime(boolean OnlyChanges) {

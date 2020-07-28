@@ -150,7 +150,7 @@ boolean usemanualtemp = true;
 #define VmenuDebug           3  
 #define VmenuZeroAmps        4
 #define VmenuOnOff           5
-#define VmenuDuty            6
+#define VmenuAjd_01            6
 #define VmenuManualtemp      7
 #define VmenuCount           8
 // ===========
@@ -174,7 +174,6 @@ MAX6675 thermocouple3(TSCKp, TCS3p,  TSD3p);
 MAX6675 thermocouple4(TSCKp, TCS4p,  TSD4p);
 //global variablers for temp control
 int Gain = 100; //read from eeprom
-
 
 //for python serial  commands
 char Commandsp1[7] = "xxxxx ";
@@ -263,6 +262,8 @@ buttonsetdef myHorControlMenuDef;
 buttonsetdef myHorFanButtonControl;
 buttonsetdef myButtonVertMenus[VmenuCount];
 int VerticalMenuShowing = 0;
+int VerticalMenuPrior = 0;
+int VerticalButtonPrior = 0;
 
 
 char s6[6];

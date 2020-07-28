@@ -78,7 +78,6 @@ void theloop () {
     }
     else
     {
-        Serial.println ("here");
         TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
         manualtemp = -1;
     }
