@@ -28,7 +28,8 @@ void theloop () {
     //Serial.println(RoastMinutes);
  } 
 
-  
+
+ //Serial.println("here AA");  
   //**********************************************************************************************************************************
   //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
   //******************************************************************************************************************************** 
@@ -105,7 +106,7 @@ void theloop () {
     }
   }
 
-
+  //Serial.println("here A");
   //**************************************************************************************************
   //DETERIM NEW STATE BASE ON TEMPERATURE or TIME
   //*****************************************************************************************************
@@ -123,7 +124,7 @@ void theloop () {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
         newState = STATECOOLING;
-        Serial.println("Roast Temp Reached. Cooling starting End:");
+       //Serial.println("Roast Temp Reached. Cooling starting End:");
       }
     }
     else {
@@ -132,7 +133,7 @@ void theloop () {
 
     if ( RoastMinutes > MySetPoints[EndingSetPoint].Minutes) {
       newState = STATECOOLING;
-      Serial.println("Max time reached. Cooling starting");
+     //Serial.println("Max time reached. Cooling starting");
     }
   }
   else if (State == STATECOOLING){

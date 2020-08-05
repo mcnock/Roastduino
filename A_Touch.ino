@@ -7,7 +7,7 @@
 void ProcessTouch(int Xtouch, int Ytouch)
 {
     int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
-    //Serial.print("touch detected X"); Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
+    //Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
     if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
         //Serial.println("found hor1 buttons");
@@ -53,10 +53,10 @@ boolean InRect(int &x, int &y, struct rect *Rect)
 
 int WhatButton(int &x, int &y, struct buttonsetdef *butdefset)
 {
-  //Serial.print ("what menu count:"); Serial.println( butdefset->Count);
+  //Serial.print ("what menu count:");Serial.println( butdefset->Count);
 
   for (int i = 0 ; i < butdefset->Count; i++) {
-    //Serial.println ("looking at index:"); Serial.println(i);
+    //Serial.println ("looking at index:");Serial.println(i);
     //SerialprintRect(&butsetdef->buttondefs[i].Rect);
     if (InRect(x, y, &butdefset->buttondefs[i].Rect) == true) {
         //Serial.print("Found:");Serial.println(i);

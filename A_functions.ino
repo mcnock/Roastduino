@@ -54,7 +54,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
     return;
   }
   //Serial.println ("Passes");
-  //Serial.print(cmd0) + Serial.print(cmd1) + Serial.print(cmd2) + Serial.println(cmd3);
+  //Serial.print(cmd0) +Serial.print(cmd1) +Serial.print(cmd2) +Serial.println(cmd3);
 
 
 
@@ -240,7 +240,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
         if (cmd1 == 'D')  {
           cmd3AsSignedInt = -cmd3AsSignedInt;
         }
-        Serial.println(cmd2);
+     //Serial.println(cmd2);
         switch (cmd2) {
           case 'a':
             port.print("MoveLast4Points by ");
@@ -306,7 +306,7 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             break;
 
 
-            Serial.println("not supported");
+         //Serial.println("not supported");
         }
         break;
     }
@@ -385,23 +385,23 @@ void ReturnSetPoints(Stream &port) {
 }
 
 void SerialprintRect(struct rect * rect) {
- // Serial.print("xmin:"); Serial.print(rect->xmin); Serial.print(" ymin:"); Serial.print(rect->ymin); Serial.print(" xmax:"); Serial.print(rect->xmax); Serial.print(" ymax:"); Serial.println(rect->ymax);
+ //Serial.print("xmin:");Serial.print(rect->xmin);Serial.print(" ymin:");Serial.print(rect->ymin);Serial.print(" xmax:");Serial.print(rect->xmax);Serial.print(" ymax:");Serial.println(rect->ymax);
 }
 
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
     Readingskipped++;
-    Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
+ //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature > 1000) {
     Readingskipped++;
-    Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
+ //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature < 40) {
     Readingskipped++;
-    Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
+ //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
     return -1;
   }
   else {

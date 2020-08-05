@@ -142,7 +142,7 @@ void DrawHorFanMenu() {
 }
 
 void ProcessHorFanMenu(int i) {
- //Serial.print("ProcessFanMenu:"); Serial.println (i);
+ //Serial.print("ProcessFanMenu:");Serial.println (i);
   int change = 0;
   switch (i) {
     case 0:
@@ -196,7 +196,7 @@ void ProcessHorFanMenu(int i) {
 void intializeVMenus(){
     for (int i = 0; i < 8; i++)
     {
-       // Serial.print("VMenu");Serial.println(i);
+       //Serial.print("VMenu");Serial.println(i);
         int j= 0;
         buttonsetdef* bsd = &myButtonVertMenus[i];
         bsd->Count = 9;
@@ -524,9 +524,9 @@ void ProcessAdjust_01Vmenu(int i) {
     
              
     if (moveamount != 0.0 ){
-     // Serial.print("moveamount");Serial.println(moveamount);
-     // Serial.print("VerticalMenuPrior ");Serial.println(VerticalMenuPrior );
-     // Serial.print("VerticalButtonPrior  ");Serial.println(myButtonVertMenus[VerticalMenuShowing].inputbutton   );
+     //Serial.print("moveamount");Serial.println(moveamount);
+     //Serial.print("VerticalMenuPrior ");Serial.println(VerticalMenuPrior );
+     //Serial.print("VerticalButtonPrior  ");Serial.println(myButtonVertMenus[VerticalMenuShowing].inputbutton   );
       
       
       if (VerticalMenuPrior == VmenuDebug && myButtonVertMenus[VerticalMenuShowing].inputbutton == VBUT7 ){
@@ -534,7 +534,7 @@ void ProcessAdjust_01Vmenu(int i) {
        
       }
       if (VerticalMenuPrior == Vmenubase && myButtonVertMenus[VerticalMenuShowing].inputbutton  == VBUT3 ){
-       //  Serial.print("int");Serial.println(Integral);
+       //Serial.print("int");Serial.println(Integral);
          Integral = Integral + moveamount;
          if (Integral < 0.0){Integral = 0.0;}
          EEPROM.update(INTEGRAL_EP , (int)(Integral * 100));
@@ -547,7 +547,7 @@ void ProcessAdjust_01Vmenu(int i) {
 }
 
 void ProcessDebugVMenu(int i) {
-     // Serial.print("ProcessVertMenu3:");Serial.println(i);
+     //Serial.print("ProcessVertMenu3:");Serial.println(i);
 //    buttonsetdef* bsd = &myButtonVertMenus[VerticalMenuShowing];     
     if (errmsg == "Must be in state stopped to debug"){
         errmsg = "";
@@ -748,7 +748,7 @@ void ProcessZeroAmpMetersVMenu(int i) {
 }
 
 void EndRoastToggleAction() {
-    Serial.println("Toggle end action");
+//Serial.println("Toggle end action");
     if (EndingSetPoint == 4) {
         EndingSetPoint = 5;
     }
@@ -878,7 +878,7 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
 
   }
   //Serial.print ("MenuShowingXmin:");Serial.println (butdefset.bounding.xmin);
- // Serial.print ("MenuShowingYmin:");Serial.println (butdefset.bounding.ymin);
+ //Serial.print ("MenuShowingYmin:");Serial.println (butdefset.bounding.ymin);
   //Serial.print ("MenuShowingXmax:");Serial.println (butdefset.bounding.xmax);
   //Serial.print ("MenuShowingYmax:");Serial.println (butdefset.bounding.ymax);
 
@@ -889,7 +889,7 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
 void DrawButton(buttonsetdef& butdefset, int i)
 {
     //draw button
-    //Serial.println ("Drawing buttons x:");Serial.println (butdefset.buttondefs[i].x), Serial.println (" y:");Serial.println ( butdefset.buttondefs[i].y);Serial.println (" w:");Serial.println ( butdefset.buttondefs[i].w) ;
+    //Serial.println ("Drawing buttons x:");Serial.println (butdefset.buttondefs[i].x),Serial.println (" y:");Serial.println ( butdefset.buttondefs[i].y);Serial.println (" w:");Serial.println ( butdefset.buttondefs[i].w) ;
     //Serial.println (" h:");Serial.println ( butdefset.buttondefs[i].h);
 
     myGLCD.setColor(butdefset.buttondefs[i].color);

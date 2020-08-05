@@ -43,14 +43,15 @@ void graphProfile() {
         }
     
              
-     
+     Serial.println("AAA");
      
      
      //perform some necesary calculations to size our scales to the display 
      //yscale is done in 3 ranges
+      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 5;
       TempYMax = 800; 
       TempSplitHigh = 440;
-      TempSplitHigh = MySetPoints[5].Temperature ;
+      TempSplitHigh = MySetPoints[EndingSetPoint].Temperature ;
       PixelYSplit2 = 400;//180;
       TempSplitLow = (MySetPoints[2].Temperature - Gain) ;
       PixelYSplit = 150;//90;
@@ -78,17 +79,22 @@ void graphProfile() {
   myGLCD.print("9min",(9 * PixelsPerMin) - 30, 460);
   myGLCD.drawLine(12 * PixelsPerMin ,0,12 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
   myGLCD.print("12min",(12 * PixelsPerMin) - 30, 460);
-  myGLCD.drawLine(15 * PixelsPerMin ,0,15 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
-  myGLCD.print("15min",(15 * PixelsPerMin) - 30, 460);
- myGLCD.drawLine(18 * PixelsPerMin ,0,18 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
-  myGLCD.print("19min",(18 * PixelsPerMin) - 30, 460);
-
+  if (TimeScreenLeft > 15){
+     myGLCD.drawLine(15 * PixelsPerMin ,0,15 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
+     myGLCD.print("15min",(15 * PixelsPerMin) - 30, 460);
+  }
+  if (TimeScreenLeft > 18){
+      myGLCD.drawLine(18 * PixelsPerMin ,0,18 * PixelsPerMin,  myGLCD.getDisplayYSize()-30 );
+      myGLCD.print("18min",(18 * PixelsPerMin) - 30, 460);
+  }
  
   //draw y scale for 3 ranges
   int yaxislable = 30;
   int lastt =0;
   //Low range A
   myGLCD.setColor(100,100,100);  
+
+     Serial.println("AAB");
 
   for (int t = 50; t < (TempSplitLow - 50); t = t + 50) {
     //Serial.println(t);
@@ -149,6 +155,7 @@ void graphProfile() {
  // myGLCD.drawLine(500, PixYCoolingPoint, myGLCD.getDisplayXSize()-50, PixYCoolingPoint);
  // myGLCD.print("Co:",500, PixYCoolingPoint+7);myGLCD.printNumI(TEMPCOOLINGDONE, 550, PixYCoolingPoint+7);
   ReDrawROLLAVGLINEFromArray(ORANGE);
+     Serial.println("AAC");
 
   DrawHorControlMenu();
 
@@ -162,11 +169,14 @@ void graphProfile() {
   {
       DrawVMenu(0,-1);
   }
-  
+       Serial.println("AAD");
+
   DrawFanGraph();
   UpdateEachSecond(All);
   UpdateRealTime(All);
   setpointschanged = false;
+       Serial.println("AAE");
+
   UpdateDisplayDetailA(false);
 }
 
@@ -187,57 +197,79 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
       myGLCD.setColor(BLACK);
       myGLCD.fillRect(col - 5,row, col4 + (myGLCD.getFontYsize() * 5)  , row + (rowheight * 5));
   }
+  //Serial.println("AAF");
   myGLCD.setColor(WHITE);  
-   
+
   myGLCD.setFont(BigFont);
  
-      if (bValuesOnly == false){
-       
-       myGLCD.print("Time:",col , row);   myGLCD_printNumF(RoastMinutes,col2 , row,5,2);
+  if (bValuesOnly == false){
+       myGLCD.print("Time:", col , row);   
+       myGLCD_printNumF(RoastMinutes,col2 , row,5,2);
        row = row + rowheight;
-       myGLCD.print("Set :",col , row);    myGLCD.printNumI(CurrentSetPointTemp,col2 , row,5);
+       //Serial.println("AAF2");
+       myGLCD.print("Set :",col , row);    
+       myGLCD.printNumI(CurrentSetPointTemp,col2 , row,5);
        row = row + rowheight;
-       myGLCD.print("Duty:", col, row);   myGLCD_printNumF(Duty, col2, row, 5,2);
+       myGLCD.print("Duty:", col, row); 
+       myGLCD_printNumF(Duty, col2, row, 5,2);
        row = row + rowheight;
-       myGLCD.print("Err :",col , row);   myGLCD.printNumI(Err,col2,row,5, ' ');
+       myGLCD.print("Err :",col , row);  
+       myGLCD.printNumI(Err,col2,row,5, ' ');
        row = row + rowheight;
-       myGLCD.print("IEr :",col  , row);  myGLCD.printNumI(ErrI,col2,row, 5, ' ');
-      myGLCD.setFont(SmallFont);
-      row = rowstart;
-      myGLCD.print("Gain:",col3 , row);      myGLCD.printNumI(Gain,col4 , row, 6, ' ');
+       myGLCD.print("IEr :",col  , row);  
+       myGLCD.printNumI(ErrI,col2,row, 5, ' ');
+       myGLCD.setFont(SmallFont);
+       row = rowstart;
+       myGLCD.print("Gain:",col3 , row);      
+       myGLCD.printNumI(Gain,col4 , row, 6, ' ');
        row = row + rowheight;
-       myGLCD.print("Int :", col3, row);  myGLCD_printNumF(Integral,col4, row, 6, 2);  
+       myGLCD.print("Int :", col3, row);   
+       myGLCD_printNumF(Integral,col4, row, 6, 2);  
        row = row + rowheight;
-       myGLCD.print("l/s :",col3, row);  myGLCD.printNumI(LoopsPerSecond,col4 , row, 6,' ') ;
+       myGLCD.print("l/s :",col3, row); 
+       myGLCD.printNumI(LoopsPerSecond,col4 , row, 6,' ') ;
        row = row + rowheight;
-       myGLCD.print("Skp : ", col3, row);  myGLCD.printNumI(Readingskipped,col4 , row, 6,' ');
+       myGLCD.print("Skp : ", col3, row);  
+       myGLCD.printNumI(Readingskipped,col4 , row, 6,' ');
        row = row + rowheight;
-       myGLCD.print("FanD:", col3, row);  myGLCD.printNumI(FanSpeedPWMAutoDecrease,col4 , row,6,' ');
+       myGLCD.print("FanD:", col3, row);  
+       myGLCD.printNumI(FanSpeedPWMAutoDecrease,col4 , row,6,' ');
       }
       else{
-           myGLCD_printNumF(RoastMinutes,col2 , row,5,2);
+       //myGLCD.print("Time:", col , row);   
+       myGLCD_printNumF(RoastMinutes,col2 , row,5,2);
        row = row + rowheight;
-           myGLCD.printNumI(CurrentSetPointTemp,col2 , row,5);
+       //Serial.println("AAF2");
+       //myGLCD.print("Set :",col , row);    
+       myGLCD.printNumI(CurrentSetPointTemp,col2 , row,5);
        row = row + rowheight;
-          myGLCD_printNumF(Duty, col2, row, 5,2);
+       //myGLCD.print("Duty:", col, row); 
+       myGLCD_printNumF(Duty, col2, row, 5,2);
        row = row + rowheight;
-          myGLCD.printNumI(Err,col2,row,5, ' ');
+       //myGLCD.print("Err :",col , row);  
+       myGLCD.printNumI(Err,col2,row,5, ' ');
        row = row + rowheight;
-         myGLCD.printNumI(ErrI,col2,row, 5, ' ');
-      myGLCD.setFont(SmallFont);
-      row = rowstart;
-           myGLCD.printNumI(Gain,col4 , row, 6, ' ');
+       //myGLCD.print("IEr :",col  , row);  
+       myGLCD.printNumI(ErrI,col2,row, 5, ' ');
+       myGLCD.setFont(SmallFont);
+       row = rowstart;
+       //myGLCD.print("Gain:",col3 , row);      
+       myGLCD.printNumI(Gain,col4 , row, 6, ' ');
        row = row + rowheight;
-        myGLCD_printNumF(Integral,col4, row, 6, 2);  
+       //myGLCD.print("Int :", col3, row);   
+       myGLCD_printNumF(Integral,col4, row, 6, 2);  
        row = row + rowheight;
-      myGLCD.printNumI(LoopsPerSecond,col4 , row, 6,' ') ;
+       //myGLCD.print("l/s :",col3, row); 
+       myGLCD.printNumI(LoopsPerSecond,col4 , row, 6,' ') ;
        row = row + rowheight;
-      myGLCD.printNumI(Readingskipped,col4 , row, 6,' ');
+       //myGLCD.print("Skp : ", col3, row);  
+       myGLCD.printNumI(Readingskipped,col4 , row, 6,' ');
        row = row + rowheight;
+       //myGLCD.print("FanD:", col3, row);  
        myGLCD.printNumI(FanSpeedPWMAutoDecrease,col4 , row,6,' ');
     
       }
-  
+  //Serial.println("AAG");
 }
 void UpdateRealTime(boolean OnlyChanges) {
   
@@ -296,7 +328,7 @@ void UpdateRealTime(boolean OnlyChanges) {
   }
   }
   else{
- //   Serial.println("no updated becaue states is same as last update");
+ //Serial.println("no updated becaue states is same as last update");
   }
   if (newerrmsg == true || OnlyChanges == false){
      myGLCD.setFont(BigFont);
@@ -464,11 +496,11 @@ void UpdateFanPWMValues() {
 void StartLinebyTimeAndY(double timemins, int Y, int lineID, uint16_t color) {
   //Serial.println ("StartLineTandT id:");
   
- // Serial.println (temp);
- // Serial.println (lineID);
- // Serial.println(" color:");
+ //Serial.println (temp);
+ //Serial.println (lineID);
+ //Serial.println(" color:");
   //Serial.println(color);
- // Serial.println("X");
+ //Serial.println("X");
   
   LastXforLineID[lineID] = (PixelsPerMin * timemins);
   LastYforLineID[lineID] = Y;
@@ -499,10 +531,10 @@ void StartLinebyTimeAndTemp(double timemins, int temp, int lineID, uint16_t colo
 void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   uint16_t newY = (uint16_t)YforATemp(temp);
   uint16_t newX = (uint16_t)(PixelsPerMin * timemins);
-  Serial.print("AddLineByTimeAndTemp X:");
-  Serial.print(LastXforLineID[lineID]); Serial.print(" ");Serial.print(newX); Serial.print(" Y:");
-  Serial.print(LastYforLineID[lineID]); Serial.print(" ");Serial.print(newY); Serial.println(" ");
-  Serial.println(temp);
+ //Serial.print("AddLineByTimeAndTemp X:");
+  //Serial.print(LastXforLineID[lineID]);Serial.print(" ");Serial.print(newX);Serial.print(" Y:");
+  //Serial.print(LastYforLineID[lineID]);Serial.print(" ");Serial.print(newY);Serial.println(" ");
+  //Serial.println(temp);
   myGLCD.setColor(LineColorforLineID[lineID]);//LineColorforLineID[lineID]);
   //x,y,x,y
   myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY );
@@ -589,7 +621,7 @@ void ReDrawROLLAVGLINEFromArray(int color) {
   LastYforLineID[1] = 480;
   for (int X = 0; X < 800; X++) {
     if (myLastGraphYPixels[X] > 0 ) {
-      //  Serial.println ("DrawRealTime ");Serial.println(" color:");Serial.println(color);
+      //Serial.println ("DrawRealTime ");Serial.println(" color:");Serial.println(color);
       myGLCD.setColor(color);
       myGLCD.drawLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X]);
       //BoldLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X], color);
@@ -630,18 +662,18 @@ int YforATemp(double temp) {
   }  
   if (temp <= TempSplitLow) {
     result = (myGLCD.getDisplayYSize() - ((double)temp / TempPerPixL));
-    Serial.print("low t:");
+    //Serial.print("low t:");
   }
   else if (temp <= TempSplitHigh) {
-    Serial.print("mid t:");
+    //Serial.print("mid t:");
     result = double(myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempSplitLow) / (double)TempPerPixM);
   } else {
-    Serial.print("high t:");
+    //Serial.print("high t:");
     result = double(myGLCD.getDisplayYSize() -  PixelYSplit2) + ((double)(TempSplitHigh - temp ) / (double)TempPerPixH);
   }
-  Serial.print (temp);
-  Serial.print ( "y:");
-  Serial.println(result);
+  //Serial.print (temp);
+  //Serial.print ( "y:");
+  //Serial.println(result);
   if (result < 0) {
     return 1;
   }
@@ -653,19 +685,25 @@ int YforATemp(double temp) {
 }
 
 void myGLCD_printNumF(double Number, int col ,int row,  int Len, int Dec){
+  
+ 
   if (Len == 5){
-    //Serial.println(Number);
-    dtostrf(Number, Len, Dec, s5);
-    //Serial.println (s5 );
-    myGLCD.print(s5,col, row);
+    Serial.println("AC5");
+       
+    Serial.println(Number);
+    dtostrf(Number, Len, Dec, s6);
+    Serial.println (s6 );
+    myGLCD.print(s6,col, row);
   
   }
   else if (Len == 6)
   { 
-    //Serial.println(Number);
-    dtostrf(Number, Len, Dec, s6);
-    //Serial.println (s6 );
-    myGLCD.print(s6,col, row);
+    Serial.println("AC6");
+
+    Serial.println(Number);
+    dtostrf(Number, Len, Dec, s7);
+    Serial.println (s7 );
+    myGLCD.print(s7,col, row);
    
    }
 }

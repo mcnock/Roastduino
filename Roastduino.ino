@@ -209,10 +209,18 @@ int PIDWindowSize ;
 
 boolean setpointschanged = true;
 double MyMinuteTemperature[30];
+
 setpoint MySetPoints[6] = {{0, 100}, {4, 390}, {7, 420}, {10, 425}, {13, 430}, {16, 450}};
+  //                 20             4         4/8         4/12         4/16        4/20
+  
+  //                 16             4         3/7         3/10         3/13        3/16
+  
+  //                 12             4         2/7         2/8          2/10        2/12
+
+
 int SetPointCount = 6;  //0,1,2,3,4,5
-int TimeScreenLeft = 20;
 int EndingSetPoint = 5;
+int TimeScreenLeft = 0;
 
 double TempYMax = 800;
 double TempSplitHigh = 460;
@@ -264,6 +272,7 @@ buttonsetdef myButtonVertMenus[VmenuCount];
 int VerticalMenuShowing = 0;
 int VerticalMenuPrior = 0;
 
+char s7[7];
 
 char s6[6];
 char s5[5];
@@ -363,9 +372,14 @@ void setup() {
   intializeVMenus();
 
   State = STATESTOPPED;   
-
+  setpointschanged = true;
+  
+  Serial.println ("setup B");
+  
   graphProfile();
-
+  
+ //Serial.println ("setup C");
+  
   FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
   FanSpeedPWM = 0;
   updateFanOutputResistance();
