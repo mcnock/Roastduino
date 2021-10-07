@@ -105,10 +105,13 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 
 //EPROM MEMORORY
 int SETPOINTTEMP_EP[]    = {5, 10, 15, 20, 25, 30};  //these are EEprom memory locations - not data
+#define FanSpeedPWMStart_EP 1
 #define INTEGRAL_EP 0
 #define GAIN_EP 2
-#define FANSPEED_EP 1
-
+#define FanSpeedPWNDelayDecreaseByMinutes_EP 3
+#define FanSpeedPWNDecreaseByMinutes_EP 4
+#define FanSpeedPWMAutoDecrease_EP 35
+#define RoastLength_EP 36
 
 
 #define OVERHEATFAN     250
@@ -152,7 +155,9 @@ boolean usemanualtemp = true;
 #define VmenuOnOff           5
 #define VmenuAjd_01            6
 #define VMenuAdj_1_5_10_V      7
-#define VmenuCount           8
+#define VmenuFan           8
+#define VmenuCount           9
+
 // ===========
 // DEFINITIONS
 // ===========
@@ -185,6 +190,8 @@ int spSelected = -1;
 
 int FanSpeedPWM=0;
 int FanSpeedPWMStart=0;
+
+
 //int FanSpeedPWMAutoEnd=0;
 int FanSpeedPWMAutoDecrease = 90;
 bool FanSpeedPWMAutoMode = false;
@@ -357,7 +364,6 @@ void setup() {
 //
   SecondTimer.restart(0);
   
-  FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
             
 
   // -------------------------------------------------------------
@@ -376,17 +382,39 @@ void setup() {
   
   Serial.println ("setup B");
   
-  graphProfile();
+  //graphProfile();
   
  //Serial.println ("setup C");
   
-  FanSpeedPWMStart = EEPROM.read(FANSPEED_EP);
+FanSpeedPWMStart = EEPROM.read(FanSpeedPWMStart_EP);
+
+
+FanSpeedPWNDelayDecreaseByMinutes = EEPROM.read(FanSpeedPWNDelayDecreaseByMinutes_EP);
+
+if (FanSpeedPWNDelayDecreaseByMinutes < 0 or FanSpeedPWNDelayDecreaseByMinutes > 5){
+  FanSpeedPWNDelayDecreaseByMinutes = 2;
+}
+
+FanSpeedPWNDecreaseByMinutes = EEPROM.read(FanSpeedPWNDecreaseByMinutes);
+if (FanSpeedPWNDecreaseByMinutes < 0 or FanSpeedPWNDecreaseByMinutes > 10){
+  FanSpeedPWNDecreaseByMinutes = 8;
+}
+
+FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease);
+if (FanSpeedPWMAutoDecrease < 0 or FanSpeedPWMAutoDecrease > 200){
+  FanSpeedPWMAutoDecrease = 80;
+}
+if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart){
+  FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
+}
+
+
   FanSpeedPWM = 0;
   updateFanOutputResistance();
   delay(2000);
 
   UpdateFanPWMValues();
-  
+  graphProfile();
 }
 
 

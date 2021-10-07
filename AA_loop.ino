@@ -50,13 +50,11 @@ void theloop () {
   CurrentHeat1 = sqrt( AvgCoil1Amp.mean()) - CurrentHeat1Offset;
   CurrentHeat2 = sqrt( AvgCoil2Amp.mean()) - CurrentHeat2Offset;
   if (bNewSecond) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
-    TCoil = getCleanTemp(thermocouple4.readFahrenheit(), 1);
+    TCoil = getCleanTemp(thermocouple4.readFahrenheit(), 4);
     //Serial.println("Coil teamp:");Serial.println(TCoil);
     TCoilRoll.push(TCoil);
-    
-
-    
-    TBean3 =   getCleanTemp(thermocouple4.readFahrenheit(), 4);
+  
+    TBean3 =   getCleanTemp(thermocouple1.readFahrenheit(), 1);
 
     TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
@@ -186,7 +184,7 @@ void theloop () {
       if (FanSpeedPWM > 0)
       {   
           FanSpeedPWMStart = FanSpeedPWM ;      
-          EEPROM.write(FANSPEED_EP,FanSpeedPWMStart);
+          EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
       }
       SetFanPWMForATime(0);
       FanSpeedPWMAutoMode = true;

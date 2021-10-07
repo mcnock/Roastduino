@@ -160,46 +160,47 @@ void ProcessHorFanMenu(int i) {
       break;
     case 4:
       FanSpeedPWMStart = FanSpeedPWM;
-      EEPROM.write(FANSPEED_EP,FanSpeedPWMStart);
+      EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
       break;
   }
   if (change != 0){    
       if (FanSpeedPWMAutoMode == true){
-           if (RoastMinutes < (FanSpeedPWNDelayDecreaseByMinutes + 2)){
+           //if (RoastMinutes < (FanSpeedPWNDelayDecreaseByMinutes + 2)){
                 FanSpeedPWMStart = FanSpeedPWMStart + change;
-           }
-           else
-           {
-               FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease  - change;
-           }
-           if (FanSpeedPWMStart > 255){FanSpeedPWMStart = 255;}
+           //}
+           //else
+           //{
+           //    FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease  - change;
+          // }
+           if (FanSpeedPWMStart > 254){FanSpeedPWMStart = 254;}
+           if (FanSpeedPWMStart < 0){FanSpeedPWMStart = 0;}
            
            DrawFanGraph();
       }
       else
       {
+        analogWrite(FanPWMp, FanSpeedPWM);
+        UpdateFanPWMValues();
         if (FanSpeedPWM == 0)
           {FanSpeedPWM = FanSpeedPWMStart;}
         FanSpeedPWM = FanSpeedPWM + change;  
-        if (FanSpeedPWM > 255){FanSpeedPWM = 255;}
+        if (FanSpeedPWM > 254){FanSpeedPWM = 254;}
         if (FanSpeedPWM < 0){FanSpeedPWM = 0;}
-        analogWrite(FanPWMp, FanSpeedPWM);
-        UpdateFanPWMValues();
         DrawFanGraph();
         updateFanOutputResistance();
         delay(5);
       }
-  }
+      }
   
 }
 
 void intializeVMenus(){
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 9; i++)
     {
        //Serial.print("VMenu");Serial.println(i);
         int j= 0;
         buttonsetdef* bsd = &myButtonVertMenus[i];
-        bsd->Count = 9;
+        bsd->Count = 10;
         bsd->rowstart = 0;
         bsd->W = 65;
         bsd->H = 50;
@@ -215,9 +216,9 @@ void intializeVMenus(){
                 strcpy(bsd->buttondefs[2].label, "Gain");    bsd->buttondefs[2].color = YELLOW;
                 strcpy(bsd->buttondefs[3].label, "Int");    bsd->buttondefs[3].color = YELLOW;
                 strcpy(bsd->buttondefs[4].label, "SPs");    bsd->buttondefs[4].color = YELLOW;
-                strcpy(bsd->buttondefs[5].label, "");    bsd->buttondefs[5].color = BLACK;
-                strcpy(bsd->buttondefs[6].label, "");    bsd->buttondefs[6].color = BLACK;
-                strcpy(bsd->buttondefs[7].label, "");   bsd->buttondefs[7].color = BLACK;
+                strcpy(bsd->buttondefs[5].label, "Fan");    bsd->buttondefs[5].color = YELLOW;
+                strcpy(bsd->buttondefs[6].label, "T+1");    bsd->buttondefs[6].color = RED;
+                strcpy(bsd->buttondefs[7].label, "T-1");   bsd->buttondefs[7].color = RED;
                 strcpy(bsd->buttondefs[8].label, "");     bsd->buttondefs[8].color = BLACK;
                 bsd->ClickHandler = ProcessBaseVMenu;
                 bsd->nextMenu = VmenuDebug;
@@ -272,9 +273,26 @@ void intializeVMenus(){
                 j=4;strcpy(bsd->buttondefs[j].label, "sp4");    bsd->buttondefs[j].color = YELLOW;
                 j=5;strcpy(bsd->buttondefs[j].label, "sp5");    bsd->buttondefs[j].color = YELLOW;
                 j=6;strcpy(bsd->buttondefs[j].label, "ls3");    bsd->buttondefs[j].color = YELLOW;
-                j=7;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
-                j=8;strcpy(bsd->buttondefs[j].label, "");    bsd->buttondefs[j].color = BLACK;
+                j=7;strcpy(bsd->buttondefs[j].label, "L+1");    bsd->buttondefs[j].color = GREEN;
+                j=8;strcpy(bsd->buttondefs[j].label, "L-1");    bsd->buttondefs[j].color = GREEN;
                 bsd->ClickHandler = ProcessSetPointSelectVMenu; 
+                bsd->nextMenu = -1;
+                bsd->backMenu = Vmenubase;
+                SetMenuBoundingRect(myButtonVertMenus[i]);
+            }
+      case VmenuFan:
+            if (bsd->buttondefs == 0) {
+                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+                j=0;strcpy(bsd->buttondefs[j].label, "<<");   bsd->buttondefs[j].color = GREEN;
+                j=1;strcpy(bsd->buttondefs[j].label, "A+1");     bsd->buttondefs[j].color = GREEN;
+                j=2;strcpy(bsd->buttondefs[j].label, "A-1");    bsd->buttondefs[j].color = GREEN;
+                j=3;strcpy(bsd->buttondefs[j].label, "B+1");    bsd->buttondefs[j].color = GREEN;
+                j=4;strcpy(bsd->buttondefs[j].label, "B+5");    bsd->buttondefs[j].color = GREEN;
+                j=5;strcpy(bsd->buttondefs[j].label, "B-1");    bsd->buttondefs[j].color = GREEN;
+                j=6;strcpy(bsd->buttondefs[j].label, "B-5");    bsd->buttondefs[j].color = GREEN;
+                j=7;strcpy(bsd->buttondefs[j].label, "C+1");    bsd->buttondefs[j].color = GREEN;
+                j=8;strcpy(bsd->buttondefs[j].label, "C-1");    bsd->buttondefs[j].color = GREEN;               
+                bsd->ClickHandler = ProcessFanVmenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = Vmenubase;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
@@ -331,6 +349,7 @@ void intializeVMenus(){
                 bsd->backMenu = VmenuDebug;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
+      
        case VMenuAdj_1_5_10_V:
             if (bsd->buttondefs == 0) {
                 bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
@@ -353,7 +372,6 @@ void intializeVMenus(){
     }
     
 }
-
 
  void DrawVMenu(int iMenu, int iButton) {
     VerticalMenuPrior = VerticalMenuShowing; 
@@ -389,7 +407,26 @@ void ProcessBaseVMenu(int i) {
     case VBUT4:
         DrawVMenu(VmenuSetPointSelect,-1);
         break;
+    case VBUT5:
+        DrawVMenu(VmenuFan,-1);
+        break;
+    case VBUT6:
+        if (State == STATEROASTING && RoastMinutes < MySetPoints[EndingSetPoint].Minutes)
+        {
+          RoastTime.add(60);
+        }
+        break;
+    case VBUT7:
+        if (State == STATEROASTING && RoastTime.elapsed()> 61)
+        {
+            RoastTime.add(-60);
+        }
+        break;
+
+
     default:
+
+    
         break;
     }
 
@@ -422,9 +459,29 @@ void ProcessSetPointSelectVMenu(int i) {
         DrawVMenu(VmenuSetPointValue,i);
         break;
     case 7:
-        spSelected = 9;
-        strcpy(myButtonVertMenus[2].buttondefs[1].label, myButtonVertMenus[1].buttondefs[i].label);
-        DrawVMenu(2,-1);
+         if (MySetPoints[EndingSetPoint].Minutes < 20 )
+        {
+           MySetPoints[EndingSetPoint].Minutes = MySetPoints[EndingSetPoint].Minutes + 1;
+           Serial.print("F7");Serial.println(MySetPoints[EndingSetPoint].Minutes);
+          byte m = MySetPoints[EndingSetPoint].Minutes;
+         
+           EEPROM.write(RoastLength_EP,m);
+           setpointschanged = true;
+           graphProfile(); 
+           DrawVMenu(VmenuSetPointSelect,i);
+        
+        }
+       
+        break;
+    case 8:
+         if (MySetPoints[EndingSetPoint].Minutes > 10 )
+        {
+          MySetPoints[EndingSetPoint].Minutes = MySetPoints[EndingSetPoint].Minutes - 1;
+          byte m = MySetPoints[EndingSetPoint].Minutes;
+          EEPROM.write(RoastLength_EP,m);
+          setpointschanged = true;
+          graphProfile();
+          DrawVMenu(VmenuSetPointSelect,i);        }
         break;
     default:
         break;
@@ -601,6 +658,87 @@ void ProcessDebugVMenu(int i) {
     }
 }
 
+void ProcessFanVmenu(int i) {
+//int FanSpeedPWMAutoDecrease = 90;
+//bool FanSpeedPWMAutoMode = false;
+//int FanSpeedPWNDelayDecreaseByMinutes = 2;
+///int FanSpeedPWNDecreaseByMinutes = 8;
+
+ //Serial.print ("ProcessSetPointAdjustmentVMenu:");Serial.println (i);
+    //Serial.print ("spSelected:");Serial.print (spSelected);
+    moveamount = 0;    
+    switch (i) {
+    case 0:
+      
+        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu,-1);
+        
+        break;
+    case 1:
+        if (FanSpeedPWNDelayDecreaseByMinutes < 5){
+        FanSpeedPWNDelayDecreaseByMinutes = FanSpeedPWNDelayDecreaseByMinutes + 1;
+        EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);}
+
+        
+        break;
+   
+    case 2:
+        if (FanSpeedPWNDelayDecreaseByMinutes > 0 ){
+        FanSpeedPWNDelayDecreaseByMinutes = FanSpeedPWNDelayDecreaseByMinutes - 1;
+        EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);}
+
+        
+        break;
+    case 3:
+        if (FanSpeedPWMAutoDecrease < 200 ){
+            FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + 1;
+
+            if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart){
+                FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
+            }
+
+            EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
+
+               break;
+    case 4:
+     if (FanSpeedPWMAutoDecrease < 195 ){
+        FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + 5;
+        if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart){
+            FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
+        }
+
+            EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
+               break;
+        break;
+    case 5:
+        if (FanSpeedPWMAutoDecrease > 0 ){
+        FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease - 1;
+
+            EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
+        break;
+    case 6:
+        if (FanSpeedPWMAutoDecrease > 5  ){
+        FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease - 5;
+
+            EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
+        break;
+    case 7:
+        if (FanSpeedPWNDecreaseByMinutes < (MySetPoints[EndingSetPoint].Minutes - FanSpeedPWNDelayDecreaseByMinutes)){
+        FanSpeedPWNDecreaseByMinutes = FanSpeedPWNDecreaseByMinutes + 1;
+            EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP,FanSpeedPWNDecreaseByMinutes);}
+    break;
+    case 8:
+        if (FanSpeedPWNDecreaseByMinutes > 0 ){
+        FanSpeedPWNDecreaseByMinutes = FanSpeedPWNDecreaseByMinutes - 1;
+        EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP,FanSpeedPWNDecreaseByMinutes);}
+        break;
+    default:
+        break;
+    }
+
+    DrawFanGraph();
+    UpdateFanPWMValues();
+  
+  }
 void ProcessOnOffVMenu(int iButPressed) {
    //Serial.print("ProcessOnOffVMenu:");Serial.println(i);
    int ONOFF = HIGH; 
@@ -647,7 +785,6 @@ void ProcessOnOffVMenu(int iButPressed) {
         }
     }
 }
-
 
 void ProcessAdj_1_5_10_VMenu(int i) {
     //Serial.print ("ProcessSetPointAdjustmentVMenu:");Serial.println (i);

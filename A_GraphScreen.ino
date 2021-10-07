@@ -14,6 +14,49 @@ void graphProfile() {
         //read from memory
         int accumulatedbySetPoint = 0;
         int accumulatedMinutes = 0;
+        byte m;
+        EEPROM.get(RoastLength_EP,m);
+        MySetPoints[EndingSetPoint].Minutes = m;
+         Serial.print ("XXA:");Serial.println (MySetPoints[EndingSetPoint].Minutes);
+        if (MySetPoints[EndingSetPoint].Minutes < 10 or MySetPoints[EndingSetPoint].Minutes > 20)
+        {
+          Serial.println ("XXA");
+       
+          MySetPoints[EndingSetPoint].Minutes = 16;
+        }
+        Serial.println ("XX");
+        Serial.println (MySetPoints[EndingSetPoint].Minutes);
+         MySetPoints[0].Minutes = 0;
+         MySetPoints[1].Minutes = 4;
+            
+        if (MySetPoints[EndingSetPoint].Minutes >= 14)
+        {
+          //3 minute appart
+          MySetPoints[2].Minutes = 7;
+          MySetPoints[3].Minutes = 10;
+          MySetPoints[4].Minutes = 13;
+          TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 5;
+      
+        }
+        else if (MySetPoints[EndingSetPoint].Minutes >= 11)
+        {
+          //2 minute appart
+          MySetPoints[2].Minutes = 6;
+          MySetPoints[3].Minutes = 8;
+          MySetPoints[4].Minutes = 10;
+          TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 3;
+      
+        }
+        else
+        {
+          //1 or 2 minute appart
+          MySetPoints[2].Minutes = 5;
+          MySetPoints[3].Minutes = 7;
+          MySetPoints[4].Minutes = 9;
+          TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 2;
+      
+        }
+
         
         for (int xSetPoint = 0; xSetPoint < SetPointCount; xSetPoint++) {
              if (xSetPoint == 0) {
@@ -43,17 +86,19 @@ void graphProfile() {
         }
     
              
-     Serial.println("AAA");
+     //Serial.println("AAA");
      
      
      //perform some necesary calculations to size our scales to the display 
      //yscale is done in 3 ranges
-      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 5;
+      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 3;
       TempYMax = 800; 
       TempSplitHigh = 440;
       TempSplitHigh = MySetPoints[EndingSetPoint].Temperature ;
       PixelYSplit2 = 400;//180;
-      TempSplitLow = (MySetPoints[2].Temperature - Gain) ;
+    //  TempSplitLow = (MySetPoints[2].Temperature - Gain) ;
+      TempSplitLow = (MySetPoints[1].Temperature ) ;
+    
       PixelYSplit = 150;//90;
     
       TempPerPixL = TempSplitLow / PixelYSplit;
@@ -94,7 +139,7 @@ void graphProfile() {
   //Low range A
   myGLCD.setColor(100,100,100);  
 
-     Serial.println("AAB");
+     //Serial.println("AAB");
 
   for (int t = 50; t < (TempSplitLow - 50); t = t + 50) {
     //Serial.println(t);
@@ -155,7 +200,7 @@ void graphProfile() {
  // myGLCD.drawLine(500, PixYCoolingPoint, myGLCD.getDisplayXSize()-50, PixYCoolingPoint);
  // myGLCD.print("Co:",500, PixYCoolingPoint+7);myGLCD.printNumI(TEMPCOOLINGDONE, 550, PixYCoolingPoint+7);
   ReDrawROLLAVGLINEFromArray(ORANGE);
-     Serial.println("AAC");
+    // Serial.println("AAC");
 
   DrawHorControlMenu();
 
@@ -169,13 +214,13 @@ void graphProfile() {
   {
       DrawVMenu(0,-1);
   }
-       Serial.println("AAD");
+   //    Serial.println("AAD");
 
   DrawFanGraph();
   UpdateEachSecond(All);
   UpdateRealTime(All);
   setpointschanged = false;
-       Serial.println("AAE");
+     //  Serial.println("AAE");
 
   UpdateDisplayDetailA(false);
 }
@@ -430,7 +475,8 @@ void DrawFanGraph(){
    int Col2 = Col1 + ((PixelsPerMin * MySetPoints[EndingSetPoint].Minutes)/4 );
   int Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 ;
   int yshiftdown = YforATemp(220) - Y1 ;
-  
+  myGLCD.setFont(SmallFont);
+    
   Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 + yshiftdown;
   int X1 = Col1 - 10;
   int Y2 = YforATemp(CalcFanPWMForATime(MySetPoints[EndingSetPoint].Minutes))+ 10  + yshiftdown ;
@@ -441,27 +487,41 @@ void DrawFanGraph(){
   myGLCD.fillRect(X1, Y1, X2, Y2);
   myGLCD.setColor(AQUA);
   myGLCD.drawRect(X1 - 1, Y1 -1 , X2 + 1, Y2 + 1);
-   
+  int top = Y1;
+  
+   myGLCD.printNumI(0 ,X1, top -  (myGLCD.getFontYsize()*1.5)  );
+   myGLCD.printNumI(MySetPoints[EndingSetPoint].Minutes ,X2, top -  (myGLCD.getFontYsize()*1.5)  );
+
+
    Y1 = YforATemp(CalcFanPWMForATime(0))  + yshiftdown;
    X1 = Col1;
    Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDelayDecreaseByMinutes))  + yshiftdown;
    X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDelayDecreaseByMinutes)/4 );  
-   myGLCD.setFont(SmallFont);
+   
    myGLCD.printNumI(FanSpeedPWMStart,Col1-35 , Y1 - (myGLCD.getFontYsize()/2)  );
    
-  
-  myGLCD.drawLine(X1, Y1, X2, Y2 );
+   
+   myGLCD.printNumI(FanSpeedPWNDelayDecreaseByMinutes ,X2 , top -  (myGLCD.getFontYsize()*1.5)  );
+   myGLCD.drawLine(X1, Y1, X2, Y2 );
+ 
   X1 = X2; Y1 = Y2;
   Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDecreaseByMinutes))  + yshiftdown;
   X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDecreaseByMinutes)/4 )  ;
+  myGLCD.printNumI(FanSpeedPWNDecreaseByMinutes ,X2 , top -  (myGLCD.getFontYsize()*1.5)  );
   myGLCD.drawLine(X1, Y1, X2, Y2 );
+  myGLCD.printNumI(FanSpeedPWMAutoDecrease ,X1 + (X2 - X1)/3 , Y2 - (Y2 - Y1)/2 - (myGLCD.getFontYsize()*.7)  );
+  
+
   X1 = X2; Y1 = Y2;
   Y2 = YforATemp(CalcFanPWMForATime(MySetPoints[EndingSetPoint].Minutes)) + yshiftdown;
   X2 =  Col2 ;
+  
   myGLCD.drawLine(X1, Y1, X2, Y2 );  
  
   myGLCD.printNumI(FanSpeedPWMStart -FanSpeedPWMAutoDecrease ,Col2 + 15 , Y2 - (myGLCD.getFontYsize()/2)  );
-    
+  //myGLCD.printNumI(FanSpeedPWMStart -FanSpeedPWMAutoDecrease ,Col2 + 15 , top -  (myGLCD.getFontYsize()*1.5)  );
+ 
+  
  
    Y1 = YforATemp(CalcFanPWMForATime(RoastMinutes))+ yshiftdown;
    X1 = Col1 + (PixelsPerMin * (RoastMinutes/4.0));
@@ -688,21 +748,21 @@ void myGLCD_printNumF(double Number, int col ,int row,  int Len, int Dec){
   
  
   if (Len == 5){
-    Serial.println("AC5");
+  //  Serial.println("AC5");
        
-    Serial.println(Number);
+   // Serial.println(Number);
     dtostrf(Number, Len, Dec, s6);
-    Serial.println (s6 );
+  //  Serial.println (s6 );
     myGLCD.print(s6,col, row);
   
   }
   else if (Len == 6)
   { 
-    Serial.println("AC6");
+    //Serial.println("AC6");
 
-    Serial.println(Number);
+    //Serial.println(Number);
     dtostrf(Number, Len, Dec, s7);
-    Serial.println (s7 );
+    //Serial.println (s7 );
     myGLCD.print(s7,col, row);
    
    }
