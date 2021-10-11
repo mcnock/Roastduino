@@ -1,5 +1,5 @@
 
-
+//
 
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
@@ -39,14 +39,14 @@ void theloop () {
     //Serial.print("fan:");Serial.println(tempread);
   //185 millamps per volt
   //DC
-  CurrentFan = ((((double)(analogRead(CURFANap) - (MaxVread / 2)) * 5)) / 125) ; 
+  CurrentFan = ((((double)(analogRead(CURFAN_A6) - (MaxVread / 2)) * 5)) / 125) ; 
   AvgFanCurrent.push(CurrentFan); 
   CurrentFan = AvgFanCurrent.mean() - CurrentFanOffset;
   if (CurrentFan < 0){
     CurrentFan =0;
   }
-  CurrentHeat1 = (((double)(analogRead(CURHEAT1ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
-  CurrentHeat2 = (((double)(analogRead(CURHEAT2ap) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
+  CurrentHeat1 = (((double)(analogRead(CURHEAT1_A4) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
+  CurrentHeat2 = (((double)(analogRead(CURHEAT2_A5) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
   CurrentHeat1 = sqrt( AvgCoil1Amp.mean()) - CurrentHeat1Offset;
   CurrentHeat2 = sqrt( AvgCoil2Amp.mean()) - CurrentHeat2Offset;
   if (bNewSecond) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
@@ -161,7 +161,8 @@ void theloop () {
   // **************************************************************************************************************************************************************
 
  switch (newState){
-  case STATESTOPPED: {
+  case STATESTOPPED:
+  {
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
     if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
       State = STATESTOPPED;
@@ -177,16 +178,22 @@ void theloop () {
     }
     break;
    }
- case STATEROASTING: {
+ case STATEROASTING: //newstate
+ {
     //Serial.println("D");
     digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
-      if (FanSpeedPWM > 0)
+      
+      if (FanSpeedPWM > 0 && FanSpeedPWMStart != FanSpeedPWM)
       {   
           FanSpeedPWMStart = FanSpeedPWM ;      
           EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
       }
-      SetFanPWMForATime(0);
+      FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
+      FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
+      DrawFanGraph_ex(true);
+
+      SetAndSendFanPWMForATime(0);
       FanSpeedPWMAutoMode = true;
       //CurrentHeat1Offset = CurrentHeat1Offset + CurrentHeat1;
       AvgCoil1Amp.clear();
@@ -215,7 +222,7 @@ void theloop () {
  
   case STATECOOLING: {
     State = newState;
-    SetFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
+    SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
     FanSpeedPWMAutoMode = false;
 
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
@@ -227,7 +234,7 @@ void theloop () {
     FanSpeedPWM = FanSpeedPWMStart ;
     CurrentFanOffset = CurrentFanOffset + CurrentFan ;    
     AvgFanCurrent.clear();   
-    SetFanPWMForATime(0);   
+    SetAndSendFanPWMForATime(0);   
     //Serial.println("VIB on");
     digitalWrite(VIBRELAYp, RELAYON);
     //Serial.println("Fan on");
@@ -262,7 +269,7 @@ void theloop () {
   //pid window size should vary based on duty cycle. 10 millsec and 50% would to 20 millisecond.  10% would be 100 milliseconds.  01 % would be 1 seconds
   //but we run 9 times per second, so shortest on off is 1 cycles or ~ 100 millseconds.   50% means .2 seconds, 10% means 1 seconds  .05% means 2 seconds
  if (State == DEBUGTOGGLE){
-    SetFanPWMForATime(0);   
+    SetAndSendFanPWMForATime(0);   
   
 
  }
@@ -384,12 +391,11 @@ void theloop () {
 
   if (LcdUdateTime.elapsed() > 3000) {
     if (State == STATEROASTING || State == STATECOOLING){
-        SetFanPWMForATime(RoastMinutes);
-        DrawFanGraph();
+        SetAndSendFanPWMForATime(RoastMinutes);
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
     }
-    UpdateFanPWMValues();
+    DrawFanGraph();
     UpdateDisplayDetailA(true);
     LcdUdateTime.restart(0);
   }

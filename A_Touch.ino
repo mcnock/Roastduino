@@ -23,7 +23,7 @@ void ProcessTouch(int Xtouch, int Ytouch)
     }  
    
     if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
-        //Serial.print("found vertical1  buttons");
+      //  Serial.print("found vertical1  buttons");
         int k = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
         myButtonVertMenus[VerticalMenuShowing].ClickHandler(k);
         return;

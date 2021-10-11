@@ -147,49 +147,81 @@ void ProcessHorFanMenu(int i) {
   switch (i) {
     case 0:
       //decrease quickly
-      change = -5;
+      change = -10;
       break;
     case 1:
-      change = -1;
+      change = -3;
        break;
     case 2:
-      change = 1;
+      change = 3;
       break;
     case 3:
-      change = 5;       
+      change = 10;       
       break;
     case 4:
       FanSpeedPWMStart = FanSpeedPWM;
       EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
+      FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
+      EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
+      DrawFanGraph_ex(true);
       break;
   }
   if (change != 0){    
       if (FanSpeedPWMAutoMode == true){
-           //if (RoastMinutes < (FanSpeedPWNDelayDecreaseByMinutes + 2)){
-                FanSpeedPWMStart = FanSpeedPWMStart + change;
-           //}
-           //else
-           //{
-           //    FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease  - change;
-          // }
-           if (FanSpeedPWMStart > 254){FanSpeedPWMStart = 254;}
-           if (FanSpeedPWMStart < 0){FanSpeedPWMStart = 0;}
+          
            
+           if (RoastMinutes < (FanSpeedPWNDelayDecreaseByMinutes + FanSpeedPWNDecreaseByMinutes/2)){
+                //first half we adjust start and let slope be what is asked for or be trimmed
+                 FanSpeedPWMStart = FanSpeedPWMStart + change;
+                
+                 
+                       
+                 
+                 
+           
+           }
+           else
+           {
+               //later half we adjust the slope and if slope is not sufficent the start
+               //in the second half we let the slope grow or shrink relative to initial setting
+
+                   FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease  - change;
+
+                  
+
+                   //if the decrease cannot be accomoated with slope change, apply it to start
+                   if (FanSpeedPWMAutoDecrease < 0)
+                   {
+                        FanSpeedPWMStart = FanSpeedPWMStart + change;
+                        FanSpeedPWMAutoDecrease = 0;
+                   }
+                   
+               
+           }
+
+         //we trim too large of slope
+         if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart)   
+         {
+              FanSpeedPWMAutoDecrease = FanSpeedPWMStart ; 
+         }
+             
+          if (FanSpeedPWMStart > 254){FanSpeedPWMStart = 254;}
+          if (FanSpeedPWMStart < 0){FanSpeedPWMStart = 0;}
+           sendFanPWM_Wire();
            DrawFanGraph();
       }
       else
       {
-        analogWrite(FanPWMp, FanSpeedPWM);
-        UpdateFanPWMValues();
-        if (FanSpeedPWM == 0)
-          {FanSpeedPWM = FanSpeedPWMStart;}
         FanSpeedPWM = FanSpeedPWM + change;  
+          
         if (FanSpeedPWM > 254){FanSpeedPWM = 254;}
         if (FanSpeedPWM < 0){FanSpeedPWM = 0;}
+     
+        sendFanPWM_Wire();
         DrawFanGraph();
-        updateFanOutputResistance();
-        delay(5);
+        //delay(5);
       }
+      
       }
   
 }
@@ -382,12 +414,7 @@ void intializeVMenus(){
 
 void ProcessBaseVMenu(int i) {
     //Serial.println ("ProcessVertMenu1:");Serial.println (i);
-    //strcpy(bsd->buttondefs[0].label, ">>"); bsd->buttondefs[0].color = GREEN;
-    //strcpy(bsd->buttondefs[1].label, "<<");    bsd->buttondefs[1].color = GREEN;
-    //            strcpy(bsd->buttondefs[2].label, "Gain");    bsd->buttondefs[2].color = YELLOW;
-    //            strcpy(bsd->buttondefs[3].label, "Int");    bsd->buttondefs[3].color = YELLOW;
-    //            strcpy(bsd->buttondefs[4].label, "SPs");    bsd->buttondefs[4].color = BLACK;
-                
+  
     switch (i) {
     case VBUT0:
         DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
@@ -411,7 +438,7 @@ void ProcessBaseVMenu(int i) {
         DrawVMenu(VmenuFan,-1);
         break;
     case VBUT6:
-        if (State == STATEROASTING && RoastMinutes < MySetPoints[EndingSetPoint].Minutes)
+        if (State == STATEROASTING || State == STATECOOLING)
         {
           RoastTime.add(60);
         }
@@ -539,9 +566,10 @@ void ProcessSetPointAdjustmentVMenu(int i) {
        }
        if (spSelected == 9 ) {
           FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + moveamount;
-           updateFanOutputResistance();
-            UpdateFanPWMValues();
-            spSelected =-1;
+           sendFanPWM_Wire();
+           DrawFanGraph();
+           
+           spSelected =-1;
        }
     }
 
@@ -659,12 +687,7 @@ void ProcessDebugVMenu(int i) {
 }
 
 void ProcessFanVmenu(int i) {
-//int FanSpeedPWMAutoDecrease = 90;
-//bool FanSpeedPWMAutoMode = false;
-//int FanSpeedPWNDelayDecreaseByMinutes = 2;
-///int FanSpeedPWNDecreaseByMinutes = 8;
-
- //Serial.print ("ProcessSetPointAdjustmentVMenu:");Serial.println (i);
+    //Serial.print ("ProcessSetPointAdjustmentVMenu:");Serial.println (i);
     //Serial.print ("spSelected:");Serial.print (spSelected);
     moveamount = 0;    
     switch (i) {
@@ -673,7 +696,7 @@ void ProcessFanVmenu(int i) {
         DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu,-1);
         
         break;
-    case 1:
+    case 1:  //A+
         if (FanSpeedPWNDelayDecreaseByMinutes < 5){
         FanSpeedPWNDelayDecreaseByMinutes = FanSpeedPWNDelayDecreaseByMinutes + 1;
         EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);}
@@ -681,15 +704,15 @@ void ProcessFanVmenu(int i) {
         
         break;
    
-    case 2:
+    case 2: //A-
         if (FanSpeedPWNDelayDecreaseByMinutes > 0 ){
         FanSpeedPWNDelayDecreaseByMinutes = FanSpeedPWNDelayDecreaseByMinutes - 1;
         EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);}
 
         
         break;
-    case 3:
-        if (FanSpeedPWMAutoDecrease < 200 ){
+    case 3: //B+
+        if (FanSpeedPWMAutoDecrease < 200 && (FanSpeedPWMStart - FanSpeedPWMAutoDecrease) > 1 ){
             FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + 1;
 
             if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart){
@@ -699,8 +722,8 @@ void ProcessFanVmenu(int i) {
             EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
 
                break;
-    case 4:
-     if (FanSpeedPWMAutoDecrease < 195 ){
+    case 4: //B++
+     if (FanSpeedPWMAutoDecrease < 195 && (FanSpeedPWMStart - FanSpeedPWMAutoDecrease) > 5 ){
         FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + 5;
         if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart){
             FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
@@ -709,9 +732,9 @@ void ProcessFanVmenu(int i) {
             EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
                break;
         break;
-    case 5:
-        if (FanSpeedPWMAutoDecrease > 0 ){
-        FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease - 1;
+    case 5://B-
+        if (FanSpeedPWMAutoDecrease > 0  ){
+            FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease - 1;
 
             EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);}
         break;
@@ -736,9 +759,9 @@ void ProcessFanVmenu(int i) {
     }
 
     DrawFanGraph();
-    UpdateFanPWMValues();
-  
+    
   }
+
 void ProcessOnOffVMenu(int iButPressed) {
    //Serial.print("ProcessOnOffVMenu:");Serial.println(i);
    int ONOFF = HIGH; 

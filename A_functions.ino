@@ -314,60 +314,51 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
 
 }
 
-
-void updateFanOutputResistance() {
-     FanSpeedResistanceCurrent = (FanSpeedPWM *100) / 254;
-     if (FanSpeedResistanceLast == 0){
-        //Serial.println("hereA");
-        digitalWrite(FanOutDirp, LOW);
-        digitalWrite(FanOutCsp, LOW);
-        for (int i = 0; i < 100; i++) {
-            digitalWrite(FanOutIncp, LOW);
-            delay(1);
-            digitalWrite(FanOutIncp, HIGH);
-            delay(1);
+int  CalcFanPWMForATime(double minutes){
+     //Serial.println(minutes);
+     if (minutes == double(0.00)){
+            //Serial.println("zeir minutes dedtected");
+            //Serial.println(minutes);
+            return FanSpeedPWMStart;
+     }
+     else if (minutes <= FanSpeedPWNDelayDecreaseByMinutes){
+            return FanSpeedPWMStart;
         }
-        digitalWrite(FanOutDirp, HIGH);
-        for (int i = 0; i < FanSpeedResistanceCurrent; i++) {
-            digitalWrite(FanOutIncp, LOW);
-            delay(1);
-            digitalWrite(FanOutIncp, HIGH);
-            delay(1);
+     else if (minutes < FanSpeedPWNDecreaseByMinutes){
+            return  (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/(FanSpeedPWNDecreaseByMinutes - FanSpeedPWNDelayDecreaseByMinutes))* (minutes-FanSpeedPWNDelayDecreaseByMinutes)) ; 
         }
-        digitalWrite(FanOutCsp, HIGH);
-        FanSpeedResistanceLast = FanSpeedResistanceCurrent;
-    }
-    else if(FanSpeedResistanceCurrent != FanSpeedResistanceLast) {
-        int Delta = FanSpeedResistanceCurrent - FanSpeedResistanceLast;
-        digitalWrite(FanOutCsp, LOW);
-        //Serial.println("hereB");
-        if (Delta > 0)
-        {
-            //Serial.println("up");
-            digitalWrite(FanOutDirp, HIGH);
-
-        }
-        else
-        {
-            //Serial.println("down");
-            digitalWrite(FanOutDirp, LOW);
-            Delta = abs(Delta);
-        }
-
-
-        for (int i = 0; i < Delta; i++) {
-            //Serial.print(i);    
-            digitalWrite(FanOutIncp, LOW);
-            delay(1);
-            digitalWrite(FanOutIncp, HIGH);
-            delay(1);
-
-        }
-        //Serial.println("");
-        FanSpeedResistanceLast = FanSpeedResistanceCurrent;
-   
-    }
+       else
+       {
+           return ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
+       }
+    
 }
+
+void  SetAndSendFanPWMForATime(double minutes) {
+      //Serial.println("Call From SetFan");
+     //Serial.println(minutes);
+           
+    FanSpeedPWM = CalcFanPWMForATime(minutes);
+    sendFanPWM_Wire();
+}
+
+void  StopAndSendFanPWM() {
+    FanSpeedPWM = 0 ;
+    sendFanPWM_Wire();
+}
+
+void  sendFanPWM_Wire() {
+
+     float q = 4092;
+     float x = FanSpeedPWM;
+     float j = q * x ;
+     int i= j/254;
+     Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
+     Serial.print("Setting Fan 10 bit :");Serial.println(i);
+     dac.setVoltage(i, false);
+ 
+}
+
   
 void ReturnSetPoints(Stream &port) {
   for (int x = 0; x < SetPointCount; x++) {
@@ -438,38 +429,6 @@ int ReadIntEprom(int loc, int min, int max, int def) {
 
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
-int  CalcFanPWMForATime(double minutes){
-     //Serial.println(minutes);
-     if (minutes == double(0.00)){
-            //Serial.println("zeir minutes dedtected");
-            //Serial.println(minutes);
-            return FanSpeedPWMStart;
-     }
-     else if (minutes <= FanSpeedPWNDelayDecreaseByMinutes){
-            return FanSpeedPWMStart;
-        }
-     else if (minutes < FanSpeedPWNDecreaseByMinutes){
-            return  (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/(FanSpeedPWNDecreaseByMinutes - FanSpeedPWNDelayDecreaseByMinutes))* (minutes-FanSpeedPWNDelayDecreaseByMinutes)) ; 
-        }
-       else
-       {
-           return ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
-       }
-    
-}
-void   SetFanPWMForATime(double minutes) {
-      //Serial.println("Call From SetFan");
-     //Serial.println(minutes);
-           
-    FanSpeedPWM = CalcFanPWMForATime(minutes);
-    OutputFanSpeedPwm();
-}
-
-void OutputFanSpeedPwm(){
-      analogWrite(FanPWMp, FanSpeedPWM);
-      UpdateFanPWMValues();
-      updateFanOutputResistance();
-}
 
 double SetpointforATime(double roastminutes) {
   int setpoint;

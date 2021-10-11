@@ -470,59 +470,85 @@ void UpdateEachSecond(boolean bValuesOnly) {
    
 }
 void DrawFanGraph(){
-    myGLCD.setColor(AQUA);
+  DrawFanGraph_ex(false);
+}
+void DrawFanGraph_ex(boolean bStartRoast){
+   UpdateFanPWMValuesDisplay();
+   myGLCD.setColor(AQUA);
+   if (bStartRoast == true){
+        XStartFan_Last = 0;
+   }
+   
    int Col1 = 320;
    int Col2 = Col1 + ((PixelsPerMin * MySetPoints[EndingSetPoint].Minutes)/4 );
-  int Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 ;
-  int yshiftdown = YforATemp(220) - Y1 ;
-  myGLCD.setFont(SmallFont);
+   int Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 ;
+   int yshiftdown = YforATemp(220) - Y1 ;
+    myGLCD.setFont(SmallFont);
     
-  Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 + yshiftdown;
-  int X1 = Col1 - 10;
-  int Y2 = YforATemp(CalcFanPWMForATime(MySetPoints[EndingSetPoint].Minutes))+ 10  + yshiftdown ;
-  int X2 =  Col2 + 10;
+   Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 + yshiftdown;
+   int X1 = Col1 - 10;
+   int Y2 = YforATemp(CalcFanPWMForATime(MySetPoints[EndingSetPoint].Minutes))+ 10  + yshiftdown ;
+   int X2 =  Col2 + 10;
   
-  myGLCD.setColor(BLACK);
+   myGLCD.setColor(BLACK);
   
-  myGLCD.fillRect(X1, Y1, X2, Y2);
-  myGLCD.setColor(AQUA);
-  myGLCD.drawRect(X1 - 1, Y1 -1 , X2 + 1, Y2 + 1);
+   myGLCD.fillRect(X1, Y1, X2, Y2);
+   myGLCD.setColor(AQUA);
+   myGLCD.drawRect(X1 - 1, Y1 -1 , X2 + 1, Y2 + 1);
+  
   int top = Y1;
-  
+
+   //side lables
    myGLCD.printNumI(0 ,X1, top -  (myGLCD.getFontYsize()*1.5)  );
    myGLCD.printNumI(MySetPoints[EndingSetPoint].Minutes ,X2, top -  (myGLCD.getFontYsize()*1.5)  );
 
-
+  //draw original line (called last)
+  //we draw the current line, which may be adjusted, on top of it
+  if (XStartFan_Last > 0) {
+      myGLCD.setColor(BLUE);
+      myGLCD.drawLine(XStartFan_Last, YTopFan_Last, X2Fan_Last, YTopFan_Last );
+      myGLCD.drawLine(X2Fan_Last, YTopFan_Last, X3Fan_Last, YBotFan_Last );
+      myGLCD.drawLine(X3Fan_Last, YBotFan_Last, XEndFan_Last, YBotFan_Last );
+  }
+  myGLCD.setColor(AQUA);
+   
+   //first hor line and top lables
    Y1 = YforATemp(CalcFanPWMForATime(0))  + yshiftdown;
    X1 = Col1;
    Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDelayDecreaseByMinutes))  + yshiftdown;
    X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDelayDecreaseByMinutes)/4 );  
-   
    myGLCD.printNumI(FanSpeedPWMStart,Col1-35 , Y1 - (myGLCD.getFontYsize()/2)  );
-   
-   
    myGLCD.printNumI(FanSpeedPWNDelayDecreaseByMinutes ,X2 , top -  (myGLCD.getFontYsize()*1.5)  );
    myGLCD.drawLine(X1, Y1, X2, Y2 );
- 
-  X1 = X2; Y1 = Y2;
-  Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDecreaseByMinutes))  + yshiftdown;
-  X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDecreaseByMinutes)/4 )  ;
-  myGLCD.printNumI(FanSpeedPWNDecreaseByMinutes ,X2 , top -  (myGLCD.getFontYsize()*1.5)  );
-  myGLCD.drawLine(X1, Y1, X2, Y2 );
-  myGLCD.printNumI(FanSpeedPWMAutoDecrease ,X1 + (X2 - X1)/3 , Y2 - (Y2 - Y1)/2 - (myGLCD.getFontYsize()*.7)  );
+   if (bStartRoast == true){
+        XStartFan_Last = X1;
+        YTopFan_Last = Y1;
+        X2Fan_Last = X2;     
+   }
+  //slope line 
+   X1 = X2; Y1 = Y2;
+   Y2 = YforATemp(CalcFanPWMForATime(FanSpeedPWNDecreaseByMinutes))  + yshiftdown;
+   X2 =  Col1 + ((PixelsPerMin * FanSpeedPWNDecreaseByMinutes)/4 )  ;
+   myGLCD.printNumI(FanSpeedPWNDecreaseByMinutes ,X2 , top -  (myGLCD.getFontYsize()*1.5)  );
+   myGLCD.drawLine(X1, Y1, X2, Y2 );
+   myGLCD.printNumI(FanSpeedPWMAutoDecrease ,X1 + (X2 - X1)/3 , Y2 - (Y2 - Y1)/2 - (myGLCD.getFontYsize()*.7)  );
   
 
+  //second hor line
   X1 = X2; Y1 = Y2;
   Y2 = YforATemp(CalcFanPWMForATime(MySetPoints[EndingSetPoint].Minutes)) + yshiftdown;
   X2 =  Col2 ;
-  
   myGLCD.drawLine(X1, Y1, X2, Y2 );  
- 
-  myGLCD.printNumI(FanSpeedPWMStart -FanSpeedPWMAutoDecrease ,Col2 + 15 , Y2 - (myGLCD.getFontYsize()/2)  );
+  myGLCD.printNumI(FanSpeedPWMStart - FanSpeedPWMAutoDecrease ,Col2 + 15 , Y2 - (myGLCD.getFontYsize()/2)  );
   //myGLCD.printNumI(FanSpeedPWMStart -FanSpeedPWMAutoDecrease ,Col2 + 15 , top -  (myGLCD.getFontYsize()*1.5)  );
- 
+  if (bStartRoast == true){
+        X3Fan_Last = X1;
+        YBotFan_Last = Y1;
+        XEndFan_Last = X2;     
+   }
   
- 
+
+   //current temp
    Y1 = YforATemp(CalcFanPWMForATime(RoastMinutes))+ yshiftdown;
    X1 = Col1 + (PixelsPerMin * (RoastMinutes/4.0));
    myGLCD.fillCircle(X1, Y1, 5);
@@ -530,7 +556,7 @@ void DrawFanGraph(){
    
   
 }
-void UpdateFanPWMValues() {
+void UpdateFanPWMValuesDisplay() {
   myGLCD.setFont(BigFont);
   int rowheight = 20;
   int row = 450;
@@ -547,9 +573,15 @@ void UpdateFanPWMValues() {
       myGLCD.setColor(AQUA);
    
    }
-   myGLCD.printNumI(FanSpeedPWMStart,col , row, 3,' ');
+   myGLCD.printNumI((FanSpeedPWMStart-FanSpeedPWMAutoDecrease),col , row, 3,' ');
    myGLCD.printNumI(FanSpeedPWM,col1 , row, 3,' ');
-   myGLCD.printNumI((FanSpeedPWMStart-FanSpeedPWMAutoDecrease),col2 , row,3,' ');
+   myGLCD.printNumI(FanSpeedPWMStart ,col2 , row,3,' ');
+   // if (State == STATESTOPPED )
+  //  { myGLCD.printNumI(FanSpeedPWMStart,col1 , row, 3,' ');}
+  //  else
+  //  {myGLCD.printNumI(FanSpeedPWM,col1 , row, 3,' ');
+  //  }
+    
        
 }
 //---------------------------------------------------------------------------------------------------------------------------------------------------------------------------

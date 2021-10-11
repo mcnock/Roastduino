@@ -1,3 +1,20 @@
+//MCP4725
+//line 91. Change names of fan analog output port
+//line 350 set values of the analog output ports
+//wire 4725 vcc and gnd to anolog output ports
+//wire 4725 scl and sda to 20 and 20 
+//wire 4725 out and gnd to inputs of dc cd power modulator
+
+
+//Lm386 (3)
+//check voltage of ground to white and join.
+//wire lm386 4 - 12 to 5 v
+//wire lm386 input to input from shunt 
+//check if grounds are all connected
+//wire ground to ground
+//wire output ++ to annalog inputs 4,5,6
+
+
 #include <EEPROM.h>
 #include <UTouchCD.h>
 #include <Chrono.h>
@@ -10,6 +27,7 @@
 #include "B_MyTypes.h"
 #include <UTFT.h>
 #include <UTouch.h>
+#include <Adafruit_MCP4725.h>
 #include <stdio.h> // for function sprintf
 
 // Declare which fonts we will be using
@@ -21,6 +39,8 @@ extern uint8_t Grotesk24x48[];
 // Remember to change the model parameter to suit your display module!
 UTFT myGLCD(SSD1963_800480,38,39,40,41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
 UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout, byte irq
+
+Adafruit_MCP4725 dac;
 
 // Assign human-readable names to some common 16-bit color values:
 
@@ -49,11 +69,19 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 
 #define VGA_TRANSPARENT 0xFFFFFFFF
 
+//#define MCP4725_ADDR 0x62 
+//#define MCP4725_ADDR 0x61 
+#define MCP4725_ADDR 0x60 
+
+//For devices with A0 pulled HIGH, use 0x61
+  
 //PIN  definitions
 //#5 inch display shield  does not  use 30- 34, 10,12, or 13 
 #define VIBRELAYp    2
 #define FANRELAYp     3
+
 #define FanPWMp       4
+
 //#define burned out 5
 #define SSR2p         6
 #define SSR1p         7
@@ -80,12 +108,16 @@ UTouch  myTouch(43, 42, 44, 45, 46);  //byte tclk, byte tcs, byte din, byte dout
 
 #define TSCKp    A7
 
-#define CURFANap    A6
-#define CURHEAT2ap  A5
-#define CURHEAT1ap  A4 
-#define FanOutIncp	A3
-#define FanOutDirp  A2
-#define FanOutCsp   A1
+#define CURFAN_A6   A6
+#define CURHEAT2_A5  A5
+#define CURHEAT1_A4  A4 
+
+#define FanOutVcc_A3   A3
+#define FanOutG_A4     A2
+//#define FanOutIncp	A3
+//define FanOutDirp  A2
+//define FanOutCsp   A1
+
 #define	fanPressurep A0
 
 
@@ -191,9 +223,18 @@ int spSelected = -1;
 int FanSpeedPWM=0;
 int FanSpeedPWMStart=0;
 
+//value to store initial fan profile line
+   int XStartFan_Last;
+   int X2Fan_Last;
+   int X3Fan_Last;
+   int XEndFan_Last;
+   int YBotFan_Last;
+   int YTopFan_Last;
+   
 
 //int FanSpeedPWMAutoEnd=0;
 int FanSpeedPWMAutoDecrease = 90;
+int FanSpeedPWMAutoDecreaseStart = 90;
 bool FanSpeedPWMAutoMode = false;
 int FanSpeedPWNDelayDecreaseByMinutes = 2;
 int FanSpeedPWNDecreaseByMinutes = 8;
@@ -218,6 +259,8 @@ boolean setpointschanged = true;
 double MyMinuteTemperature[30];
 
 setpoint MySetPoints[6] = {{0, 100}, {4, 390}, {7, 420}, {10, 425}, {13, 430}, {16, 450}};
+setpoint MySetPoints_Last[6] = {{0, 100}, {4, 390}, {7, 420}, {10, 425}, {13, 430}, {16, 450}};
+
   //                 20             4         4/8         4/12         4/16        4/20
   
   //                 16             4         3/7         3/10         3/13        3/16
@@ -318,16 +361,26 @@ void setup() {
   Serial.begin(9600);
   Serial.println ("setup starting");
   delay(2000);
+
+  dac.begin(0x60);
+  
+  
   // Pin Configuration
   pinMode(VIBRELAYp, OUTPUT); pinMode(FANRELAYp, OUTPUT);
   pinMode(SSR1p, OUTPUT); pinMode(SSR2p, OUTPUT);
   pinMode(LEDp, OUTPUT);
  
-  pinMode(CURFANap, INPUT);
-  pinMode(CURHEAT1ap, INPUT); pinMode(CURHEAT2ap, INPUT);
-  pinMode(FanOutIncp, OUTPUT);
-  pinMode(FanOutDirp, OUTPUT);
-  pinMode(FanOutCsp, OUTPUT);
+  pinMode(CURFAN_A6, INPUT);
+  pinMode(CURHEAT1_A4, INPUT); pinMode(CURHEAT2_A5, INPUT);
+
+  pinMode(FanOutVcc_A3,OUTPUT);   
+  pinMode(FanOutG_A4,OUTPUT);     
+  digitalWrite(FanOutVcc_A3, LOW);  //0V
+  digitalWrite(FanOutG_A4,HIGH);    //5V
+   
+  //pinMode(FanOutIncp, OUTPUT);
+  //pinMode(FanOutDirp, OUTPUT);
+  //pinMode(FanOutCsp, OUTPUT);
 
   pinMode(TSD1p, INPUT_PULLUP);
   pinMode(TSD2p, INPUT_PULLUP);
@@ -378,7 +431,7 @@ void setup() {
   intializeVMenus();
 
   State = STATESTOPPED;   
-  setpointschanged = true;
+  setpointschanged = true;;
   
   Serial.println ("setup B");
   
@@ -393,27 +446,36 @@ FanSpeedPWNDelayDecreaseByMinutes = EEPROM.read(FanSpeedPWNDelayDecreaseByMinute
 
 if (FanSpeedPWNDelayDecreaseByMinutes < 0 or FanSpeedPWNDelayDecreaseByMinutes > 5){
   FanSpeedPWNDelayDecreaseByMinutes = 2;
+  EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);
 }
 
-FanSpeedPWNDecreaseByMinutes = EEPROM.read(FanSpeedPWNDecreaseByMinutes);
+FanSpeedPWNDecreaseByMinutes = EEPROM.read(FanSpeedPWNDecreaseByMinutes_EP);
 if (FanSpeedPWNDecreaseByMinutes < 0 or FanSpeedPWNDecreaseByMinutes > 10){
   FanSpeedPWNDecreaseByMinutes = 8;
+   EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP,FanSpeedPWNDecreaseByMinutes);
+
 }
 
-FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease);
+FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
 if (FanSpeedPWMAutoDecrease < 0 or FanSpeedPWMAutoDecrease > 200){
-  FanSpeedPWMAutoDecrease = 80;
+    FanSpeedPWMAutoDecrease = 80;
+    EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
+ 
 }
+
 if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart){
   FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
+  EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
+
 }
+FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
+FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
 
-
-  FanSpeedPWM = 0;
-  updateFanOutputResistance();
+  Wire.begin();
+  StopAndSendFanPWM();
   delay(2000);
 
-  UpdateFanPWMValues();
+  DrawFanGraph();
   graphProfile();
 }
 
