@@ -171,14 +171,8 @@ void ProcessHorFanMenu(int i) {
           
            
            if (RoastMinutes < (FanSpeedPWNDelayDecreaseByMinutes + FanSpeedPWNDecreaseByMinutes/2)){
-                //first half we adjust start and let slope be what is asked for or be trimmed
+                 //first half we adjust start and let slope be what is asked for or be trimmed
                  FanSpeedPWMStart = FanSpeedPWMStart + change;
-                
-                 
-                       
-                 
-                 
-           
            }
            else
            {
@@ -200,13 +194,13 @@ void ProcessHorFanMenu(int i) {
            }
 
          //we trim too large of slope
-         if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart)   
-         {
+          if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart)   
+          {
               FanSpeedPWMAutoDecrease = FanSpeedPWMStart ; 
          }
              
           if (FanSpeedPWMStart > 254){FanSpeedPWMStart = 254;}
-          if (FanSpeedPWMStart < 0){FanSpeedPWMStart = 0;}
+          if (FanSpeedPWMStart < 10){FanSpeedPWMStart = 10;}
            sendFanPWM_Wire();
            DrawFanGraph();
       }
@@ -224,6 +218,7 @@ void ProcessHorFanMenu(int i) {
       
       }
   
+  
 }
 
 void intializeVMenus(){
@@ -234,7 +229,7 @@ void intializeVMenus(){
         buttonsetdef* bsd = &myButtonVertMenus[i];
         bsd->Count = 10;
         bsd->rowstart = 0;
-        bsd->W = 65;
+        bsd->W = 90;
         bsd->H = 50;
         bsd->vertical = true;
         bsd->colstart = myGLCD.getDisplayXSize() - bsd->W - 2;
@@ -249,9 +244,9 @@ void intializeVMenus(){
                 strcpy(bsd->buttondefs[3].label, "Int");    bsd->buttondefs[3].color = YELLOW;
                 strcpy(bsd->buttondefs[4].label, "SPs");    bsd->buttondefs[4].color = YELLOW;
                 strcpy(bsd->buttondefs[5].label, "Fan");    bsd->buttondefs[5].color = YELLOW;
-                strcpy(bsd->buttondefs[6].label, "T+1");    bsd->buttondefs[6].color = RED;
-                strcpy(bsd->buttondefs[7].label, "T-1");   bsd->buttondefs[7].color = RED;
-                strcpy(bsd->buttondefs[8].label, "");     bsd->buttondefs[8].color = BLACK;
+                strcpy(bsd->buttondefs[6].label, "rT+1");    bsd->buttondefs[6].color = RED; //roast time this roaste
+                strcpy(bsd->buttondefs[7].label, "rT-1");   bsd->buttondefs[7].color = RED;  //roast time this roaste
+                strcpy(bsd->buttondefs[8].label, "cCut");     bsd->buttondefs[8].color = GREEN; //temp cout
                 bsd->ClickHandler = ProcessBaseVMenu;
                 bsd->nextMenu = VmenuDebug;
                 bsd->backMenu = VmenuDebug;
@@ -305,8 +300,8 @@ void intializeVMenus(){
                 j=4;strcpy(bsd->buttondefs[j].label, "sp4");    bsd->buttondefs[j].color = YELLOW;
                 j=5;strcpy(bsd->buttondefs[j].label, "sp5");    bsd->buttondefs[j].color = YELLOW;
                 j=6;strcpy(bsd->buttondefs[j].label, "ls3");    bsd->buttondefs[j].color = YELLOW;
-                j=7;strcpy(bsd->buttondefs[j].label, "L+1");    bsd->buttondefs[j].color = GREEN;
-                j=8;strcpy(bsd->buttondefs[j].label, "L-1");    bsd->buttondefs[j].color = GREEN;
+                j=7;strcpy(bsd->buttondefs[j].label, "T+1");    bsd->buttondefs[j].color = GREEN;  //roaste time saved
+                j=8;strcpy(bsd->buttondefs[j].label, "T-1");    bsd->buttondefs[j].color = GREEN; //roast time saved
                 bsd->ClickHandler = ProcessSetPointSelectVMenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = Vmenubase;
@@ -437,13 +432,13 @@ void ProcessBaseVMenu(int i) {
     case VBUT5:
         DrawVMenu(VmenuFan,-1);
         break;
-    case VBUT6:
+    case VBUT6: //roast time
         if (State == STATEROASTING || State == STATECOOLING)
         {
           RoastTime.add(60);
         }
         break;
-    case VBUT7:
+    case VBUT7: //roast time
         if (State == STATEROASTING && RoastTime.elapsed()> 61)
         {
             RoastTime.add(-60);
@@ -634,7 +629,7 @@ void ProcessAdjust_01Vmenu(int i) {
 void ProcessDebugVMenu(int i) {
      //Serial.print("ProcessVertMenu3:");Serial.println(i);
 //    buttonsetdef* bsd = &myButtonVertMenus[VerticalMenuShowing];     
-    if (errmsg == "Must be in state stopped to debug"){
+    if (errmsg == "Must be in state stopped to debug" || errmsg == "Must be in statefanonly to debug coils"){
         errmsg = "";
         newerrmsg = true;
     }
@@ -652,11 +647,25 @@ void ProcessDebugVMenu(int i) {
           }  
           DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu,-1);
         break;
-    case VBUT3:
-    case VBUT4:
-    case VBUT5:
-    case VBUT6:
-       if (State == STATESTOPPED || State == DEBUGTOGGLE || State == DEBUGDUTY) {
+    case VBUT3:  //coil 1
+    case VBUT4:  //coil 2
+        if (State == STATEFANONLY || State == DEBUGCOIL) {
+
+              strcpy(myButtonVertMenus[VmenuOnOff].buttondefs[1].label, myButtonVertMenus[VerticalMenuShowing].buttondefs[i].label);
+                           DrawVMenu(VmenuOnOff,i);
+              newState = DEBUGCOIL;
+       }
+       else
+       {
+          newerrmsg = true;
+          errmsg = "Must be in statefanonly to debug coils";
+       }
+       break;
+    
+    case VBUT5:  //vib
+    case VBUT6:  //fan
+    
+    if (State == STATESTOPPED || State == DEBUGTOGGLE || State == DEBUGDUTY) {
               strcpy(myButtonVertMenus[VmenuOnOff].buttondefs[1].label, myButtonVertMenus[VerticalMenuShowing].buttondefs[i].label);
                            DrawVMenu(VmenuOnOff,i);
               newState = DEBUGTOGGLE;
@@ -667,7 +676,7 @@ void ProcessDebugVMenu(int i) {
           errmsg = "Must be in state stopped to debug";
        }
         break;
-    case VBUT7:
+    case VBUT7: //duty
         if (State == STATESTOPPED || State == DEBUGTOGGLE || State == DEBUGDUTY) {
               strcpy(myButtonVertMenus[VmenuAjd_01].buttondefs[1].label, myButtonVertMenus[VerticalMenuShowing].buttondefs[i].label);
               DrawVMenu(VmenuAjd_01, i);
@@ -679,7 +688,7 @@ void ProcessDebugVMenu(int i) {
           newerrmsg = true;
           errmsg = "Must be in state stopped to debug";
        }
-    case VBUT8:
+    case VBUT8:  //temp
           strcpy(myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].label, myButtonVertMenus[VerticalMenuShowing].buttondefs[i].label);    
           DrawVMenu(VMenuAdj_1_5_10_V,i);
         break;
@@ -851,7 +860,14 @@ void ProcessAdj_1_5_10_VMenu(int i) {
          EEPROM.update(GAIN_EP , Gain);
          UpdateDisplayDetailA(true);
       }
-      manualtemp = manualtemp + moveamount;
+      else if (VerticalMenuPrior == Vmenubase && myButtonVertMenus[VerticalMenuShowing].inputbutton  == VBUT8 ){
+         TEMPCOILTOOHOT = TEMPCOILTOOHOT + moveamount;
+         UpdateDisplayDetailA(true);
+      }
+    
+      
+      manualtemp = manualtemp + moveamount; //this many not be needed
+    
     }
 
 }

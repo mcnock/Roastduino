@@ -7,7 +7,7 @@
 void ProcessTouch(int Xtouch, int Ytouch)
 {
     int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
-    //Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
+    Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
     if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
         //Serial.println("found hor1 buttons");

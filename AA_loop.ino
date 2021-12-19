@@ -34,36 +34,39 @@ void theloop () {
   //read temperatures and amps    B         read temperatures and amps   B             read temperatures and amps     B         read temperatures and amps
   //******************************************************************************************************************************** 
  //read pressure
-  FanPressureRoll.push(((double)analogRead(fanPressurep)-538.00)/538*2.2);
+ // FanPressureRoll.push(((double)analogRead(fanPressurep)-538.00)/538*2.2);
    //we read current each loop since it is fast 
-    //Serial.print("fan:");Serial.println(tempread);
+  //Serial.print("fan:");Serial.println(tempread);
   //185 millamps per volt
   //DC
-  CurrentFan = ((((double)(analogRead(CURFAN_A6) - (MaxVread / 2)) * 5)) / 125) ; 
-  AvgFanCurrent.push(CurrentFan); 
-  CurrentFan = AvgFanCurrent.mean() - CurrentFanOffset;
-  if (CurrentFan < 0){
-    CurrentFan =0;
-  }
-  CurrentHeat1 = (((double)(analogRead(CURHEAT1_A4) - (MaxVread / 2)) * 5)) / 100; AvgCoil1Amp.push(CurrentHeat1 * CurrentHeat1);
-  CurrentHeat2 = (((double)(analogRead(CURHEAT2_A5) - (MaxVread / 2)) * 5)) / 100; AvgCoil2Amp.push(CurrentHeat2 * CurrentHeat2);
-  CurrentHeat1 = sqrt( AvgCoil1Amp.mean()) - CurrentHeat1Offset;
-  CurrentHeat2 = sqrt( AvgCoil2Amp.mean()) - CurrentHeat2Offset;
-  if (bNewSecond) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
+  //CurrentFan = ((((double)(analogRead(CURFAN_A6) - (MaxVread / 2)) * 5)) / 125) ; 
+  //AvgFanCurrent.push(CurrentFan); 
+  //CurrentFan = AvgFanCurrent.mean() - CurrentFanOffset;
+  //if (CurrentFan < 0){
+  //  CurrentFan =0;
+ // }
+
+  //  int i1 = analogRead(CURHEAT1_A4);
+ //   AvgCoil1Amp.push(i1);
+ //   int i2 = analogRead(CURHEAT2_A5);
+//    AvgCoil2Amp.push(i2);
+    
+    
+  int TBeanAvgThisRun =0;
+  if (bNewSecond == true || badLastTempCount > 0 ) { //we speed up loop per sec by reading temps once per second.  reading temps is very slow.
     TCoil = getCleanTemp(thermocouple4.readFahrenheit(), 4);
     //Serial.println("Coil teamp:");Serial.println(TCoil);
     TCoilRoll.push(TCoil);
   
-    TBean3 =   getCleanTemp(thermocouple1.readFahrenheit(), 1);
-
+    TBean3 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
     TBean1 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
     TBean2 = getCleanTemp(thermocouple3.readFahrenheit(), 3);
     
     if (VerticalMenuShowing == VMenuAdj_1_5_10_V && myButtonVertMenus[VMenuAdj_1_5_10_V].inputbutton == 8){  
         if (manualtemp == -1){
             TBeanAvgRoll.clear();
-            if (TBeanAvg > 0){
-                manualtemp = TBeanAvg;
+            if (TBeanAvgThisRun > 0){
+                manualtemp = TBeanAvgThisRun;
             }
             else
             {
@@ -72,29 +75,32 @@ void theloop () {
         }
         else
         {
-            TBeanAvg = manualtemp ;
+            TBeanAvgThisRun = manualtemp ;
         }        
     }
     else
     {
-        TBeanAvg = getBeanAvgTemp(TBean1, TBean2);
+        TBeanAvgThisRun = getBeanAvgTemp(TBean1, TBean2);
         manualtemp = -1;
     }
     
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
     double newtempratiotoaverage;
     if (TBeanAvgRoll.getCount() > 1) {
-      newtempratiotoaverage = TBeanAvg / TBeanAvgRoll.mean();
+       newtempratiotoaverage = TBeanAvgThisRun / TBeanAvgRoll.mean();
     }
     else {
       newtempratiotoaverage = 1;
+      
       Readingskipped++;
     }
 
-    if    ( (newtempratiotoaverage > .7 &&  newtempratiotoaverage < 1.2)  || TBeanAvgRoll.mean() < 200  || RoastMinutes < 1 )  {
-      TBeanAvgRoll.push(TBeanAvg);
+    if    ( (newtempratiotoaverage > .95 &&  newtempratiotoaverage < 1.05)  || TBeanAvgRoll.mean() < 200  || RoastMinutes < 1 )  {
+      TBeanAvgRoll.push(TBeanAvgThisRun);
+      badLastTempCount = 0;
     }
     else {
+      badLastTempCount++;
       Readingskipped++;
       //Serial.println("out of range:");
       //Serial.println("TBean2:");Serial.println(TBean2);Serial.println(" TBean1:");Serial.println(TBean1);
@@ -109,15 +115,7 @@ void theloop () {
   //DETERIM NEW STATE BASE ON TEMPERATURE or TIME
   //*****************************************************************************************************
   if (State == STATEROASTING) {
-    if (TCoil > OVERHEATCOIL) {
-      OVERHEATCOILCount++;
-      if (OVERHEATCOILCount > 20) {
-        newState = STATEOVERHEATED;
-      }
-    }
-    else {
-      OVERHEATCOILCount = 0;
-    }
+  
     if ( TBeanAvgRoll.mean() > MySetPoints[EndingSetPoint].Temperature) {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
@@ -145,7 +143,7 @@ void theloop () {
   
   
   //ProcessButton Clicks/find user new state requests
-  if (myTouch.dataAvailable())
+  if (myTouch.dataAvailable() )
   {
       myTouch.read();
       int16_t x = myTouch.getX();
@@ -192,7 +190,6 @@ void theloop () {
       FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
       FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
       DrawFanGraph_ex(true);
-
       SetAndSendFanPWMForATime(0);
       FanSpeedPWMAutoMode = true;
       //CurrentHeat1Offset = CurrentHeat1Offset + CurrentHeat1;
@@ -252,7 +249,9 @@ void theloop () {
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
         break;
   }
-  case DEBUGTOGGLE: 
+ case DEBUGCOIL:
+      State = newState;
+ case DEBUGTOGGLE: 
       State = newState;
      break;
   case DEBUGDUTY:
@@ -268,7 +267,7 @@ void theloop () {
   //*************************************************************************************************************************************************************
   //pid window size should vary based on duty cycle. 10 millsec and 50% would to 20 millisecond.  10% would be 100 milliseconds.  01 % would be 1 seconds
   //but we run 9 times per second, so shortest on off is 1 cycles or ~ 100 millseconds.   50% means .2 seconds, 10% means 1 seconds  .05% means 2 seconds
- if (State == DEBUGTOGGLE){
+ if (State == DEBUGTOGGLE || State == DEBUGCOIL){
     SetAndSendFanPWMForATime(0);   
   
 
@@ -300,10 +299,10 @@ void theloop () {
     }
     else { //clear out the integral before set point 1.
       Duty = 1;     
-      ErrI = 0;
-      IntegralSum= 0;
-      PIDIntegralUdateTime.restart(0);
-      IntegralLastTime = 0;
+    //  ErrI = 0;
+    //  IntegralSum= 0;
+    //  PIDIntegralUdateTime.restart(0);
+   //   IntegralLastTime = 0;
     }
   }
   else
@@ -315,12 +314,13 @@ void theloop () {
   }
   
  if (State == STATEROASTING || State == DEBUGDUTY) {
-  
+    int SSR1 = LOW;
+    int SSR2 = LOW;
+    
+ 
     //APPLY THE ERROR WITH THE PID WINDOW
     PIDWindowSize = 1000;
     unsigned long now = millis();
-    int SSR1 = LOW;
-    int SSR2 = LOW;
     boolean ExceedsWholePidWindow = (PIDWindowStartTime == 0) || (now - PIDWindowStartTime > PIDWindowSize);
     if (ExceedsWholePidWindow) { //keep checking if we need to start a new PID window
       PIDWindowStartTime = now;
@@ -348,11 +348,40 @@ void theloop () {
 
       }
     }
+    
+    if (TCoil > TEMPCOILTOOHOT) {
+      if (TEMPCOILTOOHOTCount == 0){
+          bNewSecond = true; //force display immediately
+          newerrmsg == true;
+          errmsg = "HOT COIL CUTOUT";
+     }
+     TEMPCOILTOOHOTCount++;
+    //Serial.println("too hot");
+      SSR1 = LOW;
+      SSR2 = LOW;
+    }
+    else
+    {
+
+      if (TEMPCOILTOOHOTCount > 0)
+      {
+            if (errmsg == "HOT COIL CUTOUT"){
+                  newerrmsg == true;
+                  errmsg = "";
+
+              
+            }
+            
+            TEMPCOILTOOHOTCount = 0;
+      }
+    
+    }
+    
     digitalWrite(SSR1p, SSR1);
     digitalWrite(SSR2p, SSR2);
  }
  
- if (not (State == STATEROASTING || State == DEBUGDUTY || State == DEBUGTOGGLE)) {
+ if (not (State == STATEROASTING || State == DEBUGDUTY || State == DEBUGTOGGLE|| State == DEBUGCOIL)) {
   
     //Serial.println("not roastine is off");
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
@@ -385,12 +414,18 @@ void theloop () {
     UpdateRealTime(ValuesOnly);
     UpdateEachSecond(ValuesOnly);
     if (State == STATEROASTING || State == STATECOOLING){
-       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvg, AVGLINEID);
+       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgThisRun, AVGLINEID);
     }
   }
 
   if (LcdUdateTime.elapsed() > 3000) {
-    if (State == STATEROASTING || State == STATECOOLING){
+    if ( State == STATECOOLING){
+      
+        SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
+        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+        AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+    }
+    if (State == STATEROASTING ){
         SetAndSendFanPWMForATime(RoastMinutes);
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);

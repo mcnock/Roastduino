@@ -17,15 +17,14 @@ void graphProfile() {
         byte m;
         EEPROM.get(RoastLength_EP,m);
         MySetPoints[EndingSetPoint].Minutes = m;
-         Serial.print ("XXA:");Serial.println (MySetPoints[EndingSetPoint].Minutes);
+         //Serial.print ("XXA:");Serial.println (MySetPoints[EndingSetPoint].Minutes);
         if (MySetPoints[EndingSetPoint].Minutes < 10 or MySetPoints[EndingSetPoint].Minutes > 20)
         {
           Serial.println ("XXA");
        
           MySetPoints[EndingSetPoint].Minutes = 16;
         }
-        Serial.println ("XX");
-        Serial.println (MySetPoints[EndingSetPoint].Minutes);
+        //Serial.println ("XX");
          MySetPoints[0].Minutes = 0;
          MySetPoints[1].Minutes = 4;
             
@@ -355,6 +354,11 @@ void UpdateRealTime(boolean OnlyChanges) {
       //strncpy(StateName, "DebugTog", 8);
       myGLCD.print ("Dbg-Tog ",col,row);
       break;
+    case DEBUGCOIL:
+      myGLCD.setColor(BLUE);
+      //strncpy(StateName, "DebugTog", 8);
+      myGLCD.print ("Dbg-Coil ",col,row);
+      break;
     case DEBUGDUTY:
       myGLCD.setColor(BLUE);
       //strncpy(StateName, "DebugDut", 8);
@@ -375,11 +379,14 @@ void UpdateRealTime(boolean OnlyChanges) {
   else{
  //Serial.println("no updated becaue states is same as last update");
   }
+  
   if (newerrmsg == true || OnlyChanges == false){
      myGLCD.setFont(BigFont);
      int row = 65-myGLCD.getFontYsize() ;
      int col = 40;
      newerrmsg =false;
+    
+     
      if (lenlasterrmsg > 0){
          myGLCD.setColor(BLACK);  
          myGLCD.fillRect(col,row, myGLCD.getFontXsize() * (lenlasterrmsg + 1), row + myGLCD.getFontYsize());
@@ -391,10 +398,13 @@ void UpdateRealTime(boolean OnlyChanges) {
         lenlasterrmsg = errmsg.length();
  
     }
-  }  
+  }
+    
 }
 void UpdateEachSecond(boolean bValuesOnly) { 
+  CalcCoilCurrents();
   myGLCD.setFont(BigFont);
+  
   int rowheight = 20;
   int row =  220 ;
   int col =  350 ;

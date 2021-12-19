@@ -353,12 +353,29 @@ void  sendFanPWM_Wire() {
      float x = FanSpeedPWM;
      float j = q * x ;
      int i= j/254;
-     Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
-     Serial.print("Setting Fan 10 bit :");Serial.println(i);
+     //Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
+     //Serial.print("Setting Fan 10 bit :");Serial.println(i);
      dac.setVoltage(i, false);
  
 }
 
+void  CalcCoilCurrents()
+{
+
+    float ampperbitratio = 100;
+    
+    float p2p1 = (AvgCoil1Amp.maximum() - AvgCoil1Amp.minimum());
+    CurrentHeat1 = p2p1 / ampperbitratio;
+
+    Serial.print("delta1"); Serial.print(p2p1); Serial.print(" amps"); Serial.println(CurrentHeat1);
+    
+    
+    int p2p2 = AvgCoil1Amp.maximum() - AvgCoil1Amp.minimum();
+    CurrentHeat2 = p2p2 / ampperbitratio;
+
+  //  Serial.print("delta2");Serial.println(p2p2);
+  
+}
   
 void ReturnSetPoints(Stream &port) {
   for (int x = 0; x < SetPointCount; x++) {
