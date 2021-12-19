@@ -6,9 +6,10 @@
 // **************************************************************************************************************************************************************
 
 void theloop () {
-  //Allways do this in a loop
+  newState = 0;
+   
+ //Allways do this in a loop
    boolean bNewSecond = false;
-   newState = 0;
    
   if (SecondTimer.elapsed() > 1000) {   
       digitalWrite(LEDp, LOW);
@@ -20,6 +21,8 @@ void theloop () {
     bNewSecond = false;
     LoopsPerSecond ++;
   }
+
+
 
 //update roast time
  if (State == STATEROASTING || State == STATECOOLING)
@@ -120,7 +123,7 @@ void theloop () {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
         newState = STATECOOLING;
-       //Serial.println("Roast Temp Reached. Cooling starting End:");
+       Serial.println("Roast Temp Reached. Cooling starting End:");
       }
     }
     else {
@@ -129,13 +132,13 @@ void theloop () {
 
     if ( RoastMinutes > MySetPoints[EndingSetPoint].Minutes) {
       newState = STATECOOLING;
-     //Serial.println("Max time reached. Cooling starting");
+     Serial.println("Max time reached. Cooling starting");
     }
   }
   else if (State == STATECOOLING){
     if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
       newState = STATESTOPPED;
-    //Serial.println("Auto Cooling Complete ");
+     Serial.println("Auto Cooling Complete ");
     
     }
   }
@@ -143,15 +146,216 @@ void theloop () {
   
   
   //ProcessButton Clicks/find user new state requests
-  if (myTouch.dataAvailable() )
-  {
-      myTouch.read();
-      int16_t x = myTouch.getX();
-      int16_t y = myTouch.getY();
-      ProcessTouch (x,y);
+ // if (myTouch.dataAvailable() )
+ // {
+ //     myTouch.read();
+ //     int16_t x = myTouch.getX();
+ //     int16_t y = myTouch.getY();
+ //     ProcessTouch (x,y);
+ // }
+  
+  if (Serial.available() > 0) {
+    // read the incoming byte:
+    int incomingByte = Serial.read();
+    int incomingByte2 = 0;
+    int incomingByte3 = 0;
+    delay(100);
+    if (Serial.available() > 0) {
+      incomingByte2 = Serial.read();
+ 
+    }
+    delay(100);
+    
+     if (Serial.available() > 0) {
+      incomingByte3 = Serial.read();
+    }  
+    // say what you got:
+   switch (incomingByte){
+    case 63: //?
+    { Serial.println("F:Fan F[i,I,d,D]:FanIncrDec; R:Roast E:End s:GetStatus c:Configuration A:AddMinute");
+      
+      break;
+    }
+    case 70: //F
+    { 
+     switch (incomingByte2){
+     case 68:
+        { Serial.print("Fan Decrease 10 ");
+          ProcessHorFanMenu(0);
+          Serial.println (FanSpeedPWM);
+          break;
+        }
+        case 100:
+        { Serial.print("Fan Decrease 3 ");
+          ProcessHorFanMenu(1);
+          Serial.println (FanSpeedPWM);
+
+          break;
+        }
+      case 105:
+        { Serial.print("Fan Increase 3 ");
+          ProcessHorFanMenu(3);
+                    Serial.println (FanSpeedPWM);
+
+          break;
+        }
+      case 73:
+        { Serial.print("Fan Increase 10 ");
+          ProcessHorFanMenu(3);
+          Serial.println (FanSpeedPWM);
+
+          break;
+        } 
+       default:{ 
+        Serial.print ("Fan On ");  
+        ProcessHorControlMenu(2);
+        Serial.println (FanSpeedPWM);
+
+      }
+     }
+       
+     break;
+    } 
+    case 80: //profile
+    { 
+      Serial.print("Profile before:");
+       for (int x = 0; x < SetPointCount; x++) {
+        Serial.print(x);
+        Serial.print("-");
+        Serial.print( MySetPoints[x].Minutes);
+        Serial.print("-");
+        Serial.print (MySetPoints[x].Temperature);
+        Serial.print(":");
+       }
+       Serial.println("");
+
+     switch (incomingByte2){
+     case 68:
+        { Serial.println("Profile Decrease 5 ");
+          moveamount = -5;
+          MoveLast3Point();
+          saveChangedSetpoints();
+          break;
+        }
+        case 100:
+        { Serial.println("Profile Decrease 3 ");
+          moveamount = -3;
+          MoveLast3Point();
+          saveChangedSetpoints();
+          
+          break;
+        }
+      case 105:
+        { Serial.println("Profile Increase 3 ");
+          moveamount = 3;
+          MoveLast3Point();
+          saveChangedSetpoints();
+          
+          break;
+        }
+      case 73:
+        { Serial.println("Profile Increase 5 ");
+          moveamount = 5;
+          MoveLast3Point();
+          saveChangedSetpoints();
+          
+       
+          break;
+        }
+     }
+      Serial.print("Profile  after:");
+       for (int x = 0; x < SetPointCount; x++) {
+        Serial.print(x);
+        Serial.print("-");
+        Serial.print( MySetPoints[x].Minutes);
+       Serial.print("-");
+        Serial.print (MySetPoints[x].Temperature);
+        Serial.print(":");
+       }
+       Serial.println("");
+
+      break;  
+      
+     }
+       
+     
+    case 82: //R
+    { Serial.println("Start Roast");
+      ProcessHorControlMenu(0);
+      break;
+    }
+    case 69: //E
+    { Serial.println("End Roast");
+      ProcessHorControlMenu(1);
+      break;
+    }
+    case 115: //s
+    {  
+       Serial.print("Time:");   
+       Serial.print(RoastMinutes);
+       Serial.print(" of ");   
+       Serial.print(MySetPoints[SetPointCount-1].Minutes);   
+       Serial.print(" Bean Temp:");   
+       Serial.print(TBeanAvgRoll.mean());
+       Serial.print(" of ");   
+       Serial.print(CurrentSetPointTemp); 
+       Serial.print(" of ");   
+       Serial.print(MySetPoints[SetPointCount-1].Temperature);        
+       Serial.print(" Duty:");   
+       Serial.print(Duty);
+       Serial.print(" Coil Temp:");   
+       Serial.println(TCoilRoll.mean());
+      
+       break;
+    
+      
+     
+    }
+    case 99: //c
+    {  
+
+        Serial.print("Profile");
+        for (int x = 0; x < SetPointCount; x++) {
+        Serial.print(x);
+        Serial.print("-");
+        Serial.print( MySetPoints[x].Minutes);
+        Serial.print("-");
+        Serial.print (MySetPoints[x].Temperature);
+        Serial.print(":");
+       }
+       Serial.println("");
+
+      Serial.print ("G:"); Serial.print(Gain); Serial.print ("I:"); Serial.println(Integral);
+      Serial.print ("FanDecrease DelayMin:"); Serial.print(FanSpeedPWNDelayDecreaseByMinutes); Serial.print ("Decrease:"); Serial.print(FanSpeedPWMAutoDecrease);Serial.print ("DecreaseMinutes"); Serial.println(FanSpeedPWNDecreaseByMinutes);
+
+   
+      
+      break;
+     
+    }
+    
+    case 65: //A
+    { Serial.println("Add a minute");
+      ProcessBaseVMenu(7);  
+      break;
+    }
+     default:
+    {
+    
+      Serial.print("I received : ");
+      Serial.println(incomingByte, DEC);
+   
+    
+
+    
+    }
+
+    
+   }
+  incomingByte = 0;
   }
-  
-  
+
+ 
 
 
   // **************************************************************************************************************************************************************

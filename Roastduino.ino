@@ -221,7 +221,6 @@ char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
 
 int spSelected = -1;
-
 int FanSpeedPWM = 0;
 int FanSpeedPWMStart = 0;
 
@@ -268,6 +267,10 @@ setpoint MySetPoints_Last[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }
 //                 16             4         3/7         3/10         3/13        3/16
 
 //                 12             4         2/7         2/8          2/10        2/12
+
+
+             
+
 
 
 int SetPointCount = 6;  //0,1,2,3,4,5
@@ -411,14 +414,32 @@ void setup() {
   delay(1000);
   MaxVread = 512;  //this is the expected half way value
   RoastTime.stop();
+int testiffirstrun;
+EEPROM.get(SETPOINTTEMP_EP[1],testiffirstrun);
+if (testiffirstrun == 0)
+{
+   //first run on this mega
+    EEPROM.put(SETPOINTTEMP_EP[0], (int)390);             
+    EEPROM.put(SETPOINTTEMP_EP[1], (int)390);
+    EEPROM.put(SETPOINTTEMP_EP[2], (int)400);
+    EEPROM.put(SETPOINTTEMP_EP[3], (int)410);
+    EEPROM.put(SETPOINTTEMP_EP[4], (int)430);
+    EEPROM.put(SETPOINTTEMP_EP[5], (int)440);
+    EEPROM.put(RoastLength_EP,14);
+    EEPROM.update(INTEGRAL_EP , (int)(.04 * 100));
+    EEPROM.update(GAIN_EP , 20);
+    EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 2);
+    EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 8);
+    EEPROM.write(FanSpeedPWMAutoDecrease_EP, 60);
+}
 
-
+        
   Gain = EEPROM.read(GAIN_EP);
   Integral = (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.00;
   if (Gain > 100) Gain = 75;
   if (Gain < 10) Gain = 10;
-
+ 
 
   //  Integral = 0.01;
   // Gain = 75;
@@ -483,6 +504,8 @@ void setup() {
 
   DrawFanGraph();
   graphProfile();
+  Serial.println("loop is starting...");
+  
 }
 
 

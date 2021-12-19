@@ -17,10 +17,10 @@ void graphProfile() {
         byte m;
         EEPROM.get(RoastLength_EP,m);
         MySetPoints[EndingSetPoint].Minutes = m;
-         //Serial.print ("XXA:");Serial.println (MySetPoints[EndingSetPoint].Minutes);
+        Serial.print ("Loading new setpoints:");
         if (MySetPoints[EndingSetPoint].Minutes < 10 or MySetPoints[EndingSetPoint].Minutes > 20)
         {
-          Serial.println ("XXA");
+          
        
           MySetPoints[EndingSetPoint].Minutes = 16;
         }
@@ -69,6 +69,7 @@ void graphProfile() {
             else
             {
                 EEPROM.get(SETPOINTTEMP_EP[xSetPoint],MySetPoints[xSetPoint].Temperature);
+                //Serial.println(MySetPoints[xSetPoint].Temperature);
                 MySetPoints[xSetPoint].SpanMinutes = MySetPoints[xSetPoint].Minutes - MySetPoints[xSetPoint - 1].Minutes;
                 accumulatedbySetPoint = accumulatedbySetPoint + MySetPoints[xSetPoint].SpanMinutes;
                 MySetPoints[xSetPoint].Minutes = accumulatedbySetPoint;

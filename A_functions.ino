@@ -367,7 +367,7 @@ void  CalcCoilCurrents()
     float p2p1 = (AvgCoil1Amp.maximum() - AvgCoil1Amp.minimum());
     CurrentHeat1 = p2p1 / ampperbitratio;
 
-    Serial.print("delta1"); Serial.print(p2p1); Serial.print(" amps"); Serial.println(CurrentHeat1);
+   // Serial.print("delta1"); Serial.print(p2p1); Serial.print(" amps"); Serial.println(CurrentHeat1);
     
     
     int p2p2 = AvgCoil1Amp.maximum() - AvgCoil1Amp.minimum();

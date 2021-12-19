@@ -71,9 +71,9 @@ void ProcessHorControlMenu(int i) {
     case 1:
       if (State != STATESTOPPED) {
         newState = STATESTOPPED;
-        //Serial.println("Stop Detected!");
-    }
-  
+       
+      } 
+      Serial.println("Stop Called!");
       break;
     case 2:
       FanAction();
@@ -969,7 +969,7 @@ void saveChangedSetpoints(){
              MySetPoints[xSetPoint].Temperature = MySetPoints[xSetPoint].TemperatureNew;
              MySetPoints[xSetPoint].TemperatureNew = 0;
              
-             EEPROM.write(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
+             EEPROM.put(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
              
 
          }
