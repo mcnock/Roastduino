@@ -172,20 +172,27 @@ void theloop () {
     // say what you got:
    switch (incomingByte){
     case 63: //?
-    { Serial.println("F:Fan F[i,I,d,D]:FanIncrDec; R:Roast E:End s:GetStatus c:Configuration A:AddMinute");
+    { Serial.println("F:Fan[S,i,I,d,D]:Start,Incr,Decr; R:Roast[S,A,R] Start,AddMinute,RemoveMinute E:End s:GetStatus t:temperatures c:GetConfiguration P[i,I,d,D]:ProfileIncrDec]");
       
       break;
     }
     case 70: //F
     { 
      switch (incomingByte2){
-     case 68:
+     case 83: //S
+       {
+          Serial.print ("Fan On ");  
+          ProcessHorControlMenu(2);
+          Serial.println (FanSpeedPWM);
+          break;
+       }
+     case 68: //i
         { Serial.print("Fan Decrease 10 ");
           ProcessHorFanMenu(0);
           Serial.println (FanSpeedPWM);
           break;
         }
-        case 100:
+     case 100:
         { Serial.print("Fan Decrease 3 ");
           ProcessHorFanMenu(1);
           Serial.println (FanSpeedPWM);
@@ -195,7 +202,7 @@ void theloop () {
       case 105:
         { Serial.print("Fan Increase 3 ");
           ProcessHorFanMenu(3);
-                    Serial.println (FanSpeedPWM);
+          Serial.println (FanSpeedPWM);
 
           break;
         }
@@ -203,20 +210,15 @@ void theloop () {
         { Serial.print("Fan Increase 10 ");
           ProcessHorFanMenu(3);
           Serial.println (FanSpeedPWM);
-
           break;
         } 
        default:{ 
-        Serial.print ("Fan On ");  
-        ProcessHorControlMenu(2);
-        Serial.println (FanSpeedPWM);
-
       }
      }
        
      break;
     } 
-    case 80: //profile
+    case 80: //P
     { 
       Serial.print("Profile before:");
        for (int x = 0; x < SetPointCount; x++) {
@@ -280,32 +282,76 @@ void theloop () {
        
      
     case 82: //R
-    { Serial.println("Start Roast");
-      ProcessHorControlMenu(0);
-      break;
+    { 
+       switch (incomingByte2){
+       case 83: //S
+       {
+          Serial.println("Start Roast");
+          ProcessHorControlMenu(0);
+          break;
+  
+       }
+      case 65: //A
+      { Serial.println("Add a minute");
+        ProcessBaseVMenu(7);  
+        break;
+      }
+      case 82: //R
+      { Serial.println("Remove a minute");
+        ProcessBaseVMenu(6);  
+        break;
+      }
+      
+      }
     }
     case 69: //E
     { Serial.println("End Roast");
       ProcessHorControlMenu(1);
       break;
     }
+     case 116: //t
+    {  
+       Serial.print("BeanAvg:");   
+       Serial.print(TBeanAvgRoll.mean());
+       Serial.print(" Bean1:");   
+       Serial.print(TBean1);   
+       Serial.print(" Bean2:");   
+       Serial.print(TBean2);
+       Serial.print(" Bean3");   
+       Serial.print(TBean3); 
+       Serial.print(" Coil Mean");   
+       Serial.print(TCoilRoll.mean());        
+       Serial.print(" Coil:");   
+       Serial.print(TCoil);
+       Serial.println();
+      
+       break;
+    
+      
+     
+    }
+ 
     case 115: //s
     {  
        Serial.print("Time:");   
        Serial.print(RoastMinutes);
-       Serial.print(" of ");   
+       Serial.print("/");   
        Serial.print(MySetPoints[SetPointCount-1].Minutes);   
        Serial.print(" Bean Temp:");   
        Serial.print(TBeanAvgRoll.mean());
-       Serial.print(" of ");   
+       Serial.print("/");   
        Serial.print(CurrentSetPointTemp); 
-       Serial.print(" of ");   
+       Serial.print("/");   
        Serial.print(MySetPoints[SetPointCount-1].Temperature);        
        Serial.print(" Duty:");   
        Serial.print(Duty);
        Serial.print(" Coil Temp:");   
-       Serial.println(TCoilRoll.mean());
-      
+       Serial.print(TCoilRoll.mean());
+       Serial.print(" FanPWM:");   
+       Serial.print(FanSpeedPWM);
+       Serial.print("/254");
+
+       Serial.println();
        break;
     
       
