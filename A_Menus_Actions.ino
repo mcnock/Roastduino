@@ -252,25 +252,7 @@ void intializeVMenus(){
                 bsd->backMenu = VmenuDebug;
                 SetMenuBoundingRect(myButtonVertMenus[i]);
             }
-      case VmenuZeroAmps:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
-                strcpy(bsd->buttondefs[0].label, ">>");   bsd->buttondefs[0].color = GREEN; //1
-                strcpy(bsd->buttondefs[1].label, "<<");     bsd->buttondefs[1].color = GREEN; //2
-                strcpy(bsd->buttondefs[2].label, "0 Fn");    bsd->buttondefs[2].color = ORANGE;
-                strcpy(bsd->buttondefs[3].label, "0 C1");    bsd->buttondefs[3].color = ORANGE;
-                strcpy(bsd->buttondefs[4].label, "0 C2");    bsd->buttondefs[4].color = ORANGE;
-                strcpy(bsd->buttondefs[5].label, "0ALL");    bsd->buttondefs[5].color = ORANGE;
-                strcpy(bsd->buttondefs[6].label, "CLR0");    bsd->buttondefs[6].color = ORANGE;
-                strcpy(bsd->buttondefs[7].label, "RSSP");    bsd->buttondefs[7].color = ORANGE;
-                strcpy(bsd->buttondefs[8].label, "");    bsd->buttondefs[8].color = BLACK;
-                bsd->ClickHandler = ProcessZeroAmpMetersVMenu; 
-                bsd->nextMenu = VmenuDebug;
-                bsd->backMenu = Vmenubase;
-
-                SetMenuBoundingRect(myButtonVertMenus[i]);
-            }
-
+    
       case VmenuDebug:
             if (bsd->buttondefs == 0) {
                
@@ -870,57 +852,6 @@ void ProcessAdj_1_5_10_VMenu(int i) {
     
     }
 
-}
-
-void ProcessZeroAmpMetersVMenu(int i) {
-   //Serial.print("ProcessVertMenu4:");Serial.println(i);
-    moveamount = 0;
-    switch (i) {
-    case 0:
-        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu, -1);
-        break;
-    case 1:
-        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu, -1);
-        break;
-    case 2:
-        CurrentFanOffset = CurrentFanOffset + CurrentFan ;
-        AvgFanCurrent.clear();
-        break;
-    case 3:
-        CurrentHeat1Offset =   CurrentHeat1Offset + CurrentHeat1;
-        AvgCoil1Amp.clear();
-        break;
-    case 4:
-        CurrentHeat2Offset = CurrentHeat2Offset + CurrentHeat2;
-        AvgCoil2Amp.clear(); 
-        break;
-    case 5:
-        CurrentFanOffset = CurrentFanOffset + CurrentFan ;
-        AvgFanCurrent.clear();
-        CurrentHeat1Offset =   CurrentHeat1Offset + CurrentHeat1;
-        AvgCoil1Amp.clear();
-        CurrentHeat2Offset = CurrentHeat2Offset + CurrentHeat2;
-        AvgCoil2Amp.clear(); 
-    
-        break;
-    case 6:
-        CurrentFanOffset = 0; 
-        CurrentHeat1Offset = 0; 
-        CurrentHeat2Offset = 0;
-        
-        break;
-    case 7:
-       for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
-        {
-               MySetPoints[xSetPoint].TemperatureNew = 0;
-               EEPROM.put(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].TemperatureDefault);
-        }
-       graphProfile();
-        break;
-
-    case 8:
-        break;
-    }
 }
 
 void EndRoastToggleAction() {

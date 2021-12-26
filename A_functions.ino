@@ -3,7 +3,7 @@
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 // FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
-void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
+void ReadSerialESP(Stream &port, Chrono &SerialInputTimer ) {
   //StepA discard serial that does not begin with +
   if (port.available() == 0) {
     return;
@@ -105,12 +105,6 @@ void ReadSerial(Stream &port, Chrono &SerialInputTimer ) {
             port.print (TBean2);
             port.print (":");
             port.print (TCoil);
-            port.print (":");
-            port.print (CurrentFan);
-            port.print (":");
-            port.print (CurrentHeat1);
-            port.print (":");
-            port.print (CurrentHeat2);
             port.print (":");
             port.print (Err);
             port.print (":");
@@ -355,27 +349,19 @@ void  sendFanPWM_Wire() {
      int i= j/254;
      //Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
      //Serial.print("Setting Fan 10 bit :");Serial.println(i);
-     dac.setVoltage(i, false);
+     //interrupts();
+      //Wire.beginTransmission(MCP4725_ADDR);
+     // Wire.write(64);                     // cmd to update the DAC
+     // Wire.write(i >> 4);        // the 8 most significant bits...
+     // Wire.write((i & 15) << 4); // the 4 least significant bits...
+     // Wire.endTransmission();
+      dac.setVoltage(i, false);
+     //Serial.print("Setting Fan pwm B:");Serial.println(FanSpeedPWM);
+     
+     
  
 }
 
-void  CalcCoilCurrents()
-{
-
-    float ampperbitratio = 100;
-    
-    float p2p1 = (AvgCoil1Amp.maximum() - AvgCoil1Amp.minimum());
-    CurrentHeat1 = p2p1 / ampperbitratio;
-
-   // Serial.print("delta1"); Serial.print(p2p1); Serial.print(" amps"); Serial.println(CurrentHeat1);
-    
-    
-    int p2p2 = AvgCoil1Amp.maximum() - AvgCoil1Amp.minimum();
-    CurrentHeat2 = p2p2 / ampperbitratio;
-
-  //  Serial.print("delta2");Serial.println(p2p2);
-  
-}
   
 void ReturnSetPoints(Stream &port) {
   for (int x = 0; x < SetPointCount; x++) {
@@ -398,17 +384,17 @@ void SerialprintRect(struct rect * rect) {
 
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
-    Readingskipped++;
- //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
+    Readingskipped[myID]++;
+    //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature > 1000) {
-    Readingskipped++;
- //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
+    Readingskipped[myID]++;
+   //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature < 40) {
-    Readingskipped++;
+    Readingskipped[myID]++;
  //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
     return -1;
   }

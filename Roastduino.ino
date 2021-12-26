@@ -30,6 +30,8 @@
 #include <Adafruit_MCP4725.h>
 #include <stdio.h>  // for function sprintf
 
+#define MCP4725_ADDR 0x60   
+
 // Declare which fonts we will be using
 extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
@@ -97,16 +99,14 @@ Adafruit_MCP4725 dac;
 //#define available 33
 //#define available 34
 
-#define TSD1p A8
-#define TCS1p A9
-#define TSD2p A10  //could share A8
-#define TCS2p A11
-#define TSD3p A12  //could share A8
-#define TCS3p A13
-#define TSD4p A14  //could share A8
-#define TCS4p A15
+#define TSCKp A9
+#define TSD1p A10  //could share A8
+#define TCS1p A11
+#define TSD2p A12  //could share A8
+#define TCS2p A13
+#define TSD3p A14  //could share A8
+#define TCS3p A15
 
-#define TSCKp A7
 
 #define CURFAN_A6 A6
 #define CURHEAT2_A5 A5
@@ -206,11 +206,15 @@ boolean newerrmsg;
 int lenlasterrmsg;
 int TEMPCOILTOOHOT = 700;
 
+boolean serialOutPutTempsBySecond ;
+boolean serialOutPutTempsBy3Seconds ;
+boolean serialOutPutStatusBy3Seconds;
+boolean serialOutPutStatusBySecond;
+
 
 MAX6675 thermocouple1(TSCKp, TCS1p, TSD1p);
 MAX6675 thermocouple2(TSCKp, TCS2p, TSD2p);
 MAX6675 thermocouple3(TSCKp, TCS3p, TSD3p);
-MAX6675 thermocouple4(TSCKp, TCS4p, TSD4p);
 //global variablers for temp control
 int Gain = 100;  //read from eeprom
 
@@ -273,7 +277,7 @@ setpoint MySetPoints_Last[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }
 
 
 
-int SetPointCount = 6;  //0,1,2,3,4,5
+int SetPointCount = 6;  //0,1,2,3,4,t0t5
 int EndingSetPoint = 5;
 int TimeScreenLeft = 0;
 
@@ -319,7 +323,7 @@ int OVERHEATFANCount;
 int TEMPCOILTOOHOTCount;
 int TempReachedCount;
 int TempSpikeCount;
-int Readingskipped;
+int Readingskipped[3];
 
 buttonsetdef myHorControlMenuDef;
 buttonsetdef myHorFanButtonControl;
@@ -395,13 +399,10 @@ void setup() {
   pinMode(TSD1p, INPUT_PULLUP);
   pinMode(TSD2p, INPUT_PULLUP);
   pinMode(TSD3p, INPUT_PULLUP);
-  pinMode(TSD4p, INPUT_PULLUP);
 
   pinMode(TCS1p, OUTPUT);
   pinMode(TCS2p, OUTPUT);
   pinMode(TCS3p, OUTPUT);
-  pinMode(TCS4p, OUTPUT);
-
 
   pinMode(TSCKp, OUTPUT);
   //#define FanPWMp     5
@@ -432,6 +433,11 @@ if (testiffirstrun == 0)
     EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 8);
     EEPROM.write(FanSpeedPWMAutoDecrease_EP, 60);
 }
+EEPROM.write(FanSpeedPWMAutoDecrease_EP, 50);
+EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 1);
+EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
+    
+
 
         
   Gain = EEPROM.read(GAIN_EP);
@@ -498,10 +504,14 @@ if (testiffirstrun == 0)
   FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
   FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
 
-  Wire.begin();
+   //Serial.println("Wire begin");
+  
+  //Wire.begin();
+  //interrupts();
+    
+  
   StopAndSendFanPWM();
-  delay(2000);
-
+  
   DrawFanGraph();
   graphProfile();
   Serial.println("loop is starting...");

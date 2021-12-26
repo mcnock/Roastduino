@@ -307,8 +307,9 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
        //myGLCD.print("l/s :",col3, row); 
        myGLCD.printNumI(LoopsPerSecond,col4 , row, 6,' ') ;
        row = row + rowheight;
-       //myGLCD.print("Skp : ", col3, row);  
-       myGLCD.printNumI(Readingskipped,col4 , row, 6,' ');
+       //myGLCD.print("Skp : ", col3, row);
+       int R =   Readingskipped[0] + Readingskipped[1] + Readingskipped[2];
+       myGLCD.printNumI(R,col4 , row, 6,' ');
        row = row + rowheight;
        //myGLCD.print("FanD:", col3, row);  
        myGLCD.printNumI(FanSpeedPWMAutoDecrease,col4 , row,6,' ');
@@ -403,7 +404,6 @@ void UpdateRealTime(boolean OnlyChanges) {
     
 }
 void UpdateEachSecond(boolean bValuesOnly) { 
-  CalcCoilCurrents();
   myGLCD.setFont(BigFont);
   
   int rowheight = 20;
@@ -427,24 +427,6 @@ void UpdateEachSecond(boolean bValuesOnly) {
        row = row + rowheight;
          myGLCD.print("T2  :", col, row);        myGLCD.print("F",col5 , row);   
          myGLCD.printNumI(TBean2, col2, row, 4, ' ');
-       row = row + rowheight;
-         myGLCD.print("T3  :", col, row);myGLCD.print("F",col5 , row);          
-         myGLCD.printNumI(TBean3, col2, row, 4, ' ');
-       row = row + rowheight;
-          myGLCD.print("Coil:", col, row); myGLCD.print("F",col5 , row);       
-          myGLCD.printNumI(TCoilRoll.mean(), col2, row, 4, ' ');
-       row = row + rowheight;
-          myGLCD.print("Fan A:", col3 , row); myGLCD.print("A",col5 , row);   
-          myGLCD.printNumI(CurrentFan,col4 , row, 4,' ');         
-       row = row + rowheight;
-          myGLCD.print("Coil1:",col3  , row);myGLCD.print("A",col5 , row);    
-          myGLCD.printNumI(CurrentHeat1,col4 ,row, 4,' ');
-       row = row + rowheight;
-          myGLCD.print("Coil2:",col3 , row); myGLCD.print("A",col5 , row);    
-          myGLCD.printNumI(CurrentHeat2,col4 , row, 4,' ');
-       row = row + rowheight;
-          myGLCD.print("Fan P:", col3, row);myGLCD.print("P",col5 , row);     
-          myGLCD.printNumI(FanPressureRoll.mean() * 100,col4, row,4,' '); 
    
    }
    else
@@ -459,23 +441,8 @@ void UpdateEachSecond(boolean bValuesOnly) {
          //myGLCD.print("T2  :", col, row);        myGLCD.print("F",col5 , row);   
          myGLCD.printNumI(TBean2, col2, row, 4, ' ');
        row = row + rowheight;
-         //myGLCD.print("T3  :", col, row);myGLCD.print("F",col5 , row);          
-         myGLCD.printNumI(TBean3, col2, row, 4, ' ');
-       row = row + rowheight;
           //myGLCD.print("Coil:", col, row); myGLCD.print("F",col5 , row);       
           myGLCD.printNumI(TCoilRoll.mean(), col2, row, 4, ' ');
-       row = row + rowheight;
-          //myGLCD.print("Fan A:", col3 , row); myGLCD.print("A",col5 , row);   
-          myGLCD.printNumI(CurrentFan,col4 , row, 4,' ');         
-       row = row + rowheight;
-          //myGLCD.print("Coil1:",col3  , row);myGLCD.print("A",col5 , row);    
-          myGLCD.printNumI(CurrentHeat1,col4 ,row, 4,' ');
-       row = row + rowheight;
-          //myGLCD.print("Coil2:",col3 , row); myGLCD.print("A",col5 , row);    
-          myGLCD.printNumI(CurrentHeat2,col4 , row, 4,' ');
-       row = row + rowheight;
-          //myGLCD.print("Fan P:", col3, row);     
-          myGLCD.printNumI(FanPressureRoll.mean() * 100,col4, row,4,' '); 
       
    }
    
