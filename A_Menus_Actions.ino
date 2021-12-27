@@ -201,8 +201,10 @@ void ProcessHorFanMenu(int i) {
              
           if (FanSpeedPWMStart > 254){FanSpeedPWMStart = 254;}
           if (FanSpeedPWMStart < 10){FanSpeedPWMStart = 10;}
-           sendFanPWM_Wire();
-           DrawFanGraph();
+
+          
+          SetAndSendFanPWMForATime(RoastMinutes);
+          DrawFanGraph();
       }
       else
       {

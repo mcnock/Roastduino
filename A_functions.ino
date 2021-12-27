@@ -347,15 +347,17 @@ void  sendFanPWM_Wire() {
      float x = FanSpeedPWM;
      float j = q * x ;
      int i= j/254;
-     //Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
+     
+  //   Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
+  //   Serial.println(MCP4725_ADDR);
      //Serial.print("Setting Fan 10 bit :");Serial.println(i);
      //interrupts();
-      //Wire.beginTransmission(MCP4725_ADDR);
-     // Wire.write(64);                     // cmd to update the DAC
-     // Wire.write(i >> 4);        // the 8 most significant bits...
-     // Wire.write((i & 15) << 4); // the 4 least significant bits...
-     // Wire.endTransmission();
-      dac.setVoltage(i, false);
+      Wire.beginTransmission(MCP4725_ADDR);
+      Wire.write(64);                     // cmd to update the DAC
+      Wire.write(i >> 4);        // the 8 most significant bits...
+      Wire.write((i & 15) << 4); // the 4 least significant bits...
+      Wire.endTransmission();
+     // dac.setVoltage(i, false,100000);
      //Serial.print("Setting Fan pwm B:");Serial.println(FanSpeedPWM);
      
      

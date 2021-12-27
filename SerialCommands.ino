@@ -30,47 +30,56 @@ if (Serial.available() > 0) {
     }
     case 70: //F
     { 
+     int v = 0;
+     int b = FanSpeedPWM;;
      switch (incomingByte2){
      case 83: //S
        {
-          Serial.print ("Fan On ");  
-          ProcessHorControlMenu(2);
-          Serial.println (FanSpeedPWM);
-          break;
+           Serial.print ("Fan On ");  
+           ProcessHorControlMenu(2);
+           Serial.println (FanSpeedPWM);
+           break;
        }
      case 68: //D
-        { Serial.print("Fan Decrease 10 from " );
-          Serial.print(FanSpeedPWM );
-          ProcessHorFanMenu(0);
-          Serial.print (" to ");
-          Serial.println (FanSpeedPWM);
-          break;
+        { 
+           v = -10;
+           ProcessHorFanMenu(0);   
+           break;
         }
      
      case 100: //d
-        { Serial.print("Fan Decrease 3 ");
+        { 
+          v = -3;
           ProcessHorFanMenu(1);
-          Serial.println (FanSpeedPWM);
-
           break;
         }
       case 105: //i
-        { Serial.print("Fan Increase 3 ");
-          ProcessHorFanMenu(3);
-          Serial.println (FanSpeedPWM);
-
+        { 
+          v = 3;
+          ProcessHorFanMenu(2);
           break;
         }
       case 73: //I
-        { Serial.print("Fan Increase 10 ");
+        { 
+          v = 10;
           ProcessHorFanMenu(3);
-          Serial.println (FanSpeedPWM);
           break;
         } 
-       default:{ 
-      }
+       default:{
+         
+       }
      }
-       
+        if (v != 0)
+        
+         {
+          Serial.print("Fan ");
+          Serial.print(v);
+          Serial.print (" from " );
+          Serial.print(b );
+          Serial.print (" to ");
+          Serial.println (FanSpeedPWM);
+          
+         }
      break;
     } 
     case 80: //P

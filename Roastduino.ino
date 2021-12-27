@@ -27,10 +27,9 @@
 #include "B_MyTypes.h"
 #include <UTFT.h>
 #include <UTouch.h>
-#include <Adafruit_MCP4725.h>
+//#include <Adafruit_MCP4725.h>
 #include <stdio.h>  // for function sprintf
-
-#define MCP4725_ADDR 0x60   
+   
 
 // Declare which fonts we will be using
 extern uint8_t SmallFont[];
@@ -42,7 +41,7 @@ extern uint8_t Grotesk24x48[];
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
 UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, byte dout, byte irq
 
-Adafruit_MCP4725 dac;
+//Adafruit_MCP4725 dac;
 
 // Assign human-readable names to some common 16-bit color values:
 
@@ -71,9 +70,9 @@ Adafruit_MCP4725 dac;
 
 #define VGA_TRANSPARENT 0xFFFFFFFF
 
-//#define MCP4725_ADDR 0x62
-//#define MCP4725_ADDR 0x61
 #define MCP4725_ADDR 0x60
+//#define MCP4725_ADDR 0x61
+//define MCP4725_ADDR 0x62
 
 //For devices with A0 pulled HIGH, use 0x61
 
@@ -373,7 +372,6 @@ void setup() {
   Serial.println("setup starting");
   delay(2000);
 
-  dac.begin(0x60);
 
 
   // Pin Configuration
@@ -504,11 +502,11 @@ EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
   FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
   FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
 
-   //Serial.println("Wire begin");
+   Serial.println("i2c for fan begin");
+
   
-  //Wire.begin();
-  //interrupts();
-    
+  Wire.begin();  
+  //dac.begin(0x60);
   
   StopAndSendFanPWM();
   
