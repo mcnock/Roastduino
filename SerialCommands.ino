@@ -70,7 +70,6 @@ if (Serial.available() > 0) {
        }
      }
         if (v != 0)
-        
          {
           Serial.print("Fan ");
           Serial.print(v);
@@ -312,15 +311,15 @@ void SerialOutputStatus()
        Serial.print("/");   
        Serial.print(MySetPoints[SetPointCount-1].Minutes);   
        Serial.print(" Bean Temp:");   
-       Serial.print(TBeanAvgRoll.mean());
+       Serial.print(TBeanAvgRoll.mean(),1);
        Serial.print("/");   
        Serial.print(MySetPoints[SetPointCount-1].Temperature);        
        Serial.print( " Delta:-"); 
-       Serial.print(Err);   
+       Serial.print(Err,1);   
        Serial.print(" Duty:");   
-       Serial.print(Duty);
+       Serial.print(Duty,2);
        Serial.print(" Coil Temp:");   
-       Serial.print(TCoilRoll.mean());
+       Serial.print(TCoilRoll.mean(),1);
        Serial.print(" FanPWM:");   
        Serial.print(FanSpeedPWM);
        Serial.print("/254");

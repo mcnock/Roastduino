@@ -248,13 +248,12 @@ int FanSpeedResistanceCurrent = 0;
 
 double Integral = 0.1;  //read from eeprom
 long unsigned IntegralLastTime = 0;
-long unsigned IntegralSum = 0;
+float IntegralSum = 0;
 unsigned long PIDWindowStartTime;
 boolean PIDNewWindow;
-int ErrI = 0;
-int Err = 0;
+float ErrI = 0;
+float Err = 0;
 double Duty;
-double Dutyraw;
 
 int PIDIntegralUdateTimeValue;
 int PIDWindowSize;
@@ -291,7 +290,7 @@ double TempPerPixL = 0;
 double TempPerPixM = 0;
 double TempPerPixH = 0;
 
-int CurrentSetPointTemp = 0;
+double CurrentSetPointTemp = 0;
 int BeforeTemp = 0;
 int BeforeTime = 0;
 
@@ -314,7 +313,6 @@ Average<int> AvgCoil1Amp(30);
 Average<int> AvgCoil2Amp(30);
 
 //temps are read once per second
-Average<float> FanPressureRoll(5);
 Average<double> TBeanAvgRoll(5);
 Average<double> TCoilRoll(5);  //this is minute avg
 

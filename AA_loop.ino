@@ -243,36 +243,37 @@ void theloop () {
   //but we run 9 times per second, so shortest on off is 1 cycles or ~ 100 millseconds.   50% means .2 seconds, 10% means 1 seconds  .05% means 2 seconds
  if (State == DEBUGTOGGLE || State == DEBUGCOIL){
     SetAndSendFanPWMForATime(0);   
-  
-
  }
  
- 
  if (State == STATEROASTING) {
-    //CALC THE ERR AND INTEGRAL
     //Serial.println("A");
+    //Err, Duty, DutyRaw,.mean(), integralsum, integral,CurrentSetpointTemp all floats
+    //only gain is an Int
     CurrentSetPointTemp =  SetpointforATime(RoastMinutes);
-    Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint
-    //if (bNewSecond) {Serial.println(" new calc of err:");Serial.println(err);    };
+    Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint. Positive it temp is under setupt
     PIDIntegralUdateTimeValue = 5000;
-    Dutyraw = ((double)(Err) / (double)Gain) ;
-    //if (RoastMinutes > MySetPoints[1].Minutes ) 
-    //if (Duty < 1 ) 
-    if (abs(Dutyraw) < 1 )
-    { //only calc intergral error if we are above the 1st setpoint
-      if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 3 seconds we add the err to be a sum of err
-        //if (Duty < 1 && ErrI < Gain ) {
+    if (abs(Err) < Gain ){ 
+      if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) { //every 5 seconds we add the err to be a sum of err
         if (ErrI < Gain ) {
-          IntegralSum =  IntegralSum + double(Err);
+          IntegralSum =  IntegralSum + Err;
+          if (IntegralSum < 0)
+          {
+            IntegralSum = 0;
+          }
           ErrI = (IntegralSum * Integral) ; //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
           //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);          
           PIDIntegralUdateTime.restart(0);
         }
       }
-      Duty = ((double)(Err + ErrI) / (double)Gain) ;
+      Duty = ((Err + ErrI) / (double)Gain) ;
+ 
+      if (Duty > 1.0) {
+        Duty = 1.0;
+      }
+      
     }
     else { //clear out the integral before set point 1.
-      Duty = 1;     
+      Duty = 1.0;     
     //  ErrI = 0;
     //  IntegralSum= 0;
     //  PIDIntegralUdateTime.restart(0);
@@ -281,8 +282,8 @@ void theloop () {
   }
   else
   {
-      ErrI = 0;
-      IntegralSum= 0;
+      ErrI = 0.0;
+      IntegralSum= 0.0;
     
   
   }
@@ -290,15 +291,13 @@ void theloop () {
  if (State == STATEROASTING || State == DEBUGDUTY) {
     int SSR1 = LOW;
     int SSR2 = LOW;
-    
- 
     //APPLY THE ERROR WITH THE PID WINDOW
     PIDWindowSize = 1000;
     unsigned long now = millis();
     boolean ExceedsWholePidWindow = (PIDWindowStartTime == 0) || (now - PIDWindowStartTime > PIDWindowSize);
     if (ExceedsWholePidWindow) { //keep checking if we need to start a new PID window
       PIDWindowStartTime = now;
-      if (Duty > 0) {
+      if (Duty > 0.0) {
         SSR1 = HIGH;
       }
       if (Duty > 0.5) {
@@ -360,7 +359,6 @@ void theloop () {
     //Serial.println("not roastine is off");
     digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
     Duty = 0;
-    Dutyraw = 0;
     Err = 0;
     CurrentSetPointTemp = 0;
     IntegralSum = 0;
