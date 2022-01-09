@@ -786,17 +786,19 @@ void ProcessOnOffVMenu(int iButPressed) {
     if (iButPressed == 2 ||  iButPressed == 3){
       switch (myButtonVertMenus[VerticalMenuShowing].inputbutton) {
         case 3: //ss 1
-            digitalWrite(SSR1p, ONOFF);
+            Serial.println("C:ONOFF");
+
+            digitalWrite(SSR1_p7, ONOFF);
             break;
         case 4: //ss 2
-            digitalWrite(SSR2p, ONOFF);
+            digitalWrite(SSR2_p6, ONOFF);
             break;
         case 5: //vib
-            digitalWrite(VIBRELAYp, !ONOFF);
+//            digitalWrite(VIBRELAYp, !ONOFF);
             break;
         case 6: //fan
             if (FanSpeedPWM == 0) {FanSpeedPWM = FanSpeedPWMStart ;}
-            digitalWrite(FANRELAYp, !ONOFF);
+            digitalWrite(FANRELAYp_2, !ONOFF);
             break;
         }
     }

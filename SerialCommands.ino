@@ -335,7 +335,7 @@ void SerialOutputTempsForPlotting()
        Serial.print(TBean2);
        Serial.print(",BeanAvg:");   
        Serial.print(TBeanAvgRoll.mean());
-       Serial.print(",Coil");   
+       Serial.print(",Coil:");   
        Serial.print(TCoil);        
        Serial.print(",CoilAvg");   
        Serial.print(TCoilRoll.mean());        

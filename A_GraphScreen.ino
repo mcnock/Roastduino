@@ -86,7 +86,6 @@ void graphProfile() {
         }
     
              
-     //Serial.println("AAA");
      
      
      //perform some necesary calculations to size our scales to the display 
@@ -139,8 +138,7 @@ void graphProfile() {
   //Low range A
   myGLCD.setColor(100,100,100);  
 
-     //Serial.println("AAB");
-
+  
   for (int t = 50; t < (TempSplitLow - 50); t = t + 50) {
     //Serial.println(t);
     myGLCD.drawLine(yaxislable,  YforATemp(t),myGLCD.getDisplayXSize(),YforATemp(t) );
@@ -277,8 +275,6 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
        myGLCD.print("Skp : ", col3, row);  
        myGLCD.printNumI(Readingskipped,col4 , row, 6,' ');
        row = row + rowheight;
-       myGLCD.print("FanD:", col3, row);  
-       myGLCD.printNumI(FanSpeedPWMAutoDecrease,col4 , row,6,' ');
       }
       else{
        //myGLCD.print("Time:", col , row);   
@@ -311,8 +307,6 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
        int R =   Readingskipped[0] + Readingskipped[1] + Readingskipped[2];
        myGLCD.printNumI(R,col4 , row, 6,' ');
        row = row + rowheight;
-       //myGLCD.print("FanD:", col3, row);  
-       myGLCD.printNumI(FanSpeedPWMAutoDecrease,col4 , row,6,' ');
     
       }
   //Serial.println("AAG");
@@ -407,27 +401,29 @@ void UpdateEachSecond(boolean bValuesOnly) {
   myGLCD.setFont(BigFont);
   
   int rowheight = 20;
-  int row =  220 ;
-  int col =  350 ;
-  int col2 = 420;
-  int col3 = 550;
-  int col4 = 640;
-  int col5 = 710;
-  col= col3;
-  col2 = col4;
+  int row =  210 ;
+  int col =  520 ; //lable ending with :
+  int col2 = 600;  //number
+  int col5 = 665; //F
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(VGA_WHITE);        
    if (bValuesOnly == false){
        row = row + rowheight;
-         myGLCD.print("Tvg :",col , row);  myGLCD.print("F",col5 , row);
+         myGLCD.print("Tvg :",col , row);  myGLCD.print(" F",col5 , row);
          myGLCD.printNumI(TBeanAvgRoll.mean(),col2,row,4,' ');
        row = row + rowheight; 
-         myGLCD.print("T1  :",col , row);   myGLCD.print("F",col5 , row);       
+         myGLCD.print("T1  :",col , row);   myGLCD.print(" F",col5 , row);       
          myGLCD.printNumI(TBean1, col2, row, 4, ' ');
        row = row + rowheight;
-         myGLCD.print("T2  :", col, row);        myGLCD.print("F",col5 , row);   
+         myGLCD.print("T2  :", col, row);        myGLCD.print(" F",col5 , row);   
          myGLCD.printNumI(TBean2, col2, row, 4, ' ');
-   
+        row = row + rowheight;
+          myGLCD.print("Coil:", col, row); myGLCD.print(" F",col5 , row);       
+          myGLCD.printNumI(TCoil, col2, row, 4, ' ');
+        row = row + rowheight;
+          myGLCD.print("Cvg :", col, row); myGLCD.print(" F",col5 , row);       
+          myGLCD.printNumI(TCoilRoll.mean(), col2, row, 4, ' ');
+      
    }
    else
    {
@@ -440,8 +436,11 @@ void UpdateEachSecond(boolean bValuesOnly) {
        row = row + rowheight;
          //myGLCD.print("T2  :", col, row);        myGLCD.print("F",col5 , row);   
          myGLCD.printNumI(TBean2, col2, row, 4, ' ');
-       row = row + rowheight;
-          //myGLCD.print("Coil:", col, row); myGLCD.print("F",col5 , row);       
+        row = row + rowheight;
+//          myGLCD.print("Coil:", col, row); myGLCD.print("F",col5 , row);       
+          myGLCD.printNumI(TCoil, col2, row, 4, ' ');
+        row = row + rowheight;
+//          myGLCD.print("Cvg:", col, row); myGLCD.print("F",col5 , row);       
           myGLCD.printNumI(TCoilRoll.mean(), col2, row, 4, ' ');
       
    }

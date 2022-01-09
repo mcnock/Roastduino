@@ -78,15 +78,15 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 //PIN  definitions
 //#5 inch display shield  does not  use 30- 34, 10,12, or 13
-#define VIBRELAYp 2
-#define FANRELAYp 3
+#define FANRELAYVCCp_3 3
+#define FANRELAYp_2 2
 
-#define FanPWMp 4
+#define FanPWMp_4 4
 
 //#define burned out 5
-#define SSR2p 6
-#define SSR1p 7
-
+#define SSR2_p6 6
+#define SSR1_p7 7
+#define SSRgr_14 14
 
 //#define available 10
 //#define available 12
@@ -98,6 +98,8 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 //#define available 33
 //#define available 34
 
+#define TCS_G_p7  A7
+#define TCS_5v_p8 A8
 #define TSCKp A9
 #define TSD1p A10  //could share A8
 #define TCS1p A11
@@ -105,6 +107,8 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define TCS2p A13
 #define TSD3p A14  //could share A8
 #define TCS3p A15
+#define TCS_5v A8
+#define CURHEAT2_A5 A5
 
 
 #define CURFAN_A6 A6
@@ -308,9 +312,9 @@ Chrono PIDIntegralUdateTime(Chrono::MILLIS);
 
 //int CapButActive = 0;
 //current is read every loop (200 per second) so 30  very short
-Average<float> AvgFanCurrent(30);
-Average<int> AvgCoil1Amp(30);
-Average<int> AvgCoil2Amp(30);
+//Average<float> AvgFanCurrent(30);
+//Average<int> AvgCoil1Amp(30);
+//Average<int> AvgCoil2Amp(30);
 
 //temps are read once per second
 Average<double> TBeanAvgRoll(5);
@@ -361,6 +365,7 @@ int TBeanAvg;
 
 boolean Flasher;
 
+boolean HasDisplay = true ;
 // =====================================================================================================================================================================
 // SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP
 // =====================================================================================================================================================================
@@ -372,16 +377,17 @@ void setup() {
 
 
 
-  // Pin Configuration
-  pinMode(VIBRELAYp, OUTPUT);
-  pinMode(FANRELAYp, OUTPUT);
-  pinMode(SSR1p, OUTPUT);
-  pinMode(SSR2p, OUTPUT);
-  pinMode(LEDp, OUTPUT);
+  // Pin Conffaiguration
+  pinMode(FANRELAYVCCp_3, OUTPUT);
+  pinMode(FANRELAYp_2, OUTPUT);
+  digitalWrite(FANRELAYVCCp_3, HIGH);   //5V
 
-  pinMode(CURFAN_A6, INPUT);
-  pinMode(CURHEAT1_A4, INPUT);
-  pinMode(CURHEAT2_A5, INPUT);
+  
+  pinMode(SSRgr_14,OUTPUT);
+  digitalWrite(SSRgr_14, LOW); 
+  pinMode(SSR1_p7, OUTPUT);
+  pinMode(SSR2_p6, OUTPUT);
+
 
   pinMode(FanOutVcc_A3, OUTPUT);
   pinMode(FanOutG_A4, OUTPUT);
@@ -400,13 +406,18 @@ void setup() {
   pinMode(TCS2p, OUTPUT);
   pinMode(TCS3p, OUTPUT);
 
-  pinMode(TSCKp, OUTPUT);
-  //#define FanPWMp     5
+  pinMode(TCS_G_p7,OUTPUT);
+  digitalWrite(TCS_G_p7, LOW);   //0V
 
+  pinMode(TCS_5v_p8,OUTPUT);
+  digitalWrite(TCS_5v_p8, HIGH);   //5V
+
+  pinMode(TSCKp, OUTPUT);
+  
 
   //set fan and vibrator relays to high - cause that means off
-  digitalWrite(FANRELAYp, RELAYOFF);
-  digitalWrite(VIBRELAYp, RELAYOFF);
+  digitalWrite(FANRELAYp_2, RELAYOFF);
+  //digitalWrite(VIBRELAYp, RELAYOFF);
 
   delay(1000);
   MaxVread = 512;  //this is the expected half way value
@@ -424,14 +435,14 @@ if (testiffirstrun == 0)
     EEPROM.put(SETPOINTTEMP_EP[5], (int)440);
     EEPROM.put(RoastLength_EP,14);
     EEPROM.update(INTEGRAL_EP , (int)(.04 * 100));
-    EEPROM.update(GAIN_EP , 20);
+    EEPROM.update(GAIN_EP , 30);
     EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 2);
     EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 8);
-    EEPROM.write(FanSpeedPWMAutoDecrease_EP, 60);
+    EEPROM.write(FanSpeedPWMAutoDecrease_EP, 50);
 }
-EEPROM.write(FanSpeedPWMAutoDecrease_EP, 50);
-EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 1);
-EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
+//EEPROM.write(FanSpeedPWMAutoDecrease_EP, 50);
+//EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 1);
+//EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
     
 
 
@@ -439,24 +450,24 @@ EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
   Gain = EEPROM.read(GAIN_EP);
   Integral = (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.00;
-  if (Gain > 100) Gain = 75;
+  if (Gain > 75) Gain = 75;
   if (Gain < 10) Gain = 10;
- 
-
-  //  Integral = 0.01;
-  // Gain = 75;
-  //
+  
   SecondTimer.restart(0);
 
 
 
   // -------------------------------------------------------------
-  myGLCD.InitLCD();
-  pinMode(8, OUTPUT);     //backlight
-  digitalWrite(8, HIGH);  //on
-  myTouch.InitTouch();
-  myTouch.setPrecision(PREC_MEDIUM);
-  // -------------------------------------------------------------
+  if (HasDisplay == true){
+    Serial.println("Initializing LCD");
+
+    myGLCD.InitLCD();
+    pinMode(8, OUTPUT);     //backlight
+    digitalWrite(8, HIGH);  //on
+    myTouch.InitTouch();
+    myTouch.setPrecision(PREC_MEDIUM);
+    // -------------------------------------------------------------
+  } 
   delay(2000);
 
   intializeVMenus();
@@ -465,17 +476,11 @@ EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
   setpointschanged = true;
   ;
 
-  // Serial.println ("setup B");
-
-  //graphProfile();
-
-  //Serial.println ("setup C");
-
+  
   FanSpeedPWMStart = EEPROM.read(FanSpeedPWMStart_EP);
 
 
   FanSpeedPWNDelayDecreaseByMinutes = EEPROM.read(FanSpeedPWNDelayDecreaseByMinutes_EP);
-
   if (FanSpeedPWNDelayDecreaseByMinutes < 0 or FanSpeedPWNDelayDecreaseByMinutes > 5) {
     FanSpeedPWNDelayDecreaseByMinutes = 2;
     EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, FanSpeedPWNDelayDecreaseByMinutes);
@@ -500,11 +505,10 @@ EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
   FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
   FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
 
-   Serial.println("i2c for fan begin");
+  Serial.println("wire i2c for fan begin");
 
   
   Wire.begin();  
-  //dac.begin(0x60);
   
   StopAndSendFanPWM();
   

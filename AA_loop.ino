@@ -119,13 +119,13 @@ void theloop () {
   
   
   //ProcessButton Clicks/find user new state requests
- // if (myTouch.dataAvailable() )
- // {
- //     myTouch.read();
- //     int16_t x = myTouch.getX();
- //     int16_t y = myTouch.getY();
- //     ProcessTouch (x,y);
- // }
+  if (HasDisplay && myTouch.dataAvailable() )
+  {
+      myTouch.read();
+      int16_t x = myTouch.getX();
+      int16_t y = myTouch.getY();
+      ProcessTouch (x,y);
+ }
 
 //Process serial input to find user new state requests
  
@@ -143,11 +143,16 @@ void theloop () {
  switch (newState){
   case STATESTOPPED:
   {
-    digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
+        Serial.print("D:");Serial.println(LOW);
+
+    digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
       State = STATESTOPPED;
-      digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
-      digitalWrite(FANRELAYp, RELAYOFF); digitalWrite(VIBRELAYp, RELAYOFF);
+          Serial.print("E:");Serial.println(LOW);
+
+      digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
+      digitalWrite(FANRELAYp_2, RELAYOFF); 
+      //digitalWrite(VIBRELAYp, RELAYOFF);
       RoastTime.stop();
       FanSpeedPWMAutoMode = false;
       FanSpeedPWM = 0;
@@ -161,7 +166,8 @@ void theloop () {
  case STATEROASTING: //newstate
  {
     //Serial.println("D");
-    digitalWrite(FANRELAYp, RELAYON); digitalWrite(VIBRELAYp, RELAYON);
+    digitalWrite(FANRELAYp_2, RELAYON); 
+    //digitalWrite(VIBRELAYp, RELAYON);
     if (State == STATESTOPPED || State == STATEFANONLY) {
       
       if (FanSpeedPWM > 0 && FanSpeedPWMStart != FanSpeedPWM)
@@ -197,8 +203,9 @@ void theloop () {
     State = newState;
     SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
     FanSpeedPWMAutoMode = false;
+    Serial.print("F:");Serial.println(LOW);
 
-    digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
+    digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     delay(1000);
     break;
   }
@@ -207,20 +214,24 @@ void theloop () {
     FanSpeedPWM = FanSpeedPWMStart ;
     SetAndSendFanPWMForATime(0);   
     //Serial.println("VIB on");
-    digitalWrite(VIBRELAYp, RELAYON);
+//    digitalWrite(VIBRELAYp, RELAYON);
     //Serial.println("Fan on");
-    digitalWrite(FANRELAYp, RELAYON); 
+    digitalWrite(FANRELAYp_2, RELAYON); 
     break;
     }
   case STATEOVERHEATED: {
     State =  newState;
-    digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
+        Serial.print("G:");Serial.println(LOW);
+
+    digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     delay(1000);
         break;
   }
   case STATENOFANCURRENT: {
     State =  newState;
-    digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
+        Serial.print("H:");Serial.println(LOW);
+
+    digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
         break;
   }
  case DEBUGCOIL:
@@ -299,6 +310,7 @@ void theloop () {
       PIDWindowStartTime = now;
       if (Duty > 0.0) {
         SSR1 = HIGH;
+        
       }
       if (Duty > 0.5) {
         SSR2 = HIGH;
@@ -307,10 +319,14 @@ void theloop () {
     else {
       if ( Duty <= 0.5 && ((now - PIDWindowStartTime) <=  (Duty  * 2 * PIDWindowSize))) {
         SSR1 = HIGH;
+        //Serial.println("SSR1 is high");
+    
       }
       if (Duty >= 1.0)
       {
         SSR1 = HIGH;
+        //Serial.println("SSR1 is high");
+
         SSR2 = HIGH;
       }
       if ( Duty > 0.5 ) {
@@ -329,7 +345,7 @@ void theloop () {
           errmsg = "HOT COIL CUTOUT";
      }
      TEMPCOILTOOHOTCount++;
-    //Serial.println("too hot");
+      Serial.println("too hot");
       SSR1 = LOW;
       SSR2 = LOW;
     }
@@ -349,15 +365,17 @@ void theloop () {
       }
     
     }
-    
-    digitalWrite(SSR1p, SSR1);
-    digitalWrite(SSR2p, SSR2);
+
+    digitalWrite(SSR1_p7, SSR1);
+    digitalWrite(SSR2_p6, SSR2);
  }
  
  if (not (State == STATEROASTING || State == DEBUGDUTY || State == DEBUGTOGGLE|| State == DEBUGCOIL)) {
   
     //Serial.println("not roastine is off");
-    digitalWrite(SSR1p, LOW); digitalWrite(SSR2p, LOW);
+    //Serial.println("B:LOW");
+
+    digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     Duty = 0;
     Err = 0;
     CurrentSetPointTemp = 0;
