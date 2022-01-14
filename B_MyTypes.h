@@ -17,15 +17,13 @@ typedef struct point {
 
 
 typedef struct rect {
-  int xmin;
-  int ymin;
+  int x;
+  int y;
   int xmax;
   int ymax;
 } rect;
 
 typedef struct buttondef {
-  int x;
-  int y;
   int h;
   int w;
   uint16_t color ;

@@ -34,9 +34,9 @@ void ProcessTouch(int Xtouch, int Ytouch)
 boolean InRect(int &x, int &y, struct rect *Rect)
 {
 
-  if (x > Rect->xmin && x < Rect->xmax) {
+  if (x > Rect->x && x < Rect->xmax) {
    //Serial.println("Found X");
-    if (y > Rect->ymin && y < Rect->ymax) {
+    if (y > Rect->y && y < Rect->ymax) {
       //Serial.println("Found Y");
       return true;
     }
@@ -61,11 +61,11 @@ int WhatButton(int &x, int &y, struct buttonsetdef *butdefset)
     if (InRect(x, y, &butdefset->buttondefs[i].Rect) == true) {
         //Serial.print("Found:");Serial.println(i);
         myGLCD.setColor(WHITE);
-        myGLCD.drawRect(butdefset->buttondefs[i].x, butdefset->buttondefs[i].y, butdefset->buttondefs[i].w + butdefset->buttondefs[i].x, butdefset->buttondefs[i].h + butdefset->buttondefs[i].y);
+        myGLCD.drawRect(butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].Rect.y, butdefset->buttondefs[i].w + butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].h + butdefset->buttondefs[i].Rect.y);
         myGLCD.setColor(BLACK);
         delay(250);
 
-        myGLCD.drawRect(butdefset->buttondefs[i].x, butdefset->buttondefs[i].y, butdefset->buttondefs[i].w + butdefset->buttondefs[i].x, butdefset->buttondefs[i].h + butdefset->buttondefs[i].y);
+        myGLCD.drawRect(butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].Rect.y, butdefset->buttondefs[i].w + butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].h + butdefset->buttondefs[i].Rect.y);
 
 
          return i;
