@@ -193,6 +193,121 @@ boolean usemanualtemp = true;
 #define VmenuFan 8
 #define VmenuCount 9
 
+#define HmenuCTRL 0
+#define HmenuFAN 1
+
+#define HmenuCount 2
+#define HmenuButtonCount 5
+
+
+#define VmenuCount 8
+#define VmenuButtonCount 9
+
+const buttontext PROGMEM Vmenutext[VmenuCount][VmenuButtonCount] = {
+  { {0,"<<" ,"go back","to","prior",GREEN},
+    {1,">>" ,"go back","to","prior",GREEN},
+    {2,"Gain" ,"go back","to","prior",YELLOW},
+    {3,"Int" ,"go back","to","prior",YELLOW},
+    {4,"SPs" ,"go back","to","prior",YELLOW},
+    {5,"Fan" ,"go back","to","prior",YELLOW},
+    {6,"rT+1" ,"go back","to","prior",YELLOW},
+    {7,"rT-1" ,"go back","to","prior",YELLOW},
+    {8,"cCut" ,"go back","to","prior",YELLOW}
+  },
+  { {10,"<<" ,"go back","to","prior",GREEN},
+    {11,"sp1" ,"go back","to","prior",GREEN},
+    {12,"sp2" ,"go back","to","prior",GREEN},
+    {13,"sp3","go back","to","prior",GREEN},
+    {14,"sp4" ,"go back","to","prior",GREEN},
+    {15,"sp5" ,"go back","to","prior",GREEN},
+    {16,"ls3" ,"go back","to","prior",GREEN},
+    {17,"T+1" ,"go back","to","prior",GREEN},
+    {18,"T-1" ,"go back","to","prior",GREEN}
+  },
+  { {20,"<<" ,"go back","to","prior",GREEN},
+    {21,"" ,"go back","to","prior",GREEN},
+    {22,"+1" ,"go back","to","prior",GREEN},
+    {23,"+3" ,"go back","to","prior",GREEN},
+    {24,"+5" ,"go back","to","prior",GREEN},
+    {25,"-1" ,"go back","to","prior",GREEN},
+    {26,"-3" ,"go back","to","prior",GREEN},
+    {27,"-5" ,"go back","to","prior",GREEN},
+    {28,"SAVE" ,"go back","to","prior",GREEN}
+  },
+  { {30,"<<" ,"go back","to","prior",GREEN},
+    {31,"<<" ,"go back","to","prior",GREEN},
+    {32,"DBG" ,"go back","to","prior",GREEN},
+    {33,"C1" ,"go back","to","prior",GREEN},
+    {34,"C2" ,"go back","to","prior",GREEN},
+    {35,"Vib" ,"go back","to","prior",GREEN},
+    {36,"Fan" ,"go back","to","prior",GREEN},
+    {37,"Duty" ,"go back","to","prior",GREEN},
+    {38,"Temp" ,"go back","to","prior",GREEN}
+  },
+  { {40,"<<" ,"go back","to","prior",GREEN},
+    {41,"<<" ,"go back","to","prior",GREEN},
+    {42,"<<" ,"go back","to","prior",GREEN},
+    {43,"<<" ,"go back","to","prior",GREEN},
+    {44,"<<" ,"go back","to","prior",GREEN},
+    {45,"<<" ,"go back","to","prior",GREEN},
+    {46,"<<" ,"go back","to","prior",GREEN},
+    {47,"<<" ,"go back","to","prior",GREEN},
+    {48,"<<" ,"go back","to","prior",GREEN}
+  },
+  { {50,"<<" ,"go back","to","prior",GREEN},
+    {51,"" ,"go back","to","prior",GREEN},
+    {52,"ON" ,"go back","to","prior",GREEN},
+    {53,"OFF" ,"go back","to","prior",GREEN},
+    {54,"" ,"go back","to","prior",GREEN},
+    {55,"" ,"go back","to","prior",GREEN},
+    {56,"" ,"go back","to","prior",GREEN},
+    {57,"" ,"go back","to","prior",GREEN},
+    {58,"" ,"go back","to","prior",GREEN}
+  }
+  ,
+  { {60,"<<" ,"go back","to","prior",GREEN},
+    {61,"" ,"go back","to","prior",GREEN},
+    {62,"+.01" ,"go back","to","prior",GREEN},
+    {63,"+.05" ,"go back","to","prior",GREEN},
+    {64,"+.10" ,"go back","to","prior",GREEN},
+    {65,"-.01" ,"go back","to","prior",GREEN},
+    {66,"-.05" ,"go back","to","prior",GREEN},
+    {67,"-.10" ,"go back","to","prior",GREEN},
+    {68,"" ,"go back","to","prior",GREEN}
+  }
+ ,
+  { {70,"<<" ,"go back","to","prior",GREEN},
+    {71,"" ,"go back","to","prior",GREEN},
+    {72,"+1" ,"go back","to","prior",GREEN},
+    {73,"+5" ,"go back","to","prior",GREEN},
+    {74,"+10" ,"go back","to","prior",GREEN},
+    {75,"-1" ,"go back","to","prior",GREEN},
+    {76,"-5" ,"go back","to","prior",GREEN},
+    {77,"-10" ,"go back","to","prior",GREEN},
+    {78,"" ,"go back","to","prior",GREEN}
+  }
+};
+
+const buttontext PROGMEM Hmenutext[][HmenuButtonCount] = {
+  { {0,"Start" ,"go back","to","prior",GREEN},
+    {1,"Stop" ,"go back","to","prior",RED},
+    {2,"Fan" ,"go back","to","prior",BLUE},
+    {3,"Ref" ,"go back","to","prior",WHITE},
+    {4,"" ,"go back","to","prior",BLACK},
+    
+  },
+  { {0,"<<" ,"go back","to","prior",AQUA},
+    {1,"<"  ,"go back","to","prior",AQUA},
+    {2,">"   ,"go","to","prior",   AQUA},
+    {3,">>" ,"go back","to","prior",AQUA},
+    {4,"S"  ,"go back","to","prior",AQUA},
+    
+  }
+};
+ 
+
+buttontext myArrayLocal;
+
 // ===========
 // DEFINITIONS
 // ===========

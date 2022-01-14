@@ -28,22 +28,29 @@ typedef struct rect {
   int ymax;
 } rect;
 
+typedef struct buttontext {
+    byte key;
+    char label[6] ;
+    char tip1[12] ;
+    char tip2[12] ;
+    char tip3[12] ;
+    uint16_t color;
+} buttontext;
+
 typedef struct buttondef {
   int h;
   int w;
-  uint16_t color ;
-  char label[8];
-  uint8_t fontsize;
   rect Rect;
-  lableID lableID;
+  lableID AlernatelableID;
 } buttondef;
 
 typedef int (*ClickHandler) (const int MenuID);
 
 typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
+  boolean initated =false;
   buttondef* buttondefs = 0;
-  int menuID = 0;
+  int menuID = -1;
   int Count = 0;
   int W = 0;
   int H = 0;
@@ -56,7 +63,6 @@ typedef struct buttonsetdef {
   int backMenu;
   int inputbutton;
   
-
 } buttonsetdef;
 
 
