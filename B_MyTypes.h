@@ -15,6 +15,11 @@ typedef struct point {
   int y ;
  } point;
 
+typedef struct labelID {
+  int MenuID ;
+  int ButtonID ;
+ } lableID;
+
 
 typedef struct rect {
   int x;
@@ -30,6 +35,7 @@ typedef struct buttondef {
   char label[8];
   uint8_t fontsize;
   rect Rect;
+  lableID lableID;
 } buttondef;
 
 typedef int (*ClickHandler) (const int MenuID);
@@ -37,6 +43,7 @@ typedef int (*ClickHandler) (const int MenuID);
 typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
   buttondef* buttondefs = 0;
+  int menuID = 0;
   int Count = 0;
   int W = 0;
   int H = 0;
