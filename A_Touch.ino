@@ -2,7 +2,52 @@
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 // TOUCH          TOUCH          TOUCH          TOUCH          TOUCH          TOUCH          TOUCH          TOUCH
 //----------------------------------------------------------------------------------------------------------------------------------------------------
+void   TouchClick()
+{
 
+     TouchButtonSet->ClickHandler(TouchButton);
+
+}
+
+
+void   TouchLongPress()
+{
+ 
+       DrawButton(*TouchButtonSet, TouchButton, true);
+}
+             
+
+boolean DetectTouch()
+{
+       myTouch.read();
+       int16_t Xtouch = myTouch.getX();
+       int16_t Ytouch = myTouch.getY();
+          
+     
+    int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
+    //Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
+
+    if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
+        //Serial.println("found hor1 buttons");
+        TouchButton = WhatButton(Xtouch, Ytouch, &myHorControlMenuDef);
+        TouchButtonSet = &myHorControlMenuDef;
+        return true;
+    }
+    if (InRect(Xtouch, Ytouch, &myHorFanButtonControl.bounding)) {
+        //Serial.println("found hor2 buttons");
+        TouchButton = WhatButton(Xtouch, Ytouch, &myHorFanButtonControl);
+        TouchButtonSet = &myHorFanButtonControl;
+        return true;
+    }  
+   
+    if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
+      //  Serial.print("found vertical1  buttons");
+        TouchButton = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
+        TouchButtonSet = &myButtonVertMenus[VerticalMenuShowing];
+        return true;
+    }
+     return false;
+}
 
 void ProcessTouch(int Xtouch, int Ytouch)
 {
@@ -61,14 +106,11 @@ int WhatButton(int &x, int &y, struct buttonsetdef *butdefset)
     if (InRect(x, y, &butdefset->buttondefs[i].Rect) == true) {
         //Serial.print("Found:");Serial.println(i);
         myGLCD.setColor(WHITE);
-        myGLCD.drawRect(butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].Rect.y, butdefset->buttondefs[i].w + butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].h + butdefset->buttondefs[i].Rect.y);
+        myGLCD.drawRect(butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].Rect.y, butdefset->buttondefs[i].Rect.xmax, butdefset->buttondefs[i].Rect.ymax);
         myGLCD.setColor(BLACK);
         delay(250);
-
-        myGLCD.drawRect(butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].Rect.y, butdefset->buttondefs[i].w + butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].h + butdefset->buttondefs[i].Rect.y);
-
-
-         return i;
+        myGLCD.drawRect(butdefset->buttondefs[i].Rect.x, butdefset->buttondefs[i].Rect.y, butdefset->buttondefs[i].Rect.xmax, butdefset->buttondefs[i].Rect.ymax);
+        return i;
     }
   }
   return -1;

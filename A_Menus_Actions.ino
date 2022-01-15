@@ -11,24 +11,6 @@ void ClearIntergalSum() {
 
 void DrawHorControlMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
-  myHorControlMenuDef.H = 40;
-  myHorControlMenuDef.W = 90;
-  myHorControlMenuDef.rowstart = 0;
-  myHorControlMenuDef.colstart = 360;
-  myHorControlMenuDef.vertical = false;
-  myHorControlMenuDef.Count = 4;
-  myHorControlMenuDef.menuID = HmenuCTRL;
-  
-  if (myHorControlMenuDef.initated ==false) {
-    //Serial.println ("Allocating myHorControlMenuDef");
-    Serial.println ("Allocating myHorControlMenuDef");
-    myHorControlMenuDef.buttondefs = (buttondef*) malloc(myHorControlMenuDef.Count * sizeof(buttondef));
-    
-    myHorControlMenuDef.initated ==true;
-    myHorControlMenuDef.ClickHandler = ProcessHorControlMenu;
-    SetMenuBoundingRect(myHorControlMenuDef);
-  }
-  //Serial.println ("Drawing myHorControlMenuDef");
   DrawButtons(myHorControlMenuDef);
 }
 
@@ -91,26 +73,6 @@ void ProcessHorControlMenu(int i) {
 
 void DrawHorFanMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
-  myHorFanButtonControl.H = 50;
-  myHorFanButtonControl.W = 50;
-  myHorFanButtonControl.rowstart = 400;
-  myHorFanButtonControl.colstart = 30;
-  myHorFanButtonControl.Count = 5;
-  myHorFanButtonControl.vertical = false;
-  myHorFanButtonControl.menuID = HmenuFAN;
-  Serial.println ("Drawing fan control");
-    
-  if (myHorFanButtonControl.initated ==false ) {
-    Serial.println ("Allocating myHorControlMenuDef");
-    myHorFanButtonControl.buttondefs = (buttondef*) malloc(myHorFanButtonControl.Count * sizeof(buttondef));
-    Serial.println(myHorFanButtonControl.vertical);
-    SetMenuBoundingRect(myHorFanButtonControl);
-    myHorFanButtonControl.ClickHandler = ProcessHorFanMenu;
-    myHorFanButtonControl.initated = true;
-  }
-  
-  Serial.println ("Drawing myHorFanButtonMenuDef");
-  SerialprintRect(&myHorFanButtonControl.bounding);
   DrawButtons(myHorFanButtonControl);
 }
 
@@ -196,13 +158,13 @@ void ProcessHorFanMenu(int i) {
   
 }
 
-void intializeVMenus(){
+void intializeMenus(){
     for (int i = 0; i < 9; i++)
     {
        //Serial.print("VMenu");Serial.println(i);
         int j= 0;
         buttonsetdef* bsd = &myButtonVertMenus[i];
-        bsd->Count = 10;
+        bsd->Count = 9;
         bsd->rowstart = 0;
         bsd->W = 90;
         bsd->H = 50;
@@ -210,81 +172,86 @@ void intializeVMenus(){
         bsd->colstart = myGLCD.getDisplayXSize() - bsd->W - 2;
         bsd->menuID = i;
         switch (i) {
-        case Vmenubase:
-               
-            if (bsd->buttondefs == 0) {
-              
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+        case Vmenubase:{
                 bsd->ClickHandler = ProcessBaseVMenu;
                 bsd->nextMenu = VmenuDebug;
                 bsd->backMenu = VmenuDebug;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
-            }
-    
-         case VmenuDebug:
-            if (bsd->buttondefs == 0) {
-               
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+        }
+         case VmenuDebug:{
                 bsd->ClickHandler = ProcessDebugVMenu;
                 bsd->nextMenu = Vmenubase;
                 bsd->backMenu = Vmenubase;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
+            break;
             }
 
-        case VmenuSetPointSelect:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+        case VmenuSetPointSelect:{
                 bsd->ClickHandler = ProcessSetPointSelectVMenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = Vmenubase;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
+            break;
             }
-      case VmenuFan:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+      case VmenuFan:{
                 bsd->ClickHandler = ProcessFanVmenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = Vmenubase;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
+            break;
             }
-        case VmenuSetPointValue:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+        case VmenuSetPointValue:{
                 bsd->ClickHandler = ProcessSetPointAdjustmentVMenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = VmenuSetPointSelect;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
-            }
+           break;
+           }
 
-      case VmenuOnOff:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+      case VmenuOnOff:{
                 bsd->ClickHandler = ProcessOnOffVMenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = VmenuDebug;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
+            break;
             }
-       case VmenuAjd_01:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+       case VmenuAjd_01:{
                 bsd->ClickHandler = ProcessAdjust_01Vmenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = VmenuDebug;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
+            break;
             }
-      
-       case VMenuAdj_1_5_10_V:
-            if (bsd->buttondefs == 0) {
-                bsd->buttondefs = (buttondef*)malloc(bsd->Count * sizeof(buttondef));
+       
+       case VMenuAdj_1_5_10_V:{
                 bsd->ClickHandler = ProcessAdj_1_5_10_VMenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = VmenuDebug;
-                SetMenuBoundingRect(myButtonVertMenus[i]);
+            break;
             }
- 
+         SetMenuBoundingRect(myButtonVertMenus[i]);
        }   
     }
+
+  
+  
+  myHorControlMenuDef.H = 40;
+  myHorControlMenuDef.W = 90;
+  myHorControlMenuDef.rowstart = 0;
+  myHorControlMenuDef.colstart = 360;
+  myHorControlMenuDef.vertical = false;
+  myHorControlMenuDef.Count = 4;
+  myHorControlMenuDef.menuID = HmenuCTRL;
+  
+    myHorControlMenuDef.ClickHandler = ProcessHorControlMenu;
+    SetMenuBoundingRect(myHorControlMenuDef);
+  
+  myHorFanButtonControl.H = 50;
+  myHorFanButtonControl.W = 50;
+  myHorFanButtonControl.rowstart = 400;
+  myHorFanButtonControl.colstart = 30;
+  myHorFanButtonControl.Count = 5;
+  myHorFanButtonControl.vertical = false;
+  myHorFanButtonControl.menuID = HmenuFAN;
+  Serial.println ("Drawing fan control");
     
+  SetMenuBoundingRect(myHorFanButtonControl);
+  myHorFanButtonControl.ClickHandler = ProcessHorFanMenu;
+  
+ 
 }
 
  void DrawVMenu(int iMenu, int iButton) {
@@ -871,8 +838,8 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
           butdefset.buttondefs[i].Rect.y = butdefset.rowstart;
           butdefset.buttondefs[i].Rect.x = butdefset.colstart + butdefset.W * i;      
       }
-      butdefset.buttondefs[i].h = butdefset.H;  //CAN BE REFACTORED OUT
-      butdefset.buttondefs[i].w = butdefset.W;  //CAN BE REFACTORED OUT
+      //butdefset.buttondefs[i].h = butdefset.H;  //CAN BE REFACTORED OUT
+      //butdefset.buttondefs[i].w = butdefset.W;  //CAN BE REFACTORED OUT
       butdefset.buttondefs[i].Rect.xmax = butdefset.buttondefs[i].Rect.x + butdefset.W;
       butdefset.buttondefs[i].Rect.ymax = butdefset.buttondefs[i].Rect.y + butdefset.H;
 
@@ -902,95 +869,64 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
 
 }
 
-void DrawButton(buttonsetdef& butdefset, int i)
-{
-    //draw button
-    //Serial.println ("Drawing buttons x:");Serial.println (butdefset.buttondefs[i].x),Serial.println (" y:");Serial.println ( butdefset.buttondefs[i].y);Serial.println (" w:");Serial.println ( butdefset.buttondefs[i].w) ;
-    //Serial.println (" h:");Serial.println ( butdefset.buttondefs[i].h);
-
-   if (butdefset.menuID > -1){
-        if (butdefset.vertical == false) 
-        {
-           Serial.print("menuid H found:");
-        
-            memcpy_P( &myArrayLocal, &Hmenutext[butdefset.menuID][i], sizeof( buttontext));
-        }
-        else
-        {
-           Serial.print("menuid V found:");
-        
-        
-            memcpy_P( &myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof( buttontext));
-                  
-        }
-        Serial.print(butdefset.menuID);
-        Serial.print(" key:");
-        Serial.println( myArrayLocal.key);
-        Serial.print( "Lable:");
-        Serial.println( myArrayLocal.label);
-        Serial.print( "COLOR:");
-        Serial.println( myArrayLocal.color);
-        
-      }
-    myGLCD.setColor(myArrayLocal.color);
-    myGLCD.fillRect(butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].Rect.y, butdefset.buttondefs[i].w + butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].h + butdefset.buttondefs[i].Rect.y);
-    myGLCD.setColor(BLACK);
-    myGLCD.drawRect(butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].Rect.y, butdefset.buttondefs[i].w + butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].h + butdefset.buttondefs[i].Rect.y);
-
-    DrawButtonText(butdefset,i, true);
- 
-
-}
-
-void DrawButtonText(buttonsetdef& butdefset, int i, boolean extracted){
-    myGLCD.setFont(BigFont);
-    if (extracted == false and butdefset.menuID > -1){
-        if (butdefset.vertical == false) 
-        {
-           Serial.print("menuid H found:");
-        
-            memcpy_P( &myArrayLocal, &Hmenutext[butdefset.menuID][i], sizeof( buttontext));
-        }
-        else
-        {
-           Serial.print("menuid V found:");
-        
-        
-            memcpy_P( &myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof( buttontext));
-                  
-        }
-        Serial.print(butdefset.menuID);
-        Serial.print(" key:");
-        Serial.println( myArrayLocal.key);
-        Serial.print( "New:");
-        Serial.println( myArrayLocal.label);
-        
-      }
-    int xOffset = (butdefset.buttondefs[i].w - (strlen(myArrayLocal.label) * myGLCD.getFontXsize()))/2;
-    int yOffset = (butdefset.buttondefs[i].h - myGLCD.getFontYsize()) / 2;
-   
-    myGLCD.setBackColor(myArrayLocal.color);
-    myGLCD.setColor(BLACK);
-         
-    myGLCD.print(myArrayLocal.label,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset );
-    myGLCD.setBackColor(BLACK);
-  
-}
-
 void DrawButtons(buttonsetdef &butdefset) {
 
   //Serial.println ("Drawing buttons start. Count:");Serial.println(count);
 
     for (int i = 0; i < butdefset.Count; i++) {
         
-      DrawButton(butdefset, i);
+      DrawButton(butdefset, i, false);
   }
 }
 
-void DrawBox(int x, int y, int w, int h, uint16_t color) {
+void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip)
+{
+   if (butdefset.menuID > -1){
+        if (butdefset.vertical == false) 
+        {
+            memcpy_P( &myArrayLocal, &Hmenutext[butdefset.menuID][i], sizeof( buttontext));
+        }
+        else
+        { 
+            memcpy_P( &myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof( buttontext));
+         }
+        
+      }
+    myGLCD.setColor(myArrayLocal.color);
+    myGLCD.fillRect(butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].Rect.y, butdefset.buttondefs[i].Rect.xmax, butdefset.buttondefs[i].Rect.ymax);
+    myGLCD.setColor(BLACK);
+    myGLCD.drawRect(butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].Rect.y, butdefset.buttondefs[i].Rect.xmax, butdefset.buttondefs[i].Rect.ymax);
 
-//  myGLCD.fillRect(x, y, w, h, color);
-//  myGLCD.drawRect(x, y, w, h, BLACK);
-
-
+    myGLCD.setBackColor(myArrayLocal.color);
+    myGLCD.setColor(BLACK);
+    int xOffset =0;
+    int yOffset =0;
+    if (toggletooltip == false || butdefset.buttondefs[i].ToolTipShowing == true){
+        myGLCD.setFont(BigFont); //main button. 6 chars.
+        xOffset = (butdefset.W - (strlen(myArrayLocal.label) * myGLCD.getFontXsize()))/2;      
+        yOffset = (butdefset.H - myGLCD.getFontYsize()) / 2;
+        myGLCD.print(myArrayLocal.label,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset );
+    }
+    else
+    {    //tool tip 2 or 3 line x 12 char
+        myGLCD.setFont(retro8x16);
+         xOffset = (butdefset.W - (strlen(myArrayLocal.tip1) * myGLCD.getFontXsize()))/2;      
+        if (butdefset.vertical == true) {
+            yOffset = (butdefset.H/3 - myGLCD.getFontYsize())/ 2;
+            myGLCD.print(myArrayLocal.tip1,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset );
+            xOffset = (butdefset.W - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize()))/2;      
+            myGLCD.print(myArrayLocal.tip2,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H/3  );
+            xOffset = (butdefset.W - (strlen(myArrayLocal.tip3) * myGLCD.getFontXsize()))/2; 
+            myGLCD.print(myArrayLocal.tip3,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + (butdefset.H/3 * 2)  );
+        
+        }
+        else
+        {
+            yOffset = (butdefset.H/2 - myGLCD.getFontYsize())/ 2;
+            myGLCD.print(myArrayLocal.tip1,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset );
+            xOffset = (butdefset.W - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize()))/2;      
+            myGLCD.print(myArrayLocal.tip1,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H/2);
+         
+        }
+    }
 }

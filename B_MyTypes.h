@@ -38,8 +38,9 @@ typedef struct buttontext {
 } buttontext;
 
 typedef struct buttondef {
-  int h;
-  int w;
+  //int h;
+  //int w;
+  boolean ToolTipShowing = false;
   rect Rect;
   lableID AlernatelableID;
 } buttondef;
@@ -48,8 +49,7 @@ typedef int (*ClickHandler) (const int MenuID);
 
 typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
-  boolean initated =false;
-  buttondef* buttondefs = 0;
+  buttondef buttondefs[9];
   int menuID = -1;
   int Count = 0;
   int W = 0;

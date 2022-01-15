@@ -1,19 +1,3 @@
-//MCP4725
-//line 91. Change names of fan analog output port
-//line 350 set values of the analog output ports
-//wire 4725 vcc and gnd to anolog output ports
-//wire 4725 scl and sda to 20 and 20
-//wire 4725 out and gnd to inputs of dc cd power modulator
-
-
-//Lm386 (3)
-//check voltage of ground to white and join.
-//wire lm386 4 - 12 to 5 v
-//wire lm386 input to input from shunt
-//check if grounds are all connected
-//wire ground to ground
-//wire output ++ to annalog inputs 4,5,6
-
 
 #include <EEPROM.h>
 #include <UTouchCD.h>
@@ -27,15 +11,12 @@
 #include "B_MyTypes.h"
 #include <UTFT.h>
 #include <UTouch.h>
-//#include <Adafruit_MCP4725.h>
 #include <stdio.h>  // for function sprintf
-   
-
-// Declare which fonts we will be using
 extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
 extern uint8_t SevenSegmentFull[];
 extern uint8_t Grotesk24x48[];
+extern uint8_t retro8x16[];
 
 // Remember to change the model parameter to suit your display module!
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
@@ -383,16 +364,6 @@ double MyMinuteTemperature[30];
 setpoint MySetPoints[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
 setpoint MySetPoints_Last[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
 
-//                 20             4         4/8         4/12         4/16        4/20
-
-//                 16             4         3/7         3/10         3/13        3/16
-
-//                 12             4         2/7         2/8          2/10        2/12
-
-
-             
-
-
 
 int SetPointCount = 6;  //0,1,2,3,4,t0t5
 int EndingSetPoint = 5;
@@ -416,8 +387,17 @@ int BeforeTime = 0;
 int badLastTempCount = 0;
 int LoopsPerSecond;
 
+boolean TouchDetected;
+
+buttonsetdef* TouchButtonSet;
+
+int TouchButton;
+
+Chrono TouchTimer(Chrono::MILLIS);
+  
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
+
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 
@@ -585,7 +565,7 @@ if (testiffirstrun == 0)
   } 
   delay(2000);
 
-  intializeVMenus();
+  intializeMenus();
 
   State = STATESTOPPED;
   setpointschanged = true;

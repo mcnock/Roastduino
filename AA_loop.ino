@@ -119,12 +119,37 @@ void theloop () {
   
   
   //ProcessButton Clicks/find user new state requests
-  if (HasDisplay && myTouch.dataAvailable() )
-  {
-      myTouch.read();
-      int16_t x = myTouch.getX();
-      int16_t y = myTouch.getY();
-      ProcessTouch (x,y);
+  if (HasDisplay) { 
+    if(myTouch.dataAvailable() )
+    {
+         if (TouchDetected == false) {
+              if (DetectTouch()){
+                  TouchDetected = true;        
+                  TouchTimer.restart(0);
+              }
+         }
+         else
+         {
+            if (TouchTimer.elapsed() > 5000)
+            {
+                TouchLongPress();
+                TouchDetected == false;  
+            }
+          
+         }
+    }
+  
+   else
+   {
+    
+       if (TouchDetected == true)
+       {
+           TouchClick();
+           TouchTimer.stop();
+           
+       }
+   }
+ 
  }
 
 //Process serial input to find user new state requests
