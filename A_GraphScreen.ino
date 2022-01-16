@@ -17,7 +17,7 @@ void graphProfile() {
         byte m;
         EEPROM.get(RoastLength_EP,m);
         MySetPoints[EndingSetPoint].Minutes = m;
-        Serial.print ("Loading new setpoints:");
+        //Serial.println ("Loading new setpoints:");
         if (MySetPoints[EndingSetPoint].Minutes < 10 or MySetPoints[EndingSetPoint].Minutes > 20)
         {
           
@@ -116,7 +116,7 @@ void graphProfile() {
 
   //draw our x time axis
   myGLCD.drawLine(3 * PixelsPerMin ,0,  3 * PixelsPerMin,myGLCD.getDisplayYSize()-30 );
-  myGLCD.print("3min",(3 * PixelsPerMin) - 30, 380);
+  myGLCD.print("3min",(3 * PixelsPerMin) - 30, 460);
   myGLCD.drawLine(6 * PixelsPerMin , 0, 6 * PixelsPerMin , myGLCD.getDisplayYSize()-30);
   myGLCD.print("6min",(6 * PixelsPerMin) - 30, 460);
   myGLCD.drawLine(9 * PixelsPerMin , 0, 9 * PixelsPerMin, myGLCD.getDisplayYSize()-30);
@@ -206,11 +206,11 @@ void graphProfile() {
 
  //if sp is  selected, assume user is adjusting setpoint redraw the menu
   if (spSelected >= 0) {
-      DrawVMenu(1,-1);
+      DrawVMenu(VmenuSetPointSelect,-1);
   }
   else
   {
-      DrawVMenu(0,-1);
+      DrawVMenu(VmenuEmpty,-1);
   }
    //    Serial.println("AAD");
 
@@ -456,7 +456,7 @@ void DrawFanGraph_ex(boolean bStartRoast){
         XStartFan_Last = 0;
    }
    
-   int Col1 = 320;
+   int Col1 = 500;
    int Col2 = Col1 + ((PixelsPerMin * MySetPoints[EndingSetPoint].Minutes)/4 );
    int Y1 = YforATemp(CalcFanPWMForATime(0)) - 10 ;
    int yshiftdown = YforATemp(220) - Y1 ;
@@ -535,19 +535,20 @@ void DrawFanGraph_ex(boolean bStartRoast){
 }
 void UpdateFanPWMValuesDisplay() {
   myGLCD.setFont(BigFont);
+  
   int rowheight = 20;
-  int row = 450;
-  int col = 30;
-  int col1 = col + 100 ;
-  int col2 = col1 + 100  ;
+  int row = 395;
+  int col = 120;
+  int col1 = col + 120 ;
+  int col2 = col1 + 140  ;
 
    if (FanSpeedPWMAutoMode == true)
    {
-      myGLCD.setColor(LGBLUE) ;
+      myGLCD.setColor(BLUE) ;
    }
    else
    {
-      myGLCD.setColor(AQUA);
+      myGLCD.setColor(BLUE);
    
    }
    myGLCD.printNumI((FanSpeedPWMStart-FanSpeedPWMAutoDecrease),col , row, 3,' ');
@@ -753,9 +754,15 @@ int YforATemp(double temp) {
 
 }
 
+void myGLCD_fillRect(rect& Rect){
+    myGLCD.fillRect(Rect.x, Rect.y, Rect.xmax, Rect.ymax);
+}
+void myGLCD_drawRect(rect& Rect){
+    myGLCD.drawRect(Rect.x, Rect.y, Rect.xmax, Rect.ymax);
+}
+
 void myGLCD_printNumF(double Number, int col ,int row,  int Len, int Dec){
   
- 
   if (Len == 5){
   //  Serial.println("AC5");
        

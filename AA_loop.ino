@@ -92,7 +92,7 @@ void theloop () {
   //*****************************************************************************************************
   if (State == STATEROASTING) {
   
-    if ( TBeanAvgRoll.mean() > MySetPoints[EndingSetPoint].Temperature) {
+    if ( TBeanAvgRoll.mean() > (MySetPoints[EndingSetPoint].Temperature) + 5) {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
         newState = STATECOOLING;
@@ -118,36 +118,66 @@ void theloop () {
 
   
   
-  //ProcessButton Clicks/find user new state requests
+  
+  
   if (HasDisplay) { 
     if(myTouch.dataAvailable() )
     {
          if (TouchDetected == false) {
-              if (DetectTouch()){
+               if (DetectTouch()){
+                  Serial.println("PRESS");
                   TouchDetected = true;        
                   TouchTimer.restart(0);
               }
          }
          else
          {
-            if (TouchTimer.elapsed() > 5000)
+            //Serial.println("B");
+
+            if (TouchTimer.elapsed() > 1500)
             {
-                TouchLongPress();
-                TouchDetected == false;  
+                if (LongPressDetected == false)
+                {
+                    LongPressDetected = true;
+                    Serial.println("LONGPRESS");
+              
+                     TouchLongPress();
+                }
+                   
             }
           
          }
     }
-  
+   
    else
-   {
-    
+   {   
        if (TouchDetected == true)
        {
-           TouchClick();
+           TouchDetected = false;
+           
+           if (LongPressDetected ==false)
+           {
+            
+              
+               if (TouchTimer.elapsed() > 100)
+              {
+                    Serial.println("CLICK!");
+            
+                  TouchClick();
+              }   
+              
+           }
+           else
+           {
+             LongPressDetected = false;
+             Serial.println("Long press release"); 
+           }
+           OutlineButton(TouchButtonSet,TouchButton,BLACK);
            TouchTimer.stop();
            
-       }
+       }   
+       TouchTimer.stop();
+           
    }
  
  }

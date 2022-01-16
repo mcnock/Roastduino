@@ -16,7 +16,7 @@ extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
 extern uint8_t SevenSegmentFull[];
 extern uint8_t Grotesk24x48[];
-extern uint8_t retro8x16[];
+extern uint8_t Retro8x16[];
 
 // Remember to change the model parameter to suit your display module!
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
@@ -161,129 +161,171 @@ boolean usemanualtemp = true;
 #define ValuesOnly true
 #define All false
 
-
-#define VmenuNone -1
 #define Vmenubase 0
 #define VmenuSetPointSelect 1
 #define VmenuSetPointValue 2
 #define VmenuDebug 3
-#define VmenuZeroAmps 4
-#define VmenuOnOff 5
-#define VmenuAjd_01 6
-#define VMenuAdj_1_5_10_V 7
-#define VmenuFan 8
-#define VmenuCount 9
+#define VmenuOnOff 4
+#define VmenuAjd_01 5
+#define VMenuAdj_1_5_10_V 6
+#define VmenuFan 7
+#define VmenuEmpty 8
 
-#define HmenuCTRL 0
-#define HmenuFAN 1
+#define HmenuCTRL 9
+#define HmenuFAN 10
 
-#define HmenuCount 2
-#define HmenuButtonCount 5
+const char Mname0  = "Vmenubase";
+const char Mname1  = "VmenuSetPointSelect";
+const char Mname2  = "VmenuSetPointValue";
+const char Mname3  = "VmenuDebug";
+const char Mname4  = "VmenuOnOff";
+const char Mname5  = "VmenuAjd_01";
+const char Mname6  = "VMenuAdj_1_5_10_V";
+const char Mname7  = "VmenuFan";
+const char Mname8  = "VmenuEmpty";
+const char Mname9  = "HmenuCTRL";
+const char Mname10  = "HmenuFAN";
 
-
-#define VmenuCount 8
-#define VmenuButtonCount 9
-
-const buttontext PROGMEM Vmenutext[VmenuCount][VmenuButtonCount] = {
-  { {0,"<<" ,"go back","to","prior",GREEN},
-    {1,">>" ,"go back","to","prior",GREEN},
-    {2,"Gain" ,"go back","to","prior",YELLOW},
-    {3,"Int" ,"go back","to","prior",YELLOW},
-    {4,"SPs" ,"go back","to","prior",YELLOW},
-    {5,"Fan" ,"go back","to","prior",YELLOW},
-    {6,"rT+1" ,"go back","to","prior",YELLOW},
-    {7,"rT-1" ,"go back","to","prior",YELLOW},
-    {8,"cCut" ,"go back","to","prior",YELLOW}
-  },
-  { {10,"<<" ,"go back","to","prior",GREEN},
-    {11,"sp1" ,"go back","to","prior",GREEN},
-    {12,"sp2" ,"go back","to","prior",GREEN},
-    {13,"sp3","go back","to","prior",GREEN},
-    {14,"sp4" ,"go back","to","prior",GREEN},
-    {15,"sp5" ,"go back","to","prior",GREEN},
-    {16,"ls3" ,"go back","to","prior",GREEN},
-    {17,"T+1" ,"go back","to","prior",GREEN},
-    {18,"T-1" ,"go back","to","prior",GREEN}
-  },
-  { {20,"<<" ,"go back","to","prior",GREEN},
-    {21,"" ,"go back","to","prior",GREEN},
-    {22,"+1" ,"go back","to","prior",GREEN},
-    {23,"+3" ,"go back","to","prior",GREEN},
-    {24,"+5" ,"go back","to","prior",GREEN},
-    {25,"-1" ,"go back","to","prior",GREEN},
-    {26,"-3" ,"go back","to","prior",GREEN},
-    {27,"-5" ,"go back","to","prior",GREEN},
-    {28,"SAVE" ,"go back","to","prior",GREEN}
-  },
-  { {30,"<<" ,"go back","to","prior",GREEN},
-    {31,"<<" ,"go back","to","prior",GREEN},
-    {32,"DBG" ,"go back","to","prior",GREEN},
-    {33,"C1" ,"go back","to","prior",GREEN},
-    {34,"C2" ,"go back","to","prior",GREEN},
-    {35,"Vib" ,"go back","to","prior",GREEN},
-    {36,"Fan" ,"go back","to","prior",GREEN},
-    {37,"Duty" ,"go back","to","prior",GREEN},
-    {38,"Temp" ,"go back","to","prior",GREEN}
-  },
-  { {40,"<<" ,"go back","to","prior",GREEN},
-    {41,"<<" ,"go back","to","prior",GREEN},
-    {42,"<<" ,"go back","to","prior",GREEN},
-    {43,"<<" ,"go back","to","prior",GREEN},
-    {44,"<<" ,"go back","to","prior",GREEN},
-    {45,"<<" ,"go back","to","prior",GREEN},
-    {46,"<<" ,"go back","to","prior",GREEN},
-    {47,"<<" ,"go back","to","prior",GREEN},
-    {48,"<<" ,"go back","to","prior",GREEN}
-  },
-  { {50,"<<" ,"go back","to","prior",GREEN},
-    {51,"" ,"go back","to","prior",GREEN},
-    {52,"ON" ,"go back","to","prior",GREEN},
-    {53,"OFF" ,"go back","to","prior",GREEN},
-    {54,"" ,"go back","to","prior",GREEN},
-    {55,"" ,"go back","to","prior",GREEN},
-    {56,"" ,"go back","to","prior",GREEN},
-    {57,"" ,"go back","to","prior",GREEN},
-    {58,"" ,"go back","to","prior",GREEN}
-  }
-  ,
-  { {60,"<<" ,"go back","to","prior",GREEN},
-    {61,"" ,"go back","to","prior",GREEN},
-    {62,"+.01" ,"go back","to","prior",GREEN},
-    {63,"+.05" ,"go back","to","prior",GREEN},
-    {64,"+.10" ,"go back","to","prior",GREEN},
-    {65,"-.01" ,"go back","to","prior",GREEN},
-    {66,"-.05" ,"go back","to","prior",GREEN},
-    {67,"-.10" ,"go back","to","prior",GREEN},
-    {68,"" ,"go back","to","prior",GREEN}
-  }
- ,
-  { {70,"<<" ,"go back","to","prior",GREEN},
-    {71,"" ,"go back","to","prior",GREEN},
-    {72,"+1" ,"go back","to","prior",GREEN},
-    {73,"+5" ,"go back","to","prior",GREEN},
-    {74,"+10" ,"go back","to","prior",GREEN},
-    {75,"-1" ,"go back","to","prior",GREEN},
-    {76,"-5" ,"go back","to","prior",GREEN},
-    {77,"-10" ,"go back","to","prior",GREEN},
-    {78,"" ,"go back","to","prior",GREEN}
-  }
+const char*  menunames[] = {
+Mname0,
+Mname1,
+Mname2,
+Mname3,
+Mname4,
+Mname5,
+Mname6,
+Mname7,
+Mname8,
+Mname9,
+Mname10,
 };
 
-const buttontext PROGMEM Hmenutext[][HmenuButtonCount] = {
-  { {0,"Start" ,"go back","to","prior",GREEN},
-    {1,"Stop" ,"go back","to","prior",RED},
-    {2,"Fan" ,"go back","to","prior",BLUE},
-    {3,"Ref" ,"go back","to","prior",WHITE},
-    {4,"" ,"go back","to","prior",BLACK},
-    
+
+#define VmenuCount 9
+
+#define MaxButtonCount 9
+
+const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
+  { {0,">>" ,"go back"  ,"to"     ,"prior",GREEN},
+    {1,"" ,"go back"  ,"to"     ,"prior",GREEN},
+    {2,"Gain" ,"Ajdust" ,"Gain"   ,"Value",YELLOW},
+    {3,"Int" ,"Ajdust"  ,"Intergal","Value",YELLOW},
+    {4,"SPs" ,"Select"  ,"Setpoints","to adjust",YELLOW},
+    {5,"Fan" ,"Adjust"  ,"fan auto","decrease",YELLOW},
+    {6,"rT+1" ,"Add 1"    ,"minute to" ,"this roast",YELLOW},
+    {7,"rT-1" ,"Remove 1" ,"minute tp" ,"this roast",YELLOW},
+    {8,"cCut" ,"Adjust" ,"Hightemp","Cut out",YELLOW}
   },
-  { {0,"<<" ,"go back","to","prior",AQUA},
-    {1,"<"  ,"go back","to","prior",AQUA},
-    {2,">"   ,"go","to","prior",   AQUA},
-    {3,">>" ,"go back","to","prior",AQUA},
-    {4,"S"  ,"go back","to","prior",AQUA},
+  { {10,"<<"  ,"back"       ,"to prior" ,"menu",GREEN},
+    {11,"sp1" ,"Adjust"     ,"setpoint" ,"#1",YELLOW},
+    {12,"sp2" ,"Adjust"     ,"setpoint" ,"#2",YELLOW},
+    {13,"sp3" ,"Adjust"     ,"setpoint" ,"#3",YELLOW},
+    {14,"sp4" ,"Adjust"     ,"setpoint" ,"#4",YELLOW},
+    {15,"sp5" ,"Adjust"     ,"setpoint" ,"#5",YELLOW},
+    {16,"ls3" ,"Adjust"     ,"last 3"   ,"setpoint",YELLOW},
+    {17,"T+1" ,"Increase"   ,"roast len"    ,"by 1 min",YELLOW},
+    {18,"T-1" ,"Decrease"   ,"roast len"    ,"by 1 min",YELLOW}
+  },
+  { {20,"<<" ,"go back","to","prior",GREEN},
+    {21,"" ,"go back","to","prior",YELLOW},
+    {22,"+1" ,"go back","to","prior",ORANGE},
+    {23,"+3" ,"go back","to","prior",ORANGE},
+    {24,"+5" ,"go back","to","prior",ORANGE},
+    {25,"-1" ,"go back","to","prior",ORANGE},
+    {26,"-3" ,"go back","to","prior",ORANGE},
+    {27,"-5" ,"go back","to","prior",ORANGE},
+    {28,"SAVE" ,"go back","to","prior",YELLOW}
+  },
+  { {30,">>" ,"go to","next","menu",GREEN},
+    {31,"" ,"go back","to","prior",GREEN},
+    {32,"DBG" ,"subject","of","menu",YELLOW},
+    {33,"C1" ,"toggle","coil 1 SSR","on and off",YELLOW},
+    {34,"C2" ,"toggle","coil 2 SSR","on and off",YELLOW},
+    {35,"" ,"go back","to","prior",YELLOW},
+    {36,"Fan" ,"toggle","fan relay","on and off",YELLOW},
+    {37,"Duty" ,"Manually","set","duty",YELLOW},
+    {38,"Temp" ,"go back","to","prior",YELLOW}
+  },  
+  { {40,"<<" ,"go to","prior","menu",GREEN},
+    {41,"" ,"selected","device","to debug",GREEN},
+    {42,"ON" ,"turn","device","on",ORANGE},
+    {43,"OFF" ,"turn","device","off",ORANGE},
+    {44,"" ,"go back","to","prior",BLACK},
+    {45,"" ,"go back","to","prior",BLACK},
+    {46,"" ,"go back","to","prior",BLACK},
+    {47,"" ,"go back","to","prior",BLACK},
+    {48,"" ,"go back","to","prior",BLACK}
+  }
+  ,
+  { {50,"<<" ,"go back","to","prior",GREEN},
+    {51,"" ,"go back","to","prior",GREEN},
+    {52,"+.01" ,"go back","to","prior",ORANGE},
+    {53,"+.05" ,"go back","to","prior",ORANGE},
+    {54,"+.10" ,"go back","to","prior",ORANGE},
+    {55,"-.01" ,"go back","to","prior",ORANGE},
+    {56,"-.05" ,"go back","to","prior",ORANGE},
+    {57,"-.10" ,"go back","to","prior",ORANGE},
+    {58,"Save" ,"Save","and","close",GREEN}
+  }
+ ,
+  { {60,"<<" ,"go to","prior","menu",GREEN},
+    {61,"" ,"go back","to","prior",GREEN},
+    {62,"+1" ,"go back","to","prior",ORANGE},
+    {63,"+5" ,"go back","to","prior",ORANGE},
+    {64,"+10" ,"go back","to","prior",ORANGE},
+    {65,"-1" ,"go back","to","prior",ORANGE},
+    {66,"-5" ,"go back","to","prior",ORANGE},
+    {67,"-10" ,"go back","to","prior",ORANGE},
+    {68,"Save" ,"Save","and","close",GREEN}
+  }
+ ,
+  { {70,"<<" ,"go to","prior","menu",GREEN},
+    {71,"" ,"go back","to","prior",GREEN},
+    {72,"+1" ,"go back","to","prior",ORANGE},
+    {73,"+5" ,"go back","to","prior",ORANGE},
+    {74,"+10" ,"go back","to","prior",ORANGE},
+    {75,"-1" ,"go back","to","prior",ORANGE},
+    {76,"-5" ,"go back","to","prior",ORANGE},
+    {77,"-10" ,"go back","to","prior",ORANGE},
+    {78,"Save" ,"Save","and","close",GREEN}
+  }
+,
+  { {80,">>" ,"go to","next","menu",GREEN},
+    {81,""  ,"go back","to","prior",AQUA},
+    {82,""   ,"go","to","prior",   AQUA},
+    {83,"" ,"go back","to","prior",AQUA},
+    {84,""  ,"go back","to","prior",AQUA},
+    {85,"" ,"go back","to","prior",GREEN},
+    {86,"" ,"go back","to","prior",GREEN},
+    {87,"" ,"go back","to","prior",GREEN},
+    {88,"" ,"go back","to","prior",GREEN}
+  }
+,  
+  
+  { 
+    {90,"Start" ,"Start"      ,"Roast"  ,"",GREEN},
+    {91,"Stop"  ,"End Roast"  ,"or Fan" ,"" ,RED},
+    {92,"Fan"   ,"Start"      ,"Fan"    ,""  ,BLUE},
+    {93, "rfs"  ,"Redraw"     ,"screen" ,"",WHITE},
+    {94,"^" ,"go back","to","prior",GREEN},
+    {95,"" ,"go back","to","prior",GREEN},
+    {96,"" ,"go back","to","prior",GREEN},
+    {97,"" ,"go back","to","prior",GREEN},
+    {98,"" ,"go back","to","prior",GREEN}
     
   }
+  ,
+  { {100,"-10" ,"Decrease","fan 10","prior",BLUE},
+    {101,"-3"  ,"Decrease","fan 3","prior",BLUE},
+    {102,"+3"   ,"Increase","fan 3","prior",   BLUE},
+    {103,"+10" ,"Increase","fan 10","prior",BLUE},
+    {104,"SAVE" ,"save as","start","prior",BLUE},
+    {105,"" ,"go back","to","prior",GREEN},
+    {106,"" ,"go back","to","prior",GREEN},
+    {107,"" ,"go back","to","prior",GREEN},
+    {108,"" ,"go back","to","prior",GREEN}
+  }
+  
 };
  
 
@@ -388,8 +430,10 @@ int badLastTempCount = 0;
 int LoopsPerSecond;
 
 boolean TouchDetected;
+boolean LongPressDetected;
 
 buttonsetdef* TouchButtonSet;
+ClickHandler* TouchButtonHandler;
 
 int TouchButton;
 
@@ -424,6 +468,7 @@ int Readingskipped[3];
 buttonsetdef myHorControlMenuDef;
 buttonsetdef myHorFanButtonControl;
 buttonsetdef myButtonVertMenus[VmenuCount];
+
 int VerticalMenuShowing = 0;
 int VerticalMenuPrior = 0;
 

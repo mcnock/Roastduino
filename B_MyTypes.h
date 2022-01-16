@@ -16,8 +16,8 @@ typedef struct point {
  } point;
 
 typedef struct labelID {
-  int MenuID ;
-  int ButtonID ;
+  int MenuID = -1 ;
+  int ButtonID = -1 ;
  } lableID;
 
 
@@ -27,6 +27,20 @@ typedef struct rect {
   int xmax;
   int ymax;
 } rect;
+
+typedef struct indexed10strings {
+    char s_0 [12];
+    char s_1 [12];
+    char s_2 [12];
+    char s_3 [12];
+    char s_4 [12];
+    char s_5 [12];
+    char s_6 [12];
+    char s_7 [12];
+    char s_8 [12];
+    char s_9 [12];
+} indexedstrings;
+
 
 typedef struct buttontext {
     byte key;
@@ -42,7 +56,7 @@ typedef struct buttondef {
   //int w;
   boolean ToolTipShowing = false;
   rect Rect;
-  lableID AlernatelableID;
+  lableID AlternateLableID;
 } buttondef;
 
 typedef int (*ClickHandler) (const int MenuID);
@@ -51,7 +65,7 @@ typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
   buttondef buttondefs[9];
   int menuID = -1;
-  int Count = 0;
+  int ButtonCount = 0;
   int W = 0;
   int H = 0;
   int colstart = 0;

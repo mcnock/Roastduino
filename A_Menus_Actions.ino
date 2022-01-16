@@ -11,7 +11,7 @@ void ClearIntergalSum() {
 
 void DrawHorControlMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
-  DrawButtons(myHorControlMenuDef);
+  DrawMenuButtons(myHorControlMenuDef);
 }
 
 void ProcessHorControlMenu(int i) {
@@ -73,7 +73,7 @@ void ProcessHorControlMenu(int i) {
 
 void DrawHorFanMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
-  DrawButtons(myHorFanButtonControl);
+  DrawMenuButtons(myHorFanButtonControl);
 }
 
 void ProcessHorFanMenu(int i) {
@@ -159,14 +159,14 @@ void ProcessHorFanMenu(int i) {
 }
 
 void intializeMenus(){
-    for (int i = 0; i < 9; i++)
+    for (int i = 0; i < 10; i++)
     {
        //Serial.print("VMenu");Serial.println(i);
-        int j= 0;
+        //this make a name
         buttonsetdef* bsd = &myButtonVertMenus[i];
-        bsd->Count = 9;
+        bsd->ButtonCount = 9;
         bsd->rowstart = 0;
-        bsd->W = 90;
+        bsd->W = 80;
         bsd->H = 50;
         bsd->vertical = true;
         bsd->colstart = myGLCD.getDisplayXSize() - bsd->W - 2;
@@ -175,11 +175,12 @@ void intializeMenus(){
         case Vmenubase:{
                 bsd->ClickHandler = ProcessBaseVMenu;
                 bsd->nextMenu = VmenuDebug;
-                bsd->backMenu = VmenuDebug;
+                bsd->backMenu = VmenuEmpty;
+                break;
         }
          case VmenuDebug:{
                 bsd->ClickHandler = ProcessDebugVMenu;
-                bsd->nextMenu = Vmenubase;
+                bsd->nextMenu = VmenuEmpty;
                 bsd->backMenu = Vmenubase;
             break;
             }
@@ -190,7 +191,7 @@ void intializeMenus(){
                 bsd->backMenu = Vmenubase;
             break;
             }
-      case VmenuFan:{
+        case VmenuFan:{
                 bsd->ClickHandler = ProcessFanVmenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = Vmenubase;
@@ -203,13 +204,13 @@ void intializeMenus(){
            break;
            }
 
-      case VmenuOnOff:{
+        case VmenuOnOff:{
                 bsd->ClickHandler = ProcessOnOffVMenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = VmenuDebug;
             break;
             }
-       case VmenuAjd_01:{
+        case VmenuAjd_01:{
                 bsd->ClickHandler = ProcessAdjust_01Vmenu; 
                 bsd->nextMenu = -1;
                 bsd->backMenu = VmenuDebug;
@@ -222,64 +223,83 @@ void intializeMenus(){
                 bsd->backMenu = VmenuDebug;
             break;
             }
-         SetMenuBoundingRect(myButtonVertMenus[i]);
-       }   
+       case VmenuEmpty:{
+                bsd->ClickHandler = ProcessEmptyVmenu; 
+                bsd->nextMenu = Vmenubase;
+                bsd->ButtonCount = 1;
+                bsd->backMenu = VmenuDebug;
+            break;
+            }
+         
+       } 
+       SetMenuBoundingRect(myButtonVertMenus[i]);  
     }
-
-  
-  
   myHorControlMenuDef.H = 40;
   myHorControlMenuDef.W = 90;
   myHorControlMenuDef.rowstart = 0;
   myHorControlMenuDef.colstart = 360;
   myHorControlMenuDef.vertical = false;
-  myHorControlMenuDef.Count = 4;
+  myHorControlMenuDef.ButtonCount = 4;
   myHorControlMenuDef.menuID = HmenuCTRL;
+  myHorControlMenuDef.ClickHandler = ProcessHorControlMenu;
+  SetMenuBoundingRect(myHorControlMenuDef);
   
-    myHorControlMenuDef.ClickHandler = ProcessHorControlMenu;
-    SetMenuBoundingRect(myHorControlMenuDef);
-  
-  myHorFanButtonControl.H = 50;
-  myHorFanButtonControl.W = 50;
-  myHorFanButtonControl.rowstart = 400;
-  myHorFanButtonControl.colstart = 30;
-  myHorFanButtonControl.Count = 5;
+  myHorFanButtonControl.H = 45;
+  myHorFanButtonControl.W = 70;
+  myHorFanButtonControl.rowstart = 410;
+  myHorFanButtonControl.colstart = 100;
+  myHorFanButtonControl.ButtonCount = 5;
   myHorFanButtonControl.vertical = false;
   myHorFanButtonControl.menuID = HmenuFAN;
-  Serial.println ("Drawing fan control");
-    
   SetMenuBoundingRect(myHorFanButtonControl);
   myHorFanButtonControl.ClickHandler = ProcessHorFanMenu;
   
  
 }
 
+
  void DrawVMenu(int iMenu, int iButton) {
     VerticalMenuPrior = VerticalMenuShowing; 
     VerticalMenuShowing = iMenu;
     myButtonVertMenus[iMenu].inputbutton = iButton;
-    DrawButtons(myButtonVertMenus[iMenu]);
+    Serial.print("draw v menu");Serial.println(iMenu);
+    Serial_println_rect(myButtonVertMenus[iMenu].bounding);
+    
+    if (iMenu == VmenuEmpty && iButton != -1)
+    {
+        Serial.println ("blacking out");
+    
+        Serial_println_rect(myButtonVertMenus[Vmenubase].bounding);
+        myGLCD.setColor(BLACK);
+        myGLCD_drawRect(myButtonVertMenus[Vmenubase].bounding);
+        myGLCD_fillRect(myButtonVertMenus[Vmenubase].bounding);
+    }
+    DrawMenuButtons(myButtonVertMenus[iMenu]);
 }
 
+void ProcessEmptyVmenu(int i)
+{
+    DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
+}
 void ProcessBaseVMenu(int i) {
-    //Serial.println ("ProcessVertMenu1:");Serial.println (i);
+    Serial.println ("ProcessVertMenu1:");Serial.println (i);
   
     switch (i) {
     case VBUT0:
-        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
+        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,0);
         break;
     case VBUT1:
-        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu,-1);
-        break;
+        //DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
+                break;
     case VBUT2:
-        myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-        myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlernatelableID.ButtonID = i;
+        myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+        myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlternateLableID.ButtonID = i;
         DrawVMenu(VMenuAdj_1_5_10_V,i);
         break;
     case VBUT3:
          
-        myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-        myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlernatelableID.ButtonID = i;
+        myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+        myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlternateLableID.ButtonID = i;
         DrawVMenu(VmenuAjd_01, i);
         break;
     case VBUT4:
@@ -333,8 +353,8 @@ void ProcessSetPointSelectVMenu(int i) {
     case 5:
     case 6:
         spSelected = i;  
-        myButtonVertMenus[VmenuSetPointValue].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-        myButtonVertMenus[VmenuSetPointValue].buttondefs[1].AlernatelableID.ButtonID = i;
+        myButtonVertMenus[VmenuSetPointValue].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+        myButtonVertMenus[VmenuSetPointValue].buttondefs[1].AlternateLableID.ButtonID = i;
  
         DrawVMenu(VmenuSetPointValue,i);
         break;
@@ -496,8 +516,7 @@ void ProcessDebugVMenu(int i) {
           if (State == DEBUGTOGGLE || State == DEBUGDUTY){
                newState = STATESTOPPED; 
           }
-          //DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu);
-          DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
+          DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,0);
         break;
     case VBUT1:
           if (State == DEBUGTOGGLE || State == DEBUGDUTY){
@@ -508,8 +527,8 @@ void ProcessDebugVMenu(int i) {
     case VBUT3:  //coil 1
     case VBUT4:  //coil 2
         if (State == STATEFANONLY || State == DEBUGCOIL) {
-              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlernatelableID.ButtonID = i;
+              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlternateLableID.ButtonID = i;
               DrawVMenu(VmenuOnOff,i);
               newState = DEBUGCOIL;
        }
@@ -524,8 +543,8 @@ void ProcessDebugVMenu(int i) {
     case VBUT6:  //fan
     
     if (State == STATESTOPPED || State == DEBUGTOGGLE || State == DEBUGDUTY) {
-              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlernatelableID.ButtonID = i;
+              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+              myButtonVertMenus[VmenuOnOff].buttondefs[1].AlternateLableID.ButtonID = i;
               DrawVMenu(VmenuOnOff,i);
               newState = DEBUGTOGGLE;
        }
@@ -537,8 +556,8 @@ void ProcessDebugVMenu(int i) {
         break;
     case VBUT7: //duty
         if (State == STATESTOPPED || State == DEBUGTOGGLE || State == DEBUGDUTY) {
-              myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-              myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlernatelableID.ButtonID = i;
+              myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+              myButtonVertMenus[VmenuAjd_01].buttondefs[1].AlternateLableID.ButtonID = i;
               DrawVMenu(VmenuAjd_01, i);
               newState = DEBUGDUTY;
 
@@ -549,8 +568,8 @@ void ProcessDebugVMenu(int i) {
           errmsg = "Must be in state stopped to debug";
        }
     case VBUT8:  //temp
-          myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlernatelableID.MenuID = VerticalMenuShowing;
-          myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlernatelableID.ButtonID = i;
+          myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+          myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlternateLableID.ButtonID = i;
           DrawVMenu(VMenuAdj_1_5_10_V,i);
         break;
     }
@@ -829,7 +848,7 @@ void MoveIntegralSum(int amount) {
 }
 
 void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
-  for (int i = 0 ; i < butdefset.Count; i++) {
+  for (int i = 0 ; i < butdefset.ButtonCount; i++) {
       if (butdefset.vertical == true) {
           butdefset.buttondefs[i].Rect.y = butdefset.rowstart + butdefset.H * i;
           butdefset.buttondefs[i].Rect.x = butdefset.colstart ;
@@ -846,62 +865,77 @@ void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
    
   }
   if (butdefset.vertical == false) {
-          Serial.println("Here");
-          Serial.println(butdefset.colstart);
+          //Serial.println("Here");
+          //Serial.println(butdefset.colstart);
           butdefset.bounding.x = butdefset.colstart;
-          Serial.println(butdefset.W);
+          //Serial.println(butdefset.W);
           
-          butdefset.bounding.xmax = butdefset.colstart + butdefset.W * butdefset.Count ;
-          Serial.println(butdefset.rowstart);
+          butdefset.bounding.xmax = butdefset.colstart + butdefset.W * butdefset.ButtonCount ;
+          //Serial.println(butdefset.rowstart);
           
           butdefset.bounding.y =  butdefset.rowstart;
-          Serial.println(butdefset.H);
+          //Serial.println(butdefset.H);
          
           butdefset.bounding.ymax = butdefset.rowstart + butdefset.H ;
        }
    else { 
           butdefset.bounding.x = butdefset.colstart;
-          butdefset.bounding.xmax = butdefset.W ; 
+          butdefset.bounding.xmax = butdefset.colstart + butdefset.W ; 
           butdefset.bounding.y =  butdefset.rowstart;
-          butdefset.bounding.ymax = butdefset.rowstart + butdefset.H * butdefset.Count;      
+          butdefset.bounding.ymax = butdefset.rowstart + butdefset.H * butdefset.ButtonCount;      
    } 
-
-
 }
 
-void DrawButtons(buttonsetdef &butdefset) {
+void DrawMenuButtons(buttonsetdef &butdefset) {
 
-  //Serial.println ("Drawing buttons start. Count:");Serial.println(count);
-
-    for (int i = 0; i < butdefset.Count; i++) {
+   
+    
+    for (int i = 0; i < butdefset.ButtonCount; i++) {
         
-      DrawButton(butdefset, i, false);
-  }
+        DrawButton(butdefset, i, false);
+    }
 }
 
-void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip)
-{
-   if (butdefset.menuID > -1){
-        if (butdefset.vertical == false) 
-        {
-            memcpy_P( &myArrayLocal, &Hmenutext[butdefset.menuID][i], sizeof( buttontext));
-        }
-        else
-        { 
-            memcpy_P( &myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof( buttontext));
-         }
-        
-      }
+void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip){    
+    int xTipOffset;
+    int yTipOffset;
+    rect DrawRect;
+
+    //memcpy_P(&DrawRect,&butdefset.buttondefs[i].Rect,sizeof(DrawRect));
+    
+    if (butdefset.vertical == true) {
+       // Serial.print("gettting button text for VmenuID:");Serial.print(butdefset.menuID);Serial.print(" button:");Serial.println(i);
+    }
+    else{
+       // Serial.print("gettting button text for HmenuID:");Serial.print(butdefset.menuID);Serial.print(" button:");Serial.println(i);
+     
+    }
+
+    if (butdefset.buttondefs[i].AlternateLableID.ButtonID > -1){
+        memcpy_P(&myArrayLocal, &Vmenutext[butdefset.buttondefs[i].AlternateLableID.MenuID][butdefset.buttondefs[i].AlternateLableID.ButtonID], sizeof( buttontext));
+    }
+    else
+    {
+        memcpy_P(&myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof( buttontext));
+    }
+    
+    
+    //Serial.print(" id:");Serial.print(myArrayLocal.key);Serial.print(" label:");Serial.println(myArrayLocal.label);
+ 
     myGLCD.setColor(myArrayLocal.color);
-    myGLCD.fillRect(butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].Rect.y, butdefset.buttondefs[i].Rect.xmax, butdefset.buttondefs[i].Rect.ymax);
+    myGLCD_fillRect(butdefset.buttondefs[i].Rect);
     myGLCD.setColor(BLACK);
-    myGLCD.drawRect(butdefset.buttondefs[i].Rect.x, butdefset.buttondefs[i].Rect.y, butdefset.buttondefs[i].Rect.xmax, butdefset.buttondefs[i].Rect.ymax);
+    myGLCD_drawRect(butdefset.buttondefs[i].Rect);
 
     myGLCD.setBackColor(myArrayLocal.color);
     myGLCD.setColor(BLACK);
     int xOffset =0;
     int yOffset =0;
+    int xT = 0;
+    
+    //this is normal
     if (toggletooltip == false || butdefset.buttondefs[i].ToolTipShowing == true){
+        butdefset.buttondefs[i].ToolTipShowing = false;
         myGLCD.setFont(BigFont); //main button. 6 chars.
         xOffset = (butdefset.W - (strlen(myArrayLocal.label) * myGLCD.getFontXsize()))/2;      
         yOffset = (butdefset.H - myGLCD.getFontYsize()) / 2;
@@ -909,15 +943,18 @@ void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip)
     }
     else
     {    //tool tip 2 or 3 line x 12 char
-        myGLCD.setFont(retro8x16);
-         xOffset = (butdefset.W - (strlen(myArrayLocal.tip1) * myGLCD.getFontXsize()))/2;      
+        
+        myGLCD.setFont(Retro8x16);
+        xOffset = (butdefset.W - (strlen(myArrayLocal.tip1) * myGLCD.getFontXsize()))/2;
+        butdefset.buttondefs[i].ToolTipShowing = true;      
         if (butdefset.vertical == true) {
+            xT = 10;
             yOffset = (butdefset.H/3 - myGLCD.getFontYsize())/ 2;
             myGLCD.print(myArrayLocal.tip1,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset );
-            xOffset = (butdefset.W - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize()))/2;      
-            myGLCD.print(myArrayLocal.tip2,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H/3  );
+            xOffset = (butdefset.W + xT - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize()))/2;      
+            myGLCD.print(myArrayLocal.tip2,butdefset.buttondefs[i].Rect.x + xOffset    , butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H/3  );
             xOffset = (butdefset.W - (strlen(myArrayLocal.tip3) * myGLCD.getFontXsize()))/2; 
-            myGLCD.print(myArrayLocal.tip3,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + (butdefset.H/3 * 2)  );
+          myGLCD.print(myArrayLocal.tip3,butdefset.buttondefs[i].Rect.x + xOffset  , butdefset.buttondefs[i].Rect.y + yOffset + (butdefset.H/3 * 2)  );
         
         }
         else
@@ -925,8 +962,17 @@ void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip)
             yOffset = (butdefset.H/2 - myGLCD.getFontYsize())/ 2;
             myGLCD.print(myArrayLocal.tip1,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset );
             xOffset = (butdefset.W - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize()))/2;      
-            myGLCD.print(myArrayLocal.tip1,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H/2);
+            myGLCD.print(myArrayLocal.tip2,butdefset.buttondefs[i].Rect.x + xOffset   , butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H/2);
          
         }
     }
+}
+
+void OutlineButton(buttonsetdef* butdefset, int i,uint16_t  color){
+        uint16_t  priorcolor = myGLCD.getColor();
+        myGLCD.setColor(color);
+        myGLCD_drawRect(butdefset->buttondefs[i].Rect);
+        myGLCD.setColor(priorcolor);
+    
+
 }

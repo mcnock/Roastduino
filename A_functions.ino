@@ -77,8 +77,8 @@ void ReturnSetPoints(Stream &port) {
  
 }
 
-void SerialprintRect(struct rect * rect) {
-   Serial.print("x:");Serial.print(rect->x);Serial.print(" y:");Serial.print(rect->y);Serial.print(" xmax:");Serial.print(rect->xmax);Serial.print(" ymax:");Serial.println(rect->ymax);
+void Serial_println_rect(struct rect& rect) {
+   Serial.print("x:");Serial.print(rect.x);Serial.print(" y:");Serial.print(rect.y);Serial.print(" xmax:");Serial.print(rect.xmax);Serial.print(" ymax:");Serial.println(rect.ymax);
 }
 
 int getCleanTemp(double temperature, int myID) {
