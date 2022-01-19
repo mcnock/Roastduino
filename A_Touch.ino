@@ -51,11 +51,11 @@ boolean DetectTouch()
         
     } else
     {
-  //   Serial.print ("looking but no match vmenu is"); Serial.println(VerticalMenuShowing);
+  //Serial.print ("looking but no match vmenu is");Serial.println(VerticalMenuShowing);
      return false;
     
     }
-//    Serial.print("found button presss menu:");Serial.print(TouchButtonSet->menuID);Serial.print(" button");Serial.println(TouchButton);
+//Serial.print("found button presss menu:");Serial.print(TouchButtonSet->menuID);Serial.print(" button");Serial.println(TouchButton);
     OutlineButton(TouchButtonSet,TouchButton,WHITE);
     return true;
 }
@@ -81,7 +81,7 @@ void ProcessTouch(int Xtouch, int Ytouch)
     }  
    
     if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
-      //  Serial.print("found vertical1  buttons");
+      //Serial.print("found vertical1  buttons");
         int k = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
         myButtonVertMenus[VerticalMenuShowing].ClickHandler(k);
         return;

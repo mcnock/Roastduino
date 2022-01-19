@@ -163,7 +163,7 @@ boolean usemanualtemp = true;
 
 #define Vmenubase 0
 #define VmenuSetPointSelect 1
-#define VmenuSetPointValue 2
+#define VmenuAdj_1_3_5 2
 #define VmenuDebug 3
 #define VmenuOnOff 4
 #define VmenuAjd_01 5
@@ -176,7 +176,7 @@ boolean usemanualtemp = true;
 
 const char Mname0  = "Vmenubase";
 const char Mname1  = "VmenuSetPointSelect";
-const char Mname2  = "VmenuSetPointValue";
+const char Mname2  = "VmenuAdj_1_3_5";
 const char Mname3  = "VmenuDebug";
 const char Mname4  = "VmenuOnOff";
 const char Mname5  = "VmenuAjd_01";
@@ -201,6 +201,7 @@ Mname10,
 };
 
 
+char debug = 'a';
 #define VmenuCount 9
 
 #define MaxButtonCount 9
@@ -279,15 +280,15 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {68,"Save" ,"Save","and","close",GREEN}
   }
  ,
-  { {70,"<<" ,"go to","prior","menu",GREEN},
-    {71,"" ,"go back","to","prior",GREEN},
-    {72,"+1" ,"go back","to","prior",ORANGE},
-    {73,"+5" ,"go back","to","prior",ORANGE},
-    {74,"+10" ,"go back","to","prior",ORANGE},
-    {75,"-1" ,"go back","to","prior",ORANGE},
-    {76,"-5" ,"go back","to","prior",ORANGE},
-    {77,"-10" ,"go back","to","prior",ORANGE},
-    {78,"Save" ,"Save","and","close",GREEN}
+  { {70,"<<" , "go to"      ,"prior"      ,"menu",GREEN},
+    {71,"A+1" ,"Add 1 min"  ,"to start"   ,"period",ORANGE},
+    {72,"A-1" ,"Rmv 1 min"  ,"to start"   ,"period",ORANGE},
+    {73,"A" ,"Adjust" ,"start" ," PWM" ,ORANGE},
+    {74,"B" ,"Adjust" ,"drop in"," PWM" ,ORANGE},
+    {75,"C+1" ,"Rmv 1 unit" ,"to fan"     ,"Drop" ,ORANGE},
+    {76,"C-1" ,"Rmv 5 unit" ,"to fan"     ,"Drop" ,ORANGE},
+    {77,"" ,"Add 1 min"  ,"to middle"  ,"Period" ,ORANGE},
+    {78,"" ,"Rmv 1 min"  ,"to middle"  ,"period",ORANGE}
   }
 ,
   { {80,">>" ,"go to","next","menu",GREEN},
@@ -305,7 +306,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   { 
     {90,"Start" ,"Start"      ,"Roast"  ,"",GREEN},
     {91,"Stop"  ,"End Roast"  ,"or Fan" ,"" ,RED},
-    {92,"Fan"   ,"Start"      ,"Fan"    ,""  ,BLUE},
+    {92,"Fan"   ,"Start"      ,"Fan"    ,""  ,AQUA},
     {93, "rfs"  ,"Redraw"     ,"screen" ,"",WHITE},
     {94,"^" ,"go back","to","prior",GREEN},
     {95,"" ,"go back","to","prior",GREEN},
@@ -315,11 +316,11 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     
   }
   ,
-  { {100,"-10" ,"Decrease","fan 10","prior",BLUE},
-    {101,"-3"  ,"Decrease","fan 3","prior",BLUE},
-    {102,"+3"   ,"Increase","fan 3","prior",   BLUE},
-    {103,"+10" ,"Increase","fan 10","prior",BLUE},
-    {104,"SAVE" ,"save as","start","prior",BLUE},
+  { {100,"-10" ,"Decrease","fan 10","prior",AQUA},
+    {101,"-3"  ,"Decrease","fan 3","prior",AQUA},
+    {102,"+3"   ,"Increase","fan 3","prior",AQUA},
+    {103,"+10" ,"Increase","fan 10","prior",AQUA},
+    {104,"SAVE" ,"save as","start","prior",AQUA},
     {105,"" ,"go back","to","prior",GREEN},
     {106,"" ,"go back","to","prior",GREEN},
     {107,"" ,"go back","to","prior",GREEN},
@@ -366,9 +367,10 @@ char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
 
 int spSelected = -1;
+
+char _debug ='a';
 int FanSpeedPWM = 0;
 int FanSpeedPWMStart = 0;
-
 //value to store initial fan profile line
 int XStartFan_Last;
 int X2Fan_Last;
@@ -384,9 +386,31 @@ int FanSpeedPWMAutoDecreaseStart = 90;
 bool FanSpeedPWMAutoMode = false;
 int FanSpeedPWNDelayDecreaseByMinutes = 2;
 int FanSpeedPWNDecreaseByMinutes = 8;
-
 int FanSpeedResistanceLast = 0;
 int FanSpeedResistanceCurrent = 0;
+
+
+const int LastPixelArrayCount = 200;
+point myLastTempGraphPixels[LastPixelArrayCount];
+point myLastFanGraphPixels[LastPixelArrayCount];
+
+int SkipTempCount;
+const int SkipTempLimit = 2;
+int SkipFanCount;
+const int SkipFanLimit = 2;
+
+int myLastTempGraphPixelsP = 0;
+int myLastFanGraphPixelsP = 0;
+const int FanGraphXStart = 410;//starting col of fan graph - a little past half
+const int FanGraphXWidth = 310;  //uses 1/4 of screen width
+const int FanGraphHeight = 125;  //uses 1/4 of screen width
+const int FanGraphHorGridSpacingPWM = 15;
+const int FanGraphBottom = 455;
+const int FanGraphMinPWM = 150;
+const int FanGraphMaxPWM = 254;
+
+long PixelsPerMinFan;
+   //Y for a temp, for values under 300 is linear. So we are going graph the 0-254 values of fan as if they where temps   
 
 double Integral = 0.1;  //read from eeprom
 long unsigned IntegralLastTime = 0;
@@ -445,10 +469,10 @@ Chrono SecondTimer(Chrono::MILLIS);
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 
+
 //int SecondTimerValue = 1000;
 Chrono LcdUdateTime(Chrono::MILLIS);
 Chrono PIDIntegralUdateTime(Chrono::MILLIS);
-
 //int CapButActive = 0;
 //current is read every loop (200 per second) so 30  very short
 //Average<float> AvgFanCurrent(30);
@@ -479,31 +503,29 @@ char s5[5];
 
 char spFormat[5] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
-uint16_t LastXforLineID[5];
-uint16_t LastYforLineID[5];
+int LastXforLineID[5];
+int LastYforLineID[5];
 uint16_t LineColorforLineID[5];
 
-int myLastGraphYPixels[800];
-int myLastGraphXPixels[800];
+
+
 int moveamount = -1;
 
 double RoastMinutes = 0;
+
+int FanDeviation = 0;
 
 int TCoil;
 int TBean1;
 int TBean2;
 int TBean3;
 double MaxVoltage, MaxVread;
-double CurrentFan;
-double CurrentHeat1, CurrentHeat2;
+//double CurrentFan;
+//double CurrentHeat1, CurrentHeat2;
 
-double CurrentHeat1Offset, CurrentHeat2Offset;
-double CurrentFanOffset = 0;
 
 int TBeanAvg;
 
-
-boolean Flasher;
 
 boolean HasDisplay = true ;
 // =====================================================================================================================================================================
@@ -513,9 +535,6 @@ void setup() {
   //Serial1.begin(9600);
   Serial.begin(9600);
   Serial.println("setup starting");
-  delay(2000);
-
-
 
   // Pin Conffaiguration
   pinMode(FANRELAYVCCp_3, OUTPUT);
@@ -642,17 +661,17 @@ if (testiffirstrun == 0)
     FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
     EEPROM.write(FanSpeedPWMAutoDecrease_EP, FanSpeedPWMAutoDecrease);
   }
+  FanSpeedPWM = FanSpeedPWMStart;
   FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
   FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
 
-  Serial.println("wire i2c for fan begin");
-
+  Serial.println(F("wire i2c for fan begin"));
+   
   
   Wire.begin();  
   
   StopAndSendFanPWM();
   
-  DrawFanGraph();
   graphProfile();
   Serial.println("loop is starting...");
   

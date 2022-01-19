@@ -86,7 +86,7 @@ void theloop () {
     }
   }
 
-  //Serial.println("here A");
+  //Serial.println("hereA");
   //**************************************************************************************************
   //DETERIM NEW STATE BASE ON TEMPERATURE or TIME
   //*****************************************************************************************************
@@ -96,7 +96,7 @@ void theloop () {
       TempReachedCount ++;
       if (TempReachedCount > 20) {
         newState = STATECOOLING;
-       Serial.println("Roast Temp Reached. Cooling starting End:");
+       //Serial.println("Roast Temp Reached. Cooling starting End:");
       }
     }
     else {
@@ -123,9 +123,10 @@ void theloop () {
   if (HasDisplay) { 
     if(myTouch.dataAvailable() )
     {
+         //Serial.println("touch");
          if (TouchDetected == false) {
                if (DetectTouch()){
-                  Serial.println("PRESS");
+                  //Serial.println("PRESS");
                   TouchDetected = true;        
                   TouchTimer.restart(0);
               }
@@ -139,7 +140,7 @@ void theloop () {
                 if (LongPressDetected == false)
                 {
                     LongPressDetected = true;
-                    Serial.println("LONGPRESS");
+                    //Serial.println("LONGPRESS");
               
                      TouchLongPress();
                 }
@@ -161,7 +162,7 @@ void theloop () {
               
                if (TouchTimer.elapsed() > 100)
               {
-                    Serial.println("CLICK!");
+                    //Serial.println("CLICK!");
             
                   TouchClick();
               }   
@@ -170,7 +171,7 @@ void theloop () {
            else
            {
              LongPressDetected = false;
-             Serial.println("Long press release"); 
+             //Serial.println("Long press release"); 
            }
            OutlineButton(TouchButtonSet,TouchButton,BLACK);
            TouchTimer.stop();
@@ -198,12 +199,12 @@ void theloop () {
  switch (newState){
   case STATESTOPPED:
   {
-        Serial.print("D:");Serial.println(LOW);
+        //Serial.print("D:");Serial.println(LOW);
 
     digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE ) {
       State = STATESTOPPED;
-          Serial.print("E:");Serial.println(LOW);
+          //Serial.print("E:");Serial.println(LOW);
 
       digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
       digitalWrite(FANRELAYp_2, RELAYOFF); 
@@ -220,19 +221,22 @@ void theloop () {
    }
  case STATEROASTING: //newstate
  {
-    //Serial.println("D");
     digitalWrite(FANRELAYp_2, RELAYON); 
     //digitalWrite(VIBRELAYp, RELAYON);
+    
     if (State == STATESTOPPED || State == STATEFANONLY) {
       
       if (FanSpeedPWM > 0 && FanSpeedPWMStart != FanSpeedPWM)
       {   
+    
           FanSpeedPWMStart = FanSpeedPWM ;      
           EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
       }
       FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
       FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
-      DrawFanGraph_ex(true);
+      //DrawFanGraph_ex(true);
+      XStartFan_Last = 0;
+
       SetAndSendFanPWMForATime(0);
       FanSpeedPWMAutoMode = true;
       TCoilRoll.clear();
@@ -240,10 +244,16 @@ void theloop () {
       Readingskipped[0] = 0;
       Readingskipped[1] = 0;
       Readingskipped[2] = 0;
-      StartLinebyTimeAndTemp(0, 0, AVGLINEID , YELLOW);
-      StartLinebyTimeAndTemp(0, 0, ROLLAVGLINEID , LGBLUE);
-      StartLinebyTimeAndTemp(0, 0, COILLINEID , RED);
+      StartLinebyTemp( 0, AVGLINEID , YELLOW);
+
+      StartLinebyTemp( 0, ROLLAVGLINEID , LGBLUE);
+
+      StartLinebyTemp( 0, COILLINEID , RED);
+
+      StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeedPWM) , FANSPEEDLINEID , AQUA);
+
       graphProfile();
+
       RoastTime.restart(0);
       RoastMinutes = 0;
     }
@@ -258,7 +268,7 @@ void theloop () {
     State = newState;
     SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
     FanSpeedPWMAutoMode = false;
-    Serial.print("F:");Serial.println(LOW);
+    //Serial.print("F:");Serial.println(LOW);
 
     digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     delay(1000);
@@ -276,7 +286,7 @@ void theloop () {
     }
   case STATEOVERHEATED: {
     State =  newState;
-        Serial.print("G:");Serial.println(LOW);
+        //Serial.print("G:");Serial.println(LOW);
 
     digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
     delay(1000);
@@ -284,7 +294,7 @@ void theloop () {
   }
   case STATENOFANCURRENT: {
     State =  newState;
-        Serial.print("H:");Serial.println(LOW);
+        //Serial.print("H:");Serial.println(LOW);
 
     digitalWrite(SSR1_p7, LOW); digitalWrite(SSR2_p6, LOW);
         break;
@@ -312,6 +322,7 @@ void theloop () {
  }
  
  if (State == STATEROASTING) {
+ //if (false){
     //Serial.println("A");
     //Err, Duty, DutyRaw,.mean(), integralsum, integral,CurrentSetpointTemp all floats
     //only gain is an Int
@@ -353,8 +364,10 @@ void theloop () {
     
   
   }
-  
- if (State == STATEROASTING || State == DEBUGDUTY) {
+
+
+ //if (false){
+if (State == STATEROASTING || State == DEBUGDUTY) {
     int SSR1 = LOW;
     int SSR2 = LOW;
     //APPLY THE ERROR WITH THE PID WINDOW
@@ -394,13 +407,15 @@ void theloop () {
     }
     
     if (TCoil > TEMPCOILTOOHOT) {
-      if (TEMPCOILTOOHOTCount == 0){
+      if (TEMPCOILTOOHOTCount > 10 ){
           bNewSecond = true; //force display immediately
+          
           newerrmsg == true;
           errmsg = "HOT COIL CUTOUT";
+          //Serial.println("too hot");
+      
      }
      TEMPCOILTOOHOTCount++;
-      Serial.println("too hot");
       SSR1 = LOW;
       SSR2 = LOW;
     }
@@ -424,7 +439,8 @@ void theloop () {
     digitalWrite(SSR1_p7, SSR1);
     digitalWrite(SSR2_p6, SSR2);
  }
- 
+
+
  if (not (State == STATEROASTING || State == DEBUGDUTY || State == DEBUGTOGGLE|| State == DEBUGCOIL)) {
   
     //Serial.println("not roastine is off");
@@ -452,18 +468,20 @@ void theloop () {
     UpdateRealTime(ValuesOnly);  
     newState = 0; //this clears it for next run
   }
+   
 
   //we update the area when we get new temps
-  if    (bNewSecond) {
+  if (bNewSecond) {
     //Serial.println("update after reach new temp");
     UpdateRealTime(ValuesOnly);
     UpdateEachSecond(ValuesOnly);
+    UpdateFanPWMValuesDisplay();
+    
     if (State == STATEROASTING || State == STATECOOLING){
        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgThisRun, AVGLINEID);
     }
   }
-
-  if (LcdUdateTime.elapsed() > 3000) {
+  if ( LcdUdateTime.elapsed() > 3000) {
     if (serialOutPutTempsBy3Seconds == true)
     {
        SerialOutputTempsForPlotting();
@@ -472,21 +490,33 @@ void theloop () {
     {
        SerialOutputStatus();
     }
- 
     if ( State == STATECOOLING){
       
         SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
     }
-    if (State == STATEROASTING ){
-        SetAndSendFanPWMForATime(RoastMinutes);
-        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
-        AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
-    }
-    DrawFanGraph();
+    if ( State == STATEROASTING ){
+          //Serial.println('b');
+          SetAndSendFanPWMForATime(RoastMinutes);
+              
+          AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+             
+          AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+        
+     
+           //Serial.println('d');
+          
+          AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+        
+             //Serial.println('e');
+          
+          AddLinebyTimeAndFan(RoastMinutes);
+        
+        }
+   
     UpdateDisplayDetailA(true);
-    LcdUdateTime.restart(0);
+    LcdUdateTime.restart(0);   
   }
 
 }

@@ -6,24 +6,73 @@
 
 
 int  CalcFanPWMForATime(double minutes){
-     //Serial.println(minutes);
+     //Serial.println("starting CalcFanPWMForATime");
+     //Serial.print("minutes:");Serial.println(minutes);
+     //Serial.print("deviation:");Serial.println(FanDeviation);
+     int calcedFanSpeed;
+     int newFanSpeed;
      if (minutes == double(0.00)){
             //Serial.println("zeir minutes dedtected");
             //Serial.println(minutes);
-            return FanSpeedPWMStart;
+            calcedFanSpeed = FanSpeedPWMStart;
      }
      else if (minutes <= FanSpeedPWNDelayDecreaseByMinutes){
-            return FanSpeedPWMStart;
+            calcedFanSpeed = FanSpeedPWMStart;
         }
      else if (minutes < FanSpeedPWNDecreaseByMinutes){
-            return  (FanSpeedPWMStart - (FanSpeedPWMAutoDecrease/(FanSpeedPWNDecreaseByMinutes - FanSpeedPWNDelayDecreaseByMinutes))* (minutes-FanSpeedPWNDelayDecreaseByMinutes)) ; 
+            
+            float ratio = (float)(minutes-FanSpeedPWNDelayDecreaseByMinutes)/(float)(FanSpeedPWNDecreaseByMinutes - FanSpeedPWNDelayDecreaseByMinutes);
+            //Serial.print("ratio:");Serial.println(ratio);
+            calcedFanSpeed =   (FanSpeedPWMStart - (ratio * FanSpeedPWMAutoDecrease)) ; 
         }
-       else
+     else
        {
-           return ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
+           //Serial.println( FanSpeedPWMStart);
+           //Serial.println( FanSpeedPWMAutoDecrease);
+           
+           calcedFanSpeed =  ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
        }
-    
+
+      newFanSpeed = calcedFanSpeed + FanDeviation;
+      if (FanSpeedPWMStart > 254){
+          if (FanDeviation > 0)
+          {
+              FanDeviation = 254 - calcedFanSpeed;
+              if (FanDeviation > 0){FanDeviation = 0;} 
+          }
+       
+       }
+          
+       if (FanSpeedPWMStart < 10){
+          if (FanDeviation < 0)
+          {
+              FanDeviation =  calcedFanSpeed - 10;
+              if (FanDeviation < 0){FanDeviation = 0;} 
+          }
+        
+        FanSpeedPWMStart = 10;}
+
+       //Serial.print("return:");Serial.println(newFanSpeed);
+       return newFanSpeed;
 }
+int  YforAFan(int fanpwm) {
+       //Serial.print("starting YforAFan");Serial.println(fanpwm);
+
+      if (fanpwm <= FanGraphMinPWM)
+      {
+         //Serial.print("return min:"); Serial.println(FanGraphYBottom);
+         return FanGraphBottom;
+      }
+      else
+      {
+          double ratio = (fanpwm - FanGraphMinPWM) / float(FanGraphMaxPWM -FanGraphMinPWM); 
+          //Serial.print("ratio:");Serial.println(ratio);
+          if (ratio > 1) {ratio =1;}
+          return   (FanGraphBottom - (ratio * FanGraphHeight));
+      }  
+
+}
+
 
 void  SetAndSendFanPWMForATime(double minutes) {
       //Serial.println("Call From SetFan");
@@ -45,8 +94,8 @@ void  sendFanPWM_Wire() {
      float j = q * x ;
      int i= j/254;
      
-  //   Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
-  //   Serial.println(MCP4725_ADDR);
+  //Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
+  //Serial.println(MCP4725_ADDR);
      //Serial.print("Setting Fan 10 bit :");Serial.println(i);
      //interrupts();
       Wire.beginTransmission(MCP4725_ADDR);

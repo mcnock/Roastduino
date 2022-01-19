@@ -32,7 +32,7 @@ void processSerial()
           switch (incomingByte2) {
             case 83: //S
               {
-                Serial.print ("Fan On ");
+                Serial.print (F("Fan On "));
                 ProcessHorControlMenu(2);
                 Serial.println (FanSpeedPWM);
                 break;
@@ -162,9 +162,11 @@ void processSerial()
           }
           break;
         }
-      case 101: //e
+      case 100: //d
         {
-
+            _debug = incomingByte2;
+            Serial.print("debug char recieved:");Serial.println(_debug);
+            break;
         }
       case 69: //E
         {

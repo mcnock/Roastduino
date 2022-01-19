@@ -10,9 +10,10 @@ typedef struct pointdb {
   double y ;
  } pointdb;
 
+
 typedef struct point {
-  int x ;
-  int y ;
+  int x = -1 ;
+  int y = -1;
  } point;
 
 typedef struct labelID {
@@ -76,6 +77,7 @@ typedef struct buttonsetdef {
   int nextMenu;
   int backMenu;
   int inputbutton;
+  int priormenuID;
   
 } buttonsetdef;
 
