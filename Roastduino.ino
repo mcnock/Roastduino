@@ -151,9 +151,11 @@ boolean usemanualtemp = true;
 
 #define PROFILELINEID 0
 #define ROLLAVGLINEID 1
-#define AVGLINEID 2
+#define ROLLMAXLINEID 2
 #define COILLINEID 3
 #define FANSPEEDLINEID 4
+#define ROLLMINLINEID 5
+#define GRAPHLINECOUNT 6
 
 #define RELAYON LOW
 #define RELAYOFF HIGH
@@ -371,13 +373,7 @@ int spSelected = -1;
 char _debug ='a';
 int FanSpeedPWM = 0;
 int FanSpeedPWMStart = 0;
-//value to store initial fan profile line
-int XStartFan_Last;
-int X2Fan_Last;
-int X3Fan_Last;
-int XEndFan_Last;
-int YBotFan_Last;
-int YTopFan_Last;
+
 
 
 //int FanSpeedPWMAutoEnd=0;
@@ -395,9 +391,9 @@ point myLastTempGraphPixels[LastPixelArrayCount];
 point myLastFanGraphPixels[LastPixelArrayCount];
 
 int SkipTempCount;
-const int SkipTempLimit = 2;
+const int SkipTempLimit = 6;  
 int SkipFanCount;
-const int SkipFanLimit = 2;
+const int SkipFanLimit = 6;
 
 int myLastTempGraphPixelsP = 0;
 int myLastFanGraphPixelsP = 0;
@@ -431,8 +427,8 @@ setpoint MySetPoints[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 1
 setpoint MySetPoints_Last[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
 
 
-int SetPointCount = 6;  //0,1,2,3,4,t0t5
-int EndingSetPoint = 5;
+const int SetPointCount = 6;  //0,1,2,3,4,t0t5
+ int EndingSetPoint = 5;
 int TimeScreenLeft = 0;
 
 double TempYMax = 800;
@@ -441,53 +437,42 @@ double TempSplitLow = 390;
 
 double PixelYSplit2;
 double PixelYSplit;
-long PixelsPerMin;
+long   PixelsPerMin;
 double TempPerPixL = 0;
 double TempPerPixM = 0;
 double TempPerPixH = 0;
 
 double CurrentSetPointTemp = 0;
-int BeforeTemp = 0;
-int BeforeTime = 0;
+
+//int BeforeTemp = 0;
+//int BeforeTime = 0;
 
 int badLastTempCount = 0;
 int LoopsPerSecond;
 
 boolean TouchDetected;
 boolean LongPressDetected;
-
 buttonsetdef* TouchButtonSet;
 ClickHandler* TouchButtonHandler;
-
 int TouchButton;
 
 Chrono TouchTimer(Chrono::MILLIS);
-  
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
-
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
-
-
-//int SecondTimerValue = 1000;
 Chrono LcdUdateTime(Chrono::MILLIS);
 Chrono PIDIntegralUdateTime(Chrono::MILLIS);
-//int CapButActive = 0;
-//current is read every loop (200 per second) so 30  very short
-//Average<float> AvgFanCurrent(30);
-//Average<int> AvgCoil1Amp(30);
-//Average<int> AvgCoil2Amp(30);
 
 //temps are read once per second
-Average<double> TBeanAvgRoll(5);
-Average<double> TCoilRoll(5);  //this is minute avg
+Average<double> TBeanAvgRoll(3);
+Average<double> TCoilRoll(3);  //this is minute avg
 
 int OVERHEATFANCount;
 int TEMPCOILTOOHOTCount;
 int TempReachedCount;
 int TempSpikeCount;
-int Readingskipped[3];
+int TempReadingskipped[3];
 
 buttonsetdef myHorControlMenuDef;
 buttonsetdef myHorFanButtonControl;
@@ -497,17 +482,14 @@ int VerticalMenuShowing = 0;
 int VerticalMenuPrior = 0;
 
 char s7[7];
-
 char s6[6];
 char s5[5];
 
 char spFormat[5] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
-int LastXforLineID[5];
-int LastYforLineID[5];
-uint16_t LineColorforLineID[5];
-
-
+int LastXforLineID[GRAPHLINECOUNT];
+int LastYforLineID[GRAPHLINECOUNT];
+uint16_t LineColorforLineID[GRAPHLINECOUNT];
 
 int moveamount = -1;
 
@@ -515,13 +497,13 @@ double RoastMinutes = 0;
 
 int FanDeviation = 0;
 
+boolean bNewTempsAvailable =false;
+int ReadTempFlag = -1;
 int TCoil;
 int TBean1;
 int TBean2;
-int TBean3;
+
 double MaxVoltage, MaxVread;
-//double CurrentFan;
-//double CurrentHeat1, CurrentHeat2;
 
 
 int TBeanAvg;
@@ -535,6 +517,9 @@ void setup() {
   //Serial1.begin(9600);
   Serial.begin(9600);
   Serial.println("setup starting");
+  Serial2.begin(9600);
+  Serial2.println("setup starting");
+
 
   // Pin Conffaiguration
   pinMode(FANRELAYVCCp_3, OUTPUT);

@@ -277,11 +277,11 @@ void processSerial()
                 Serial.print(F(" Avg"));
                 Serial.print(TCoilRoll.mean());
                 Serial.print(F(" Skipped:"));
-                Serial.print(Readingskipped[1]);
+                Serial.print(TempReadingskipped[1]);
                 Serial.print(F("/"));
-                Serial.print(Readingskipped[2]);
+                Serial.print(TempReadingskipped[2]);
                 Serial.print(F("/"));
-                Serial.print(Readingskipped[0]);
+                Serial.print(TempReadingskipped[0]);
                 Serial.println();
               }
 

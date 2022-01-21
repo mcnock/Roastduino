@@ -267,7 +267,9 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
     myGLCD.printNumI(LoopsPerSecond, col4 , row, 6, ' ') ;
     row = row + rowheight;
     myGLCD.print("Skp : ", col3, row);
-    myGLCD.printNumI(Readingskipped, col4 , row, 6, ' ');
+    int R =   TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
+ 
+    myGLCD.printNumI(R, col4 , row, 6, ' ');
     row = row + rowheight;
   }
   else {
@@ -298,7 +300,7 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
     myGLCD.printNumI(LoopsPerSecond, col4 , row, 6, ' ') ;
     row = row + rowheight;
     //myGLCD.print("Skp : ", col3, row);
-    int R =   Readingskipped[0] + Readingskipped[1] + Readingskipped[2];
+    int R =   TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
     myGLCD.printNumI(R, col4 , row, 6, ' ');
     row = row + rowheight;
 

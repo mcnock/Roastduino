@@ -132,17 +132,17 @@ void Serial_println_rect(struct rect& rect) {
 
 int getCleanTemp(double temperature, int myID) {
   if (isnan(temperature)) {
-    Readingskipped[myID]++;
+    TempReadingskipped[myID]++;
     //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature > 1000) {
-    Readingskipped[myID]++;
+    TempReadingskipped[myID]++;
    //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
     return -1;
   }
   else if (temperature < 40) {
-    Readingskipped[myID]++;
+    TempReadingskipped[myID]++;
  //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
     return -1;
   }
