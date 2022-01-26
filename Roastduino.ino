@@ -28,56 +28,52 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 #define BLACK 0x0000
 #define WHITE 0xFFFF
-
 #define BLUE 0xF800  //255 0 0  red
 #define RED 0x001F   //0  0  255  blud
-
 #define ORANGE 0x0339   //0,102,204 med blue
 #define BLUEMED 0xCB20  //204,102, 0 orange
-
 #define LIME 0x07E0   //0,255,0
 #define GREEN 0x05E0  //0,190,0
-
 #define YELLOW 0x0FFF  //pair 255,255,0 (aqua)
 #define AQUA 0x07FF    //pair 0,255,255 (yellow)
-
 #define TAN 0x9E7F     // 152,204,255
 #define LGBLUE 0xFE73  // 255,204,152 (tan)
-
 #define PINK 0xFB3F  // 255,100,255
-
 #define MAROON 0x0010    //128,0,255
 #define BLUEDEEP 0xF810  //255,0,128
-
 #define VGA_TRANSPARENT 0xFFFFFFFF
 
 #define MCP4725_ADDR 0x60
-//#define MCP4725_ADDR 0x61
-//define MCP4725_ADDR 0x62
-
-//For devices with A0 pulled HIGH, use 0x61
 
 //PIN  definitions
-//#5 inch display shield  does not  use 30- 34, 10,12, or 13
+//note: the 5 TFT inch display shield has pins inserted, but does not actuall use digital pins 30-34, 10 , 12,  13 or i2c pins 20,21 
+
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
-
 #define FanPWMp_4 4
-
-//#define burned out 5
+//#define available 5
 #define SSR2_p6 6
 #define SSR1_p7 7
-#define SSRgr_14 14
-
 //#define available 10
 //#define available 12
 //#define available 13
+#define SSRgr_14 14
+
 
 //#define available 30
 //#define available 31
 //#define available 32
 //#define available 33
 //#define available 34
+
+
+//#define available A0
+//#define available A1
+#define FanOutG_A4 A2
+#define FanOutVcc_A3 A3
+//#define available A4
+//#define available A5
+//#define available A6
 
 #define TCS_G_p7  A7
 #define TCS_5v_p8 A8
@@ -88,25 +84,11 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define TCS2p A13
 #define TSD3p A14  //could share A8
 #define TCS3p A15
-#define TCS_5v A8
-#define CURHEAT2_A5 A5
 
 
-#define CURFAN_A6 A6
-#define CURHEAT2_A5 A5
-#define CURHEAT1_A4 A4
-
-#define FanOutVcc_A3 A3
-#define FanOutG_A4 A2
-//#define FanOutIncp	A3
-//define FanOutDirp  A2
-//define FanOutCsp   A1
-
-#define fanPressurep A0
 
 
-#define LEDp 5  //bad pin will not do anthing
-
+  
 
 #define VBUT0 0
 #define VBUT1 1
@@ -120,20 +102,20 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 
 //EPROM MEMORORY
-int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
 #define FanSpeedPWMStart_EP 1
 #define INTEGRAL_EP 0
 #define GAIN_EP 2
 #define FanSpeedPWNDelayDecreaseByMinutes_EP 3
 #define FanSpeedPWNDecreaseByMinutes_EP 4
+const int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
 #define FanSpeedPWMAutoDecrease_EP 35
 #define RoastLength_EP 36
+#define FanGraphMinPWM_EP 37
+#define FanGraphMaxPWM_EP 38
 
 
-#define OVERHEATFAN 250
-#define BAUD 57600
+
 #define TEMPCOOLINGDONE 250
-
 #define STATEROASTING 1
 #define STATESTOPPED 2
 #define STATECOOLING 3
@@ -145,10 +127,6 @@ int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory lo
 #define DEBUGDUTY 10
 #define DEBUGCOIL 11
 
-
-double manualtemp = 300;
-boolean usemanualtemp = true;
-
 #define PROFILELINEID 0
 #define ROLLAVGLINEID 1
 #define ROLLMAXLINEID 2
@@ -156,6 +134,8 @@ boolean usemanualtemp = true;
 #define FANSPEEDLINEID 4
 #define ROLLMINLINEID 5
 #define GRAPHLINECOUNT 6
+
+//800 pixels / every 4 seconds = 200
 
 #define RELAYON LOW
 #define RELAYOFF HIGH
@@ -175,6 +155,7 @@ boolean usemanualtemp = true;
 
 #define HmenuCTRL 9
 #define HmenuFAN 10
+
 
 const char Mname0  = "Vmenubase";
 const char Mname1  = "VmenuSetPointSelect";
@@ -204,10 +185,9 @@ Mname10,
 
 
 char debug = 'a';
+
 #define VmenuCount 9
-
 #define MaxButtonCount 9
-
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   { {0,">>" ,"go back"  ,"to"     ,"prior",GREEN},
     {1,"" ,"go back"  ,"to"     ,"prior",GREEN},
@@ -289,8 +269,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {74,"B" ,"Adjust" ,"drop in"," PWM" ,ORANGE},
     {75,"C+1" ,"Rmv 1 unit" ,"to fan"     ,"Drop" ,ORANGE},
     {76,"C-1" ,"Rmv 5 unit" ,"to fan"     ,"Drop" ,ORANGE},
-    {77,"" ,"Add 1 min"  ,"to middle"  ,"Period" ,ORANGE},
-    {78,"" ,"Rmv 1 min"  ,"to middle"  ,"period",ORANGE}
+    {77,"Max" ,"Adjust"  ,"Y scale "  ,"max PWM" ,ORANGE},
+    {78,"Min" ,"Adjust"  ,"Y scale"  ,"min PWM",ORANGE}
   }
 ,
   { {80,">>" ,"go to","next","menu",GREEN},
@@ -330,17 +310,9 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   }
   
 };
- 
 
 buttontext myArrayLocal;
 
-// ===========
-// DEFINITIONS
-// ===========
-
-// ===============================================================================================================================================================================
-// GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS            GLOBALS
-// ======================================================================================================================================================================================
 int State;
 char StateName[9] = "12345678";
 int newState;
@@ -386,24 +358,25 @@ int FanSpeedResistanceLast = 0;
 int FanSpeedResistanceCurrent = 0;
 
 
-const int LastPixelArrayCount = 200;
-point myLastTempGraphPixels[LastPixelArrayCount];
-point myLastFanGraphPixels[LastPixelArrayCount];
 
-int SkipTempCount;
-const int SkipTempLimit = 6;  
-int SkipFanCount;
-const int SkipFanLimit = 6;
+point TempPixelHistory[160];
+point FanPixelHistory[160];
 
-int myLastTempGraphPixelsP = 0;
-int myLastFanGraphPixelsP = 0;
+//LineID;SkipCount;SkipLimit;PixelsP;ArraySize;Array
+  graphhistory GraphHistory[] = {
+  {ROLLAVGLINEID,0,5,0,160,TempPixelHistory }
+  ,
+  {FANSPEEDLINEID,0,5,0,160,FanPixelHistory }
+};
+
+
 const int FanGraphXStart = 410;//starting col of fan graph - a little past half
 const int FanGraphXWidth = 310;  //uses 1/4 of screen width
 const int FanGraphHeight = 125;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
 const int FanGraphBottom = 455;
-const int FanGraphMinPWM = 150;
-const int FanGraphMaxPWM = 254;
+ int FanGraphMinPWM = 110;
+ int FanGraphMaxPWM = 254;
 
 long PixelsPerMinFan;
    //Y for a temp, for values under 300 is linear. So we are going graph the 0-254 values of fan as if they where temps   
@@ -463,6 +436,7 @@ Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 Chrono LcdUdateTime(Chrono::MILLIS);
 Chrono PIDIntegralUdateTime(Chrono::MILLIS);
+Chrono MeasureTempTimer(Chrono::MILLIS);
 
 //temps are read once per second
 Average<double> TBeanAvgRoll(3);
@@ -487,8 +461,7 @@ char s5[5];
 
 char spFormat[5] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
-int LastXforLineID[GRAPHLINECOUNT];
-int LastYforLineID[GRAPHLINECOUNT];
+point LastforLineID[GRAPHLINECOUNT];
 uint16_t LineColorforLineID[GRAPHLINECOUNT];
 
 int moveamount = -1;
@@ -517,8 +490,8 @@ void setup() {
   //Serial1.begin(9600);
   Serial.begin(9600);
   Serial.println("setup starting");
-  Serial2.begin(9600);
-  Serial2.println("setup starting");
+  Serial1.begin(9600);
+  Serial1.println("setup starting");
 
 
   // Pin Conffaiguration
@@ -559,6 +532,7 @@ void setup() {
   pinMode(TSCKp, OUTPUT);
   
 
+  
   //set fan and vibrator relays to high - cause that means off
   digitalWrite(FANRELAYp_2, RELAYOFF);
   //digitalWrite(VIBRELAYp, RELAYOFF);

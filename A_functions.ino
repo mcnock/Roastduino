@@ -4,11 +4,21 @@
 // FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 
+int GetHistoryIDfromLineID(int lineID){
+
+  for (int i = 1; i < 2; i++) {
+    if (GraphHistory[i].LineID == lineID)
+    {
+      return i;
+    }
+  }
+  return -1;
+}
 
 int  CalcFanPWMForATime(double minutes){
-     //Serial.println("starting CalcFanPWMForATime");
-     //Serial.print("minutes:");Serial.println(minutes);
-     //Serial.print("deviation:");Serial.println(FanDeviation);
+      //Serial.print("starting CalcFanPWMForATime");
+      //Serial.print("minutes:");Serial.println(minutes);
+      //Serial.print("deviation:");Serial.println(FanDeviation);
      int calcedFanSpeed;
      int newFanSpeed;
      if (minutes == double(0.00)){
@@ -55,6 +65,7 @@ int  CalcFanPWMForATime(double minutes){
        //Serial.print("return:");Serial.println(newFanSpeed);
        return newFanSpeed;
 }
+
 int  YforAFan(int fanpwm) {
        //Serial.print("starting YforAFan");Serial.println(fanpwm);
 
@@ -72,7 +83,6 @@ int  YforAFan(int fanpwm) {
       }  
 
 }
-
 
 void  SetAndSendFanPWMForATime(double minutes) {
       //Serial.println("Call From SetFan");
@@ -110,7 +120,35 @@ void  sendFanPWM_Wire() {
  
 }
 
-  
+int  YforATemp(double temp) {
+  int result = 0;
+  if ( temp < 0.0 ) {
+    temp = 0.0;
+  }
+  if (temp <= TempSplitLow) {
+    result = (myGLCD.getDisplayYSize() - ((double)temp / TempPerPixL));
+    //Serial.print("low t:");
+  }
+  else if (temp <= TempSplitHigh) {
+    //Serial.print("mid t:");
+    result = double(myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempSplitLow) / (double)TempPerPixM);
+  } else {
+    //Serial.print("high t:");
+    result = double(myGLCD.getDisplayYSize() -  PixelYSplit2) + ((double)(TempSplitHigh - temp ) / (double)TempPerPixH);
+  }
+  //Serial.print (temp);
+  //Serial.print ( "y:");
+  //Serial.println(result);
+  if (result < 0) {
+    return 1;
+  }
+  else
+  { return result;
+  }
+
+
+}
+
 void ReturnSetPoints(Stream &port) {
   for (int x = 0; x < SetPointCount; x++) {
     if (x > 0) {
@@ -167,19 +205,25 @@ double getBeanAvgTemp(double t1, double t2) {
   }
 }
 
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-int ReadIntEprom(int loc, int min, int max, int def) {
-  int t;
-  t = EEPROM.read(loc);
-  if (t >= 0 && t < max) {
-    return t ;
-  }  else {
-    return def ;
-  }
+void saveChangedSetpoints(){
+
+    for (int xSetPoint = 0; xSetPoint < 6; xSetPoint++)
+        {
+         if (MySetPoints[xSetPoint].TemperatureNew != 0)
+         {
+             MySetPoints[xSetPoint].Temperature = MySetPoints[xSetPoint].TemperatureNew;
+             MySetPoints[xSetPoint].TemperatureNew = 0;
+             
+             EEPROM.put(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
+             
+
+         }
+      }
+      
+     
+        
+     
 }
-
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
 
 double SetpointforATime(double roastminutes) {
   int setpoint;

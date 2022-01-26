@@ -4,133 +4,6 @@
 // MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-void ClearIntergalSum() {
-  IntegralSum = 0;
-}
-
-void DrawHorControlMenu() {
-  //these ar the buttoms on top row starting about 1/2 across screen
-  DrawMenuButtons(myHorControlMenuDef);
-}
-
-void ProcessHorControlMenu(int i) {
-  //Serial.print("ProcessConrol");Serial.println (i);
-  if (errmsg == "Must be in Fan Only to start a roast"){
-       errmsg = "";
-       newerrmsg = true;
-  }
- 
-    switch (i) {
-    case 0:
-          
-    
-       
-       if ( State == STATEFANONLY) {
-              newState = STATEROASTING;
-       }
-       else if ((State == STATENOFANCURRENT || State == STATEOVERHEATED || State == STATECOOLING)) {
-              newState = STATEROASTING;
-              //Serial.println("ReStart Detected!");
-       }
-       else{
-           newerrmsg = true;
-           errmsg = "Must be in Fan Only to start a roast";
-      
-        
-       }
-       break;
-    case 1:
-      if (State != STATESTOPPED) {
-        newState = STATESTOPPED;
-       
-      } 
-      Serial.println(F("Stop Called!"));
-      break;
-    case 2:
-      FanAction();
-     
-      break;
-    case 3:
-      //Serial.println("Redraw graph detected");
-      for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
-      {
-          MySetPoints[xSetPoint].TemperatureNew = 0;
-      }
-
-
-      RefreshAction();
-     
-      break;
-    case 4:
-   
-      break;
-
-  }
-
-
-}
-
-void DrawHorFanMenu() {
-  //these ar the buttoms on top row starting about 1/2 across screen
-  DrawMenuButtons(myHorFanButtonControl);
-}
-
-void ProcessHorFanMenu(int i) {
- //Serial.print("ProcessFanMenu:");Serial.println (i);
-  int change = 0;
-  switch (i) {
-    case 0:
-      //decrease quickly
-      change = -10;
-      break;
-    case 1:
-      change = -3;
-       break;
-    case 2:
-      change = 3;
-      break;
-    case 3:
-      change = 10;       
-      break;
-    case 4:
-      FanSpeedPWMStart = FanSpeedPWM;
-      EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
-      FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
-      EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
-      //DrawFanGraph_ex(true);
-      break;
-  }
-  if (change != 0){    
-      if (FanSpeedPWMAutoMode == true){
-          
-          FanDeviation = FanDeviation + change;
-          
-          //the following call will corrext the FanDeviation if it is too large
-          SetAndSendFanPWMForATime(RoastMinutes);
-          //DrawFanGraph();
-      }
-      else
-      {
-        if (State == STATEFANONLY){
-            FanSpeedPWM = FanSpeedPWM + change;  
-              
-            if (FanSpeedPWM > 254){FanSpeedPWM = 254;}
-            if (FanSpeedPWM < 0){FanSpeedPWM = 0;}
-             
-             FanDeviation = FanSpeedPWM -FanSpeedPWMStart;
-              
-            sendFanPWM_Wire();
-        }
-            //DrawFanGraph();
-            //delay(5);
-      }
-      
-      }
-  
-  
-}
-
 void intializeMenus(){
     for (int i = 0; i < 10; i++)
     {
@@ -230,6 +103,129 @@ void intializeMenus(){
  
 }
 
+void DrawHorControlMenu() {
+  //these ar the buttoms on top row starting about 1/2 across screen
+  DrawMenuButtons(myHorControlMenuDef);
+}
+
+void ProcessHorControlMenu(int i) {
+  //Serial.print("ProcessConrol");Serial.println (i);
+  if (errmsg == "Must be in Fan Only to start a roast"){
+       errmsg = "";
+       newerrmsg = true;
+  }
+ 
+    switch (i) {
+    case 0:
+          
+    
+       
+       if ( State == STATEFANONLY) {
+              newState = STATEROASTING;
+       }
+       else if ((State == STATENOFANCURRENT || State == STATEOVERHEATED || State == STATECOOLING)) {
+              newState = STATEROASTING;
+              //Serial.println("ReStart Detected!");
+       }
+       else{
+           newerrmsg = true;
+           errmsg = "Must be in Fan Only to start a roast";
+      
+        
+       }
+       break;
+    case 1:
+      if (State != STATESTOPPED) {
+        newState = STATESTOPPED;
+       
+      } 
+      Serial.println(F("Stop Called!"));
+      break;
+    case 2:
+      if (State == STATESTOPPED) {
+        newState = STATEFANONLY;
+    }
+     
+      break;
+    case 3:
+      //Serial.println("Redraw graph detected");
+      for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++)
+      {
+          MySetPoints[xSetPoint].TemperatureNew = 0;
+      }
+
+
+      graphProfile();
+     
+      break;
+    case 4:
+   
+      break;
+
+  }
+
+
+}
+
+void DrawHorFanMenu() {
+  //these ar the buttoms on top row starting about 1/2 across screen
+  DrawMenuButtons(myHorFanButtonControl);
+}
+
+void ProcessHorFanMenu(int i) {
+ //Serial.print("ProcessFanMenu:");Serial.println (i);
+  int change = 0;
+  switch (i) {
+    case 0:
+      //decrease quickly
+      change = -10;
+      break;
+    case 1:
+      change = -3;
+       break;
+    case 2:
+      change = 3;
+      break;
+    case 3:
+      change = 10;       
+      break;
+    case 4:
+      FanSpeedPWMStart = FanSpeedPWM;
+      EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
+      FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
+      EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
+      //DrawFanGraph_ex(true);
+      break;
+  }
+  if (change != 0){    
+      if (FanSpeedPWMAutoMode == true){
+          
+          FanDeviation = FanDeviation + change;
+          
+          //the following call will corrext the FanDeviation if it is too large
+          SetAndSendFanPWMForATime(RoastMinutes);
+          //DrawFanGraph();
+      }
+      else
+      {
+        if (State == STATEFANONLY){
+            FanSpeedPWM = FanSpeedPWM + change;  
+              
+            if (FanSpeedPWM > 254){FanSpeedPWM = 254;}
+            if (FanSpeedPWM < 0){FanSpeedPWM = 0;}
+             
+             FanDeviation = FanSpeedPWM -FanSpeedPWMStart;
+              
+            sendFanPWM_Wire();
+        }
+            //DrawFanGraph();
+            //delay(5);
+      }
+      
+      }
+  
+  
+}
 
  void DrawVMenu(int iMenu, int iButton) {
     VerticalMenuPrior = VerticalMenuShowing; 
@@ -250,10 +246,10 @@ void intializeMenus(){
     DrawMenuButtons(myButtonVertMenus[iMenu]);
 }
 
-void ProcessEmptyVmenu(int i)
-{
+void ProcessEmptyVmenu(int i){
     DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
 }
+
 void ProcessBaseVMenu(int i) {
     //Serial.println ("ProcessVertMenu1:");Serial.println (i);
   
@@ -444,10 +440,10 @@ void Process_135_VMenu(int i) {
 
             if (FanSpeedPWMAutoDecrease + FanGraphMinPWM > FanSpeedPWMStart ){
                 FanSpeedPWMAutoDecrease = FanSpeedPWMStart -  FanGraphMinPWM;
-                 Serial.print("A:");Serial.println(FanGraphMinPWM);
-                  Serial.print("Aa:");Serial.println(FanSpeedPWMStart);
+                 //Serial.print("A:");Serial.println(FanGraphMinPWM);
+                 //Serial.print("Aa:");Serial.println(FanSpeedPWMStart);
     
-                  Serial.print("B:");Serial.println(FanSpeedPWMAutoDecrease);
+                 //Serial.print("B:");Serial.println(FanSpeedPWMAutoDecrease);
           
             }
             if (FanSpeedPWMAutoDecrease < 10){
@@ -747,103 +743,10 @@ void ProcessAdj_1_5_10_VMenu(int i) {
          UpdateDisplayDetailA(true);
       }
       
-      manualtemp = manualtemp + moveamount; //this many not be needed
+//      manualtemp = manualtemp + moveamount; //this many not be needed
     
     }
 
-}
-
-void EndRoastToggleAction() {
-//Serial.println("Toggle end action");
-    if (EndingSetPoint == 4) {
-        EndingSetPoint = 5;
-    }
-    else {
-        EndingSetPoint = 4;
-    }
-
-    graphProfile();
-}
-void FanAction() {
-    //Serial.println("Fan action");
-    if (State == STATESTOPPED) {
-        newState = STATEFANONLY;
-    }
-}
-void RefreshAction() {
-    graphProfile();
-}
-void StartAction() {
-    if (State == STATESTOPPED || State == STATEFANONLY) {
-        newState = STATEROASTING;
-        //Serial.println("Start Detected!");
-    }
-    else if (! (State == STATENOFANCURRENT || State == STATEOVERHEATED || State == STATECOOLING)) {
-        newState = STATEROASTING;
-        //Serial.println("ReStart Detected!");
-    }
-}
-void EndAction() {
-    if (State != STATESTOPPED) {
-        newState = STATESTOPPED;
-        //Serial.println("Stop Detected!");
-    }
-
-}
-void saveChangedSetpoints(){
-
-    for (int xSetPoint = 0; xSetPoint < 6; xSetPoint++)
-        {
-         if (MySetPoints[xSetPoint].TemperatureNew != 0)
-         {
-             MySetPoints[xSetPoint].Temperature = MySetPoints[xSetPoint].TemperatureNew;
-             MySetPoints[xSetPoint].TemperatureNew = 0;
-             
-             EEPROM.put(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
-             
-
-         }
-      }
-      
-     
-        
-     
-}
-void MoveLast3Point() {
-    spSelected = 3;
-    MoveAPoint(3);
-    spSelected = 4;
-    MoveAPoint(4);
-    spSelected = 5;
-    MoveAPoint(5);
-    spSelected = 6;
-}
-void MoveAPoint(int SetPoint) {
-  //Serial.print("MoveAPoint Setpoint:");Serial.print(SetPoint);Serial.print("moveamount:");Serial.println(moveamount);  
-  if (SetPoint > -1) {
-      if (MySetPoints[SetPoint].TemperatureNew == 0) {
-         MySetPoints[SetPoint].TemperatureNew = MySetPoints[SetPoint].Temperature;
-     }
-    int lastnew = MySetPoints[SetPoint].TemperatureNew;
-    MySetPoints[SetPoint].TemperatureNew = MySetPoints[SetPoint].TemperatureNew + moveamount;
-
-    delay(100);
-    DrawMovedSetPoint(SetPoint);
-    
-  }
-}
-void MoveGain(int amount) {
-  Gain = Gain + amount;
-  EEPROM.update(GAIN_EP, Gain);
-  delay(100);
-}
-void MoveIntegral(int amount) {
-  Integral = Integral + (float(amount) / 20);
-  delay(100);
-  EEPROM.update(INTEGRAL_EP , (int)(Integral * 100));
-}
-void MoveIntegralSum(int amount) {
-  IntegralSum = IntegralSum + amount;
 }
 
 void SetMenuBoundingRect(struct buttonsetdef &butdefset) {
@@ -891,11 +794,11 @@ void DrawMenuButtons(buttonsetdef &butdefset) {
     
     for (int i = 0; i < butdefset.ButtonCount; i++) {
         
-        DrawButton(butdefset, i, false);
+        DrawMenuButton(butdefset, i, false);
     }
 }
 
-void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip){    
+void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip){    
     int xTipOffset;
     int yTipOffset;
     rect DrawRect;
@@ -967,7 +870,7 @@ void DrawButton(buttonsetdef& butdefset, int i, boolean toggletooltip){
     }
 }
 
-void OutlineButton(buttonsetdef* butdefset, int i,uint16_t  color){
+void OutlineMenuButton(buttonsetdef* butdefset, int i,uint16_t  color){
         uint16_t  priorcolor = myGLCD.getColor();
         myGLCD.setColor(color);
         myGLCD_drawRect(butdefset->buttondefs[i].Rect);

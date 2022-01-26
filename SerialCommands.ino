@@ -1,4 +1,9 @@
-void processSerial()
+void processASerial(Stream &Serial)
+{
+  
+}
+void processSerial(Stream &Serial)
+
 {
   if (Serial.available() > 0) {
     // read the incoming byte:
@@ -83,9 +88,9 @@ void processSerial()
           Serial.print(F("Profile before:"));
           for (int x = 0; x < SetPointCount; x++) {
             Serial.print(x);
-            Serial.print("-");
+            Serial.print(F("-"));
             Serial.print( MySetPoints[x].Minutes);
-            Serial.print("-");
+            Serial.print(F("-"));
             Serial.print (MySetPoints[x].Temperature);
             Serial.print(F(":"));
           }
@@ -127,7 +132,7 @@ void processSerial()
           Serial.print(F("Profile  after:"));
           for (int x = 0; x < SetPointCount; x++) {
             Serial.print(x);
-            Serial.print("-");
+            Serial.print(F("-"));
             Serial.print( MySetPoints[x].Minutes);
             Serial.print("-");
             Serial.print (MySetPoints[x].Temperature);
@@ -180,7 +185,7 @@ void processSerial()
             case 49: //1
               {
                 serialOutPutStatusBySecond = !serialOutPutStatusBySecond;
-                Serial.print (F("1secondStatus:")); Serial.println(serialOutPutStatusBySecond);
+                Serial.print (F("1secondStatus:"));Serial.println(serialOutPutStatusBySecond);
 
                 serialOutPutStatusBy3Seconds = false;
                 break;
@@ -189,7 +194,7 @@ void processSerial()
             case 51: //3
               {
                 serialOutPutStatusBy3Seconds = !serialOutPutStatusBy3Seconds;
-                Serial.print (F("3secondStatus:")); Serial.println(serialOutPutStatusBySecond);
+                Serial.print (F("3secondStatus:"));Serial.println(serialOutPutStatusBySecond);
 
                 serialOutPutTempsBySecond = false;
                 break;
@@ -226,8 +231,8 @@ void processSerial()
           }
           Serial.println("");
 
-          Serial.print (F("G:")); Serial.print(Gain); Serial.print (F("I:")); Serial.println(Integral);
-          Serial.print (F("FanDecrease DelayMin:")); Serial.print(FanSpeedPWNDelayDecreaseByMinutes); Serial.print (F("Decrease:")); Serial.print(FanSpeedPWMAutoDecrease); Serial.print (F("DecreaseMinutes")); Serial.println(FanSpeedPWNDecreaseByMinutes);
+          Serial.print (F("G:"));Serial.print(Gain);Serial.print (F("I:"));Serial.println(Integral);
+          Serial.print (F("FanDecrease DelayMin:"));Serial.print(FanSpeedPWNDelayDecreaseByMinutes);Serial.print (F("Decrease:"));Serial.print(FanSpeedPWMAutoDecrease);Serial.print (F("DecreaseMinutes"));Serial.println(FanSpeedPWNDecreaseByMinutes);
 
 
 
@@ -240,7 +245,7 @@ void processSerial()
             case 49: //1
               {
                 serialOutPutTempsBySecond = !serialOutPutTempsBySecond;
-                Serial.print (F("1secondtemps:")); Serial.println(serialOutPutTempsBySecond);
+                Serial.print (F("1secondtemps:"));Serial.println(serialOutPutTempsBySecond);
 
                 serialOutPutTempsBy3Seconds = false;
                 break;
@@ -249,7 +254,7 @@ void processSerial()
             case 51: //3
               {
                 serialOutPutTempsBy3Seconds = !serialOutPutTempsBy3Seconds;
-                Serial.print (F("3secondtemps:")); Serial.println(serialOutPutTempsBySecond);
+                Serial.print (F("3secondtemps:"));Serial.println(serialOutPutTempsBySecond);
 
                 serialOutPutTempsBySecond = false;
                 break;
@@ -305,23 +310,23 @@ void processSerial()
 void SerialOutputStatus()
 {
 
-  Serial.print("Time:");
+  Serial.print(F("Time:"));
   Serial.print(RoastMinutes);
-  Serial.print("/");
+  Serial.print(F("/"));
   Serial.print(MySetPoints[SetPointCount - 1].Minutes);
-  Serial.print(" Bean Temp:");
+  Serial.print(F(" Bean Temp:"));
   Serial.print(TBeanAvgRoll.mean(), 1);
-  Serial.print("/");
+  Serial.print(F("/"));
   Serial.print(MySetPoints[SetPointCount - 1].Temperature);
-  Serial.print( " Delta:-");
+  Serial.print( F(" Delta:-"));
   Serial.print(Err, 1);
-  Serial.print(" Duty:");
+  Serial.print(F(" Duty:"));
   Serial.print(Duty, 2);
-  Serial.print(" Coil Temp:");
+  Serial.print(F(" Coil Temp:"));
   Serial.print(TCoilRoll.mean(), 1);
-  Serial.print(" FanPWM:");
+  Serial.print(F(" FanPWM:"));
   Serial.print(FanSpeedPWM);
-  Serial.print("/254");
+  Serial.print(F("/254"));
 
   Serial.println();
 

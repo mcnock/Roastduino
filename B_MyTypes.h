@@ -5,16 +5,22 @@
 #include <WString.h>
 
 
-typedef struct pointdb {
-  double x ;
-  double y ;
- } pointdb;
-
 
 typedef struct point {
-  int x = -1 ;
+  int x = 0 ;
   int y = -1;
  } point;
+
+typedef struct graphhistory {
+  int LineID  ;
+  int SkipCount;
+  int SkipLimit;
+  int PixelsP;
+  int ArraySize;
+  point *Pixels;
+ } graphhistory;
+
+
 
 typedef struct labelID {
   int MenuID = -1 ;

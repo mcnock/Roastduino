@@ -1,9 +1,4 @@
 
-//----------------------------------------------------------------------------------------------------------------------------------------------------
-// GRAPHSCREEN          GRAPHSCREEN          GRAPHSCREEN          GRAPHSCREEN          GRAPHSCREEN          GRAPHSCREEN          GRAPHSCREEN          GRAPHSCREEN
-//----------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 void graphProfile() {
 
   //draw scales
@@ -189,7 +184,7 @@ void graphProfile() {
 
   //Serial.println("AAC");
 
-  ReDrawROLLAVGLINEFromArray(ORANGE);
+  ReDrawFromHistoryArray(ORANGE, ROLLAVGLINEID);
   //Serial.println("AAD");
 
   DrawHorControlMenu();
@@ -215,6 +210,121 @@ void graphProfile() {
   //Serial.println("AAE");
 
   UpdateDisplayDetailA(false);
+}
+
+void graphFanProfile() {
+
+  uint16_t fancolor = AQUA;
+  uint16_t fanback = AQUA;
+
+  myGLCD.setColor(fancolor);
+
+  //Serial.println("starting graphFanProfile");
+
+  PixelsPerMinFan = (int)FanGraphXWidth / MySetPoints[EndingSetPoint].Minutes;
+
+  int FanGraphTop = FanGraphBottom - FanGraphHeight;
+  int FanXEnd = FanGraphXStart + ((PixelsPerMinFan * MySetPoints[EndingSetPoint].Minutes) ); //calc the ending of graph a max time
+
+
+  int upperlineY = YforAFan(FanSpeedPWMStart)    ;
+  int upperlineX2 =  FanGraphXStart + (PixelsPerMinFan * (FanSpeedPWNDelayDecreaseByMinutes )) ;
+  int lowPWM = FanSpeedPWMStart - FanSpeedPWMAutoDecrease;
+  int lowerlineY = YforAFan(lowPWM) ;
+  int lowerlineX1 =  FanGraphXStart + ((PixelsPerMinFan * (FanSpeedPWNDecreaseByMinutes + FanSpeedPWNDelayDecreaseByMinutes)) )  ;
+  int midPWM  =  FanSpeedPWMStart - FanSpeedPWMAutoDecrease / 2;
+  int midPWMlineY = YforAFan(midPWM) ;
+  int yTemp = 0;
+  int xTemp = 0;
+
+  myGLCD.setFont(SmallFont);
+
+  int xlable = FanGraphXStart - myGLCD.getFontXsize() * 3 - 2;
+
+  //block out area
+
+  myGLCD.setFont(SmallFont);
+  myGLCD.setColor(BLACK);
+
+  myGLCD.fillRect(xlable, FanGraphTop  , FanXEnd , FanGraphBottom) ;
+  myGLCD.setBackColor(BLACK);
+  myGLCD.setColor(fancolor);
+  myGLCD.drawRect(FanGraphXStart , FanGraphTop  , FanXEnd , FanGraphBottom );
+
+
+
+  //draw vertical time grid lines and labels
+  myGLCD.setColor(100, 100, 100);
+
+  for (int t = 3; t < MySetPoints[EndingSetPoint].Minutes; t = t + 3) {
+    int q = PixelsPerMinFan * t + FanGraphXStart;
+    myGLCD.drawLine( q, FanGraphTop, q, FanGraphBottom );
+    if (t < 10) {
+      myGLCD.printNumI(t , q - myGLCD.getFontXsize() , FanGraphBottom - myGLCD.getFontYsize() - 1  );
+      myGLCD.print ("m",  q, FanGraphBottom  - myGLCD.getFontYsize() - 1);
+    } else
+    {
+      myGLCD.printNumI(t , q - (myGLCD.getFontXsize() * 1.33) , FanGraphBottom - myGLCD.getFontYsize() - 1   );
+      myGLCD.print ("m",  q + (myGLCD.getFontXsize() * 1.33), FanGraphBottom  - myGLCD.getFontYsize() - 1);
+    }
+  }
+
+  //draw horizontal pwm grid lines and labels
+  myGLCD.setColor(100, 100, 100);
+  int xgridpwm = 0;
+  for (xgridpwm = FanGraphMinPWM; xgridpwm < FanGraphMaxPWM ; xgridpwm = xgridpwm + FanGraphHorGridSpacingPWM) {
+    int Y = YforAFan(xgridpwm);
+    if (Y != FanGraphBottom and xgridpwm != FanGraphTop) //Do not override top and bottom
+    {
+      myGLCD.drawLine(FanGraphXStart, Y, FanXEnd, Y );
+    }
+    myGLCD.printNumI(xgridpwm    , xlable , Y - (myGLCD.getFontYsize() / 2)  );
+  }
+
+  if (xgridpwm < FanGraphMaxPWM) {
+    if (FanGraphMaxPWM - xgridpwm >= 10) {
+      myGLCD.printNumI(xgridpwm  , xlable , FanGraphTop - (myGLCD.getFontYsize() / 2)  );
+    }
+
+  }
+
+  //draw fan profile
+  myGLCD.setColor(WHITE);
+  myGLCD.drawLine(FanGraphXStart, upperlineY, upperlineX2, upperlineY );
+  myGLCD.drawLine(upperlineX2, upperlineY, lowerlineX1, lowerlineY );
+  myGLCD.drawLine(lowerlineX1, lowerlineY , FanXEnd, lowerlineY  );
+
+  //label fan profile start and end lables
+
+
+  //draw probile settings lables
+  //A
+  myGLCD.print("A"  , upperlineX2 + 2                   , upperlineY + 3  );
+  myGLCD.printNumI(FanSpeedPWNDelayDecreaseByMinutes , upperlineX2 + myGLCD.getFontXsize() + 3 , upperlineY + 3  );
+  myGLCD.print("m"  , upperlineX2 + (myGLCD.getFontXsize() * 2) + 2 , upperlineY + 3  );
+
+  myGLCD.printNumI(FanSpeedPWMStart  , upperlineX2 + 2 , upperlineY - (myGLCD.getFontYsize()) - 1  );
+
+  //B
+  int xtemp =  FanGraphXStart + (PixelsPerMinFan * (FanSpeedPWNDelayDecreaseByMinutes + FanSpeedPWNDecreaseByMinutes / 2 )) ;
+  myGLCD.print("B"                          , xtemp     , midPWMlineY - myGLCD.getFontYsize() / 2  );
+  myGLCD.printNumI(FanSpeedPWMAutoDecrease  , xtemp + myGLCD.getFontXsize()   , midPWMlineY - myGLCD.getFontYsize() / 2  );
+
+  //C
+
+  myGLCD.print("C"        , lowerlineX1     , lowerlineY + 3  );
+  myGLCD.printNumI(FanSpeedPWNDelayDecreaseByMinutes + FanSpeedPWNDecreaseByMinutes,  lowerlineX1 + myGLCD.getFontXsize()  , lowerlineY + 3  );
+  myGLCD.print("m"        , lowerlineX1 + (myGLCD.getFontXsize() * 3) , lowerlineY + 3  );
+
+  myGLCD.printNumI(lowPWM , lowerlineX1     , lowerlineY - (myGLCD.getFontYsize()) - 1  );
+
+
+  //Serial.println("here we go");
+
+
+
+  ReDrawFromHistoryArray(ORANGE, FANSPEEDLINEID);
+  ////UpdateFanPWMValuesDisplay();
 }
 
 void UpdateDisplayDetailA(boolean bValuesOnly) {
@@ -268,7 +378,7 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
     row = row + rowheight;
     myGLCD.print("Skp : ", col3, row);
     int R =   TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
- 
+
     myGLCD.printNumI(R, col4 , row, 6, ' ');
     row = row + rowheight;
   }
@@ -307,6 +417,7 @@ void UpdateDisplayDetailA(boolean bValuesOnly) {
   }
   //Serial.println("AAG");
 }
+
 void UpdateRealTime(boolean OnlyChanges) {
 
   if (lastStateUpdated != State || OnlyChanges == false) {
@@ -393,6 +504,7 @@ void UpdateRealTime(boolean OnlyChanges) {
   }
 
 }
+
 void UpdateEachSecond(boolean bValuesOnly) {
   myGLCD.setFont(BigFont);
 
@@ -422,7 +534,7 @@ void UpdateEachSecond(boolean bValuesOnly) {
 
   }
   else
-  {
+  { //this is copy of above with myLCD commented out
     row = row + rowheight;
     //myGLCD.print("Tvg :",col , row);  myGLCD.print("F",col5 , row);
     myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 4, ' ');
@@ -442,131 +554,9 @@ void UpdateEachSecond(boolean bValuesOnly) {
   }
 
 }
-void FanRestart()
-{
-  //            XStartFan_Last = 0;
-  //
-  //            X3Fan_Last = FanGraphColStart - 10;
-  //            YBotFan_Last = Y1;
-  //            XEndFan_Last = X2;
-
-}
-void graphFanProfile() {
-
-  uint16_t fancolor = AQUA;
-  uint16_t fanback = AQUA;
-
-  myGLCD.setColor(fancolor);
-
-  Serial.println("starting graphFanProfile");
-
-  PixelsPerMinFan = (int)FanGraphXWidth / MySetPoints[EndingSetPoint].Minutes;
-
-  int FanGraphTop = FanGraphBottom - FanGraphHeight;
-  int FanXEnd = FanGraphXStart + ((PixelsPerMinFan * MySetPoints[EndingSetPoint].Minutes) ); //calc the ending of graph a max time
-
-
-  int upperlineY = YforAFan(FanSpeedPWMStart)    ;
-  int upperlineX2 =  FanGraphXStart + (PixelsPerMinFan * (FanSpeedPWNDelayDecreaseByMinutes )) ;
-  int lowPWM = FanSpeedPWMStart - FanSpeedPWMAutoDecrease;
-  int lowerlineY = YforAFan(lowPWM) ;
-  int lowerlineX1 =  FanGraphXStart + ((PixelsPerMinFan * (FanSpeedPWNDecreaseByMinutes + FanSpeedPWNDelayDecreaseByMinutes)) )  ;
-  int midPWM  =  FanSpeedPWMStart - FanSpeedPWMAutoDecrease / 2;
-  int midPWMlineY = YforAFan(midPWM) ;
-  int yTemp = 0;
-  int xTemp = 0;
-
-  myGLCD.setFont(SmallFont);
-
-  int xlable = FanGraphXStart - myGLCD.getFontXsize() * 3 - 2;
-
-  //block out area
-
-  myGLCD.setFont(SmallFont);
-  myGLCD.setColor(BLACK);
-
-  myGLCD.fillRect(xlable, FanGraphTop  , FanXEnd , FanGraphBottom) ;
-  myGLCD.setBackColor(BLACK);
-  myGLCD.setColor(fancolor);
-  myGLCD.drawRect(FanGraphXStart , FanGraphTop  , FanXEnd , FanGraphBottom );
-
-
-
-  //draw vertical time grid lines and labels
-  myGLCD.setColor(100, 100, 100);
-
-  for (int t = 3; t < MySetPoints[EndingSetPoint].Minutes; t = t + 3) {
-    int q = PixelsPerMinFan * t + FanGraphXStart;
-    myGLCD.drawLine( q, FanGraphTop, q, FanGraphBottom );
-    if (t < 10) {
-      myGLCD.printNumI(t , q - myGLCD.getFontXsize() , FanGraphBottom - myGLCD.getFontYsize() - 1  );
-      myGLCD.print ("m",  q, FanGraphBottom  - myGLCD.getFontYsize() - 1);
-    } else
-    {
-      myGLCD.printNumI(t , q - (myGLCD.getFontXsize() * 1.33) , FanGraphBottom - myGLCD.getFontYsize() - 1   );
-      myGLCD.print ("m",  q + (myGLCD.getFontXsize() * 1.33), FanGraphBottom  - myGLCD.getFontYsize() - 1);
-    }
-  }
-
-  //draw horizontal pwm grid lines and labels
-  myGLCD.setColor(100, 100, 100);
-  int xgridpwm = 0;
-  for (xgridpwm =FanGraphMinPWM; xgridpwm < FanGraphMaxPWM ; xgridpwm = xgridpwm + FanGraphHorGridSpacingPWM) {
-    int Y = YforAFan(xgridpwm);  
-    if (Y != FanGraphBottom and xgridpwm !=FanGraphTop) //Do not override top and bottom
-    { 
-        myGLCD.drawLine(FanGraphXStart, Y, FanXEnd, Y );
-    }
-    myGLCD.printNumI(xgridpwm    , xlable , Y - (myGLCD.getFontYsize() / 2)  );
-  }
-
-  if (xgridpwm < FanGraphMaxPWM) {
-      if (FanGraphMaxPWM - xgridpwm >= 10) {
-        myGLCD.printNumI(xgridpwm  , xlable , FanGraphTop - (myGLCD.getFontYsize() / 2)  );
-      }
-    
-  }
-
-  //draw fan profile
-  myGLCD.setColor(WHITE);
-  myGLCD.drawLine(FanGraphXStart, upperlineY, upperlineX2, upperlineY );
-  myGLCD.drawLine(upperlineX2, upperlineY, lowerlineX1, lowerlineY );
-  myGLCD.drawLine(lowerlineX1, lowerlineY , FanXEnd, lowerlineY  );
-
- //label fan profile start and end lables
-  
-
-  //draw probile settings lables
-  //A
-  myGLCD.print("A"  , upperlineX2 + 2                   , upperlineY + 3  );
-  myGLCD.printNumI(FanSpeedPWNDelayDecreaseByMinutes , upperlineX2 + myGLCD.getFontXsize() + 3 , upperlineY + 3  );
-  myGLCD.print("m"  , upperlineX2 + (myGLCD.getFontXsize() * 2) + 2 , upperlineY + 3  );
-
-  myGLCD.printNumI(FanSpeedPWMStart  , upperlineX2 + 2 , upperlineY - (myGLCD.getFontYsize()) - 1  );
- 
-  //B
-  int xtemp =  FanGraphXStart + (PixelsPerMinFan * (FanSpeedPWNDelayDecreaseByMinutes + FanSpeedPWNDecreaseByMinutes / 2 )) ;
-  myGLCD.print("B"                          , xtemp     , midPWMlineY - myGLCD.getFontYsize() / 2  );
-  myGLCD.printNumI(FanSpeedPWMAutoDecrease  , xtemp + myGLCD.getFontXsize()   , midPWMlineY - myGLCD.getFontYsize() / 2  );
-
-  //C
-  
-  myGLCD.print("C"        , lowerlineX1     , lowerlineY + 3  );
-  myGLCD.printNumI(FanSpeedPWNDelayDecreaseByMinutes + FanSpeedPWNDecreaseByMinutes,  lowerlineX1 + myGLCD.getFontXsize()  , lowerlineY + 3  );
-  myGLCD.print("m"        ,lowerlineX1 + (myGLCD.getFontXsize() * 3) , lowerlineY + 3  );
-
-  myGLCD.printNumI(lowPWM , lowerlineX1     , lowerlineY - (myGLCD.getFontYsize()) - 1  );
-  
-
-  Serial.println("here we go");
-
-
-
-  ReDrawFANromArray(ORANGE);
-  ////UpdateFanPWMValuesDisplay();
-}
 
 void UpdateFanPWMValuesDisplay() {
+
   myGLCD.setFont(BigFont);
 
   int rowheight = 20;
@@ -575,16 +565,12 @@ void UpdateFanPWMValuesDisplay() {
   int col1 = col + myGLCD.getFontXsize() * 4 ;
   int col2 = col1 + myGLCD.getFontXsize() * 3  ;
 
-
   myGLCD.setColor(AQUA) ;
-
-  myGLCD.printNumI(FanSpeedPWM, col , row);
+  myGLCD.printNumI(FanSpeedPWM, col , row , 3, ' ');
   myGLCD.print("Dev", col1 , row, 3);
-  myGLCD.printNumI(FanDeviation, col2 , row);
-
+  myGLCD.printNumI(FanDeviation, col2 , row , 3 , ' ');
 
 }
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 void StartLinebyTemp(int temp, int lineID, uint16_t color) {
 
@@ -601,71 +587,63 @@ void StartLinebyTemp(int temp, int lineID, uint16_t color) {
 
 void StartLinebyXAndY(int X, int Y, int lineID, uint16_t color) {
 
-  LastXforLineID[lineID] = X;
-  LastYforLineID[lineID] = Y;
+  LastforLineID[lineID].x = X;
+  LastforLineID[lineID].y = Y;
 
   LineColorforLineID[lineID] = color;
-
-  if (lineID == ROLLAVGLINEID) {
-    for (int X = 0; X < LastPixelArrayCount; X++) {
-      myLastTempGraphPixels[X].y = -1;
+  int HistoryID = GetHistoryIDfromLineID(lineID);
+  if (HistoryID > -1) {
+    for (int i = 0; i < GraphHistory[HistoryID].ArraySize; i++) {
+      GraphHistory[HistoryID].Pixels[i].y = -1;
     }
-    myLastTempGraphPixels[0].x = X;
-    myLastTempGraphPixels[0].y = Y;
-    myLastTempGraphPixelsP = 0;
+    GraphHistory[HistoryID].Pixels[0].x = X;
+    GraphHistory[HistoryID].Pixels[0].y = Y;
+    GraphHistory[HistoryID].PixelsP = 0;
+    GraphHistory[HistoryID].SkipCount = 0;
+  }
+  else  {
+    Serial.print(F("No history to reset starting lineID"));Serial.println(lineID);
+
   }
 
-  if (lineID == FANSPEEDLINEID) {
-    for (int X = 0; X < LastPixelArrayCount; X++) {
-      myLastFanGraphPixels[X].y = -1;
-    }
-    myLastFanGraphPixels[0].x = X;
-    myLastFanGraphPixels[0].y = Y;
-    myLastFanGraphPixelsP = 0;
-  }
-
+ 
 
 
 }
 
 void AddLinebyXY(uint16_t &newX, uint16_t &newY,  int lineID) {
+  //Serial.print("Adding line by xy line id:");Serial.println(lineID);
   myGLCD.setColor(LineColorforLineID[lineID]);//LineColorforLineID[lineID]);
   //x,y,x,y
-  myGLCD.drawLine(LastXforLineID[lineID], LastYforLineID[lineID], newX, newY );
-  LastXforLineID[lineID] = newX;
-  LastYforLineID[lineID] = newY;
-  if (lineID == ROLLAVGLINEID) {
-    if (SkipTempCount >= SkipTempLimit)
-    {
-          myLastTempGraphPixelsP++;
-          Serial.print("save p"); Serial.print(myLastTempGraphPixelsP); Serial.print(" x"); Serial.print(newX); Serial.print(" y"); Serial.println(newY);
-
-      myLastTempGraphPixels[ myLastTempGraphPixelsP].x = newX;
-      myLastTempGraphPixels[ myLastTempGraphPixelsP].y = newY;
+  myGLCD.drawLine(LastforLineID[lineID].x, LastforLineID[lineID].y, newX, newY );
+  LastforLineID[lineID].x = newX;
+  LastforLineID[lineID].y = newY;
+  int HistoryID = GetHistoryIDfromLineID(lineID);
+  if (HistoryID > -1) {
+    if (GraphHistory[HistoryID].SkipCount >= GraphHistory[HistoryID].SkipLimit) {
+      GraphHistory[HistoryID].SkipCount = 0;
+      if (GraphHistory[HistoryID].PixelsP < (GraphHistory[HistoryID].ArraySize - 1)) {
+        GraphHistory[HistoryID].PixelsP++;
+        //Serial.print("save p");Serial.print(myLastTempGraphPixelsP);Serial.print(" x");Serial.print(newX);Serial.print(" y");Serial.println(newY);
+        GraphHistory[HistoryID].Pixels[ GraphHistory[HistoryID].PixelsP].x = newX;
+        GraphHistory[HistoryID].Pixels[ GraphHistory[HistoryID].PixelsP].y = newY;
+      }
+      else {
+        Serial.print(F("ERROR:LastTemp array size exceeded for LineID:"));Serial.println(lineID);
+      }
     }
-    else
-    {
-      SkipTempCount++;
+    else {
+      GraphHistory[HistoryID].SkipCount++;
     }
-
+  }
+  else  {
+    Serial.print(F("Add to history  not available for lineID"));Serial.println(lineID);
 
   }
-  if (lineID == FANSPEEDLINEID) {
 
-    if (SkipFanCount >= SkipFanLimit)
-    {
-      SkipFanCount = 0;
-      myLastFanGraphPixelsP++;
-      
-      myLastFanGraphPixels[ myLastFanGraphPixelsP].x = newX;
-      myLastFanGraphPixels[ myLastFanGraphPixelsP].y = newY;
-    }
-    else
-    {
-      SkipFanCount++;
-    }
 
-  }
+
+  
 }
 
 void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
@@ -676,7 +654,7 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
 }
 
 void AddLinebyTimeAndFan(double timemins) {
-  //Serial.print("FanSpeedPWM:");Serial.print(FanSpeedPWM); Serial.print(" Time:");Serial.println(timemins);
+  //Serial.print("FanSpeedPWM:");Serial.print(FanSpeedPWM);Serial.print(" Time:");Serial.println(timemins);
   uint16_t newY = (uint16_t)YforAFan(FanSpeedPWM);
   uint16_t newX = (uint16_t)(FanGraphXStart + (PixelsPerMinFan * timemins));
 
@@ -737,8 +715,8 @@ void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int r
   //myGLCD.setColor(0,150,0);
   //Serial.print('a');Serial.print(newX);Serial.print( "   ");;Serial.print(timemins);Serial.print( "   ");Serial.println(temp);
   myGLCD.fillCircle(newX, newY, radius );
-  LastXforLineID[lineID] = newX;
-  LastYforLineID[lineID] = newY;
+  LastforLineID[lineID].x = newX;
+  LastforLineID[lineID].y = newY;
 
 }
 
@@ -754,70 +732,60 @@ void AddPointbyTimeandTemp(double timemins, int temp, int color, int radius) {
 
 }
 
-void ReDrawROLLAVGLINEFromArray(int color) {
-  LastXforLineID[ROLLAVGLINEID] = myLastTempGraphPixels[0].x;
-  LastYforLineID[ROLLAVGLINEID] = myLastTempGraphPixels[0].y;
+void ReDrawFromHistoryArray(int color, int LINEID ) {
+  int HistoryID = GetHistoryIDfromLineID(LINEID);
+  if (HistoryID > -1) {
+    LastforLineID[LINEID].x = GraphHistory[HistoryID].Pixels[0].x;
+    LastforLineID[LINEID].y = GraphHistory[HistoryID].Pixels[0].y;
+    for (int i = 1; i < GraphHistory[HistoryID].ArraySize; i++) {
+      if (GraphHistory[HistoryID].Pixels[i].y > -1 ) {
+        //Serial.print("draw p");Serial.print(X);Serial.print(" x");Serial.print(GraphHistory[i].Pixels[X].x);Serial.print(" y");Serial.println(GraphHistory[i].Pixels[X].y);
+        myGLCD.drawLine(LastforLineID[LINEID].x, LastforLineID[LINEID].y , GraphHistory[HistoryID].Pixels[i].x, GraphHistory[HistoryID].Pixels[i].y);
+        LastforLineID[LINEID].x = GraphHistory[HistoryID].Pixels[i].x;
+        LastforLineID[LINEID].y = GraphHistory[HistoryID].Pixels[i].y;
+
+      }
+      else {
+        //Serial.println ("Exit Draw lineid");Serial.print(LINEID);Serial.print(" at:");Serial.println(i);
+        break;
+      }
+
+    }
+    return;
+  }
+  else
+  {
+    Serial.print(F("Draw from  history  not available for lineID"));Serial.println(LINEID);
+   
+  }
+}
+
+
+
+//void XReDrawROLLAVGLINEFromArray(int color) {
+//  LastforLineID[ROLLAVGLINEID].x = myLastTempGraphPixels[0].x;
+//  LastforLineID[ROLLAVGLINEID].y = myLastTempGraphPixels[0].y;
   //Serial.print ("ReDrawROLLAVGLINEFromArray ");Serial.println(sizeof(myLastTempGraphPixels));
-  myGLCD.setColor(color);
-  for (int X = 1; X < LastPixelArrayCount; X++) {
-    if (myLastTempGraphPixels[X].y > -1 ) {
-      Serial.print("draw p"); Serial.print(X); Serial.print(" x"); Serial.print(myLastTempGraphPixels[X].x); Serial.print(" y"); Serial.println(myLastTempGraphPixels[X].y);
-      
-       myGLCD.drawLine(LastXforLineID[1], LastYforLineID[1] , myLastTempGraphPixels[X].x, myLastTempGraphPixels[X].y);
+//  myGLCD.setColor(color);
+//  for (int X = 1; X < HistoryPixelArraySize; X++) {
+//    if (myLastTempGraphPixels[X].y > -1 ) {
+      //Serial.print("draw p");Serial.print(X);Serial.print(" x");Serial.print(myLastTempGraphPixels[X].x);Serial.print(" y");Serial.println(myLastTempGraphPixels[X].y);
+
+//      myGLCD.drawLine(LastforLineID[ROLLAVGLINEID].x, LastforLineID[ROLLAVGLINEID].y , myLastTempGraphPixels[X].x, myLastTempGraphPixels[X].y);
       //BoldLine(LastXforLineID[1], LastYforLineID[1] , X, myLastGraphYPixels[X], color);
-      LastXforLineID[ROLLAVGLINEID] = myLastTempGraphPixels[X].x;
-      LastYforLineID[ROLLAVGLINEID] = myLastTempGraphPixels[X].y;
-      myLastTempGraphPixelsP++;
-    }
-    else
-    { break;
-    }
-
-  }
-}
-void ReDrawFANromArray(int color) {
-  LastXforLineID[FANSPEEDLINEID] = myLastFanGraphPixels[0].x;
-  LastYforLineID[FANSPEEDLINEID] = myLastFanGraphPixels[0].y;
-
-  for (int X = 1; X < LastPixelArrayCount; X++) {
-    if (myLastFanGraphPixels[X].y > -1 ) {
-      //Serial.print("draw p"); Serial.print(X); Serial.print(" x"); Serial.print(myLastFanGraphPixels[X].x); Serial.print(" y"); Serial.println(myLastFanGraphPixels[X].y);
-      myGLCD.drawLine(LastXforLineID[FANSPEEDLINEID], LastYforLineID[FANSPEEDLINEID] , myLastFanGraphPixels[X].x, myLastFanGraphPixels[X].y);
-      LastXforLineID[FANSPEEDLINEID] = myLastFanGraphPixels[X].x;
-      LastYforLineID[FANSPEEDLINEID] = myLastFanGraphPixels[X].y;
-
-    }
-    else {
-      Serial.println ("Exit Draw Fan at:"); Serial.println(myLastFanGraphPixelsP);
-      break;
-    }
-
-  }
+ //     LastforLineID[ROLLAVGLINEID].x = myLastTempGraphPixels[X].x;
+ //     LastforLineID[ROLLAVGLINEID].y = myLastTempGraphPixels[X].y;
+ //     myLastTempGraphPixelsP++;
+//    }
+//    else
+//    { break;
+//    }
+//
+//  }
+//}
 
 
 
-
-
-
-  return;
-  return;
-  myGLCD.setColor(color);
-  return;
-  for (int X = 1; X < LastPixelArrayCount; X++) {
-    if (myLastFanGraphPixels[X].y > -1 ) {
-      //Serial.println ("DrawRealTime ");Serial.println(" color:");Serial.println(color);
-      myGLCD.drawLine(LastXforLineID[FANSPEEDLINEID], LastYforLineID[FANSPEEDLINEID] , myLastFanGraphPixels[X].x, myLastFanGraphPixels[X].y);
-      LastXforLineID[1] = myLastTempGraphPixels[X].x;
-      LastYforLineID[1] = myLastTempGraphPixels[X].y;
-      myLastFanGraphPixelsP++;
-    }
-    else {
-      break;
-    }
-
-  }
-}
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void BoldLine(int x, int y, int newX, int newY, int color) {
   myGLCD.setColor(color);
   myGLCD.drawLine(x, y + 1, newX, newY + 1);
@@ -825,7 +793,7 @@ void BoldLine(int x, int y, int newX, int newY, int color) {
   myGLCD.drawLine(x + 1, y + 1, newX + 1, newY + 1);
   myGLCD.drawLine(x + 1, y, newX + 1, newY);
 }
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double timemins2, int temp2, int color) {
   if (log == true)
   {
@@ -841,39 +809,37 @@ void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double time
   myGLCD.setColor(color);
   myGLCD.drawLine(PixelsPerMin * timemins1, YforATemp(temp1), PixelsPerMin * timemins2, YforATemp(temp2));
 }
-//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-int  YforATemp(double temp) {
-  int result = 0;
-  if ( temp < 0.0 ) {
-    temp = 0.0;
-  }
-  if (temp <= TempSplitLow) {
-    result = (myGLCD.getDisplayYSize() - ((double)temp / TempPerPixL));
-    //Serial.print("low t:");
-  }
-  else if (temp <= TempSplitHigh) {
-    //Serial.print("mid t:");
-    result = double(myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempSplitLow) / (double)TempPerPixM);
-  } else {
-    //Serial.print("high t:");
-    result = double(myGLCD.getDisplayYSize() -  PixelYSplit2) + ((double)(TempSplitHigh - temp ) / (double)TempPerPixH);
-  }
-  //Serial.print (temp);
-  //Serial.print ( "y:");
-  //Serial.println(result);
-  if (result < 0) {
-    return 1;
-  }
-  else
-  { return result;
-  }
 
-
+void MoveLast3Point() {
+  spSelected = 3;
+  MoveAPoint(3);
+  spSelected = 4;
+  MoveAPoint(4);
+  spSelected = 5;
+  MoveAPoint(5);
+  spSelected = 6;
 }
-void myGLCD_fillRect(rect& Rect) {
+
+void MoveAPoint(int SetPoint) {
+  //Serial.print("MoveAPoint Setpoint:");Serial.print(SetPoint);Serial.print("moveamount:");Serial.println(moveamount);
+  if (SetPoint > -1) {
+    if (MySetPoints[SetPoint].TemperatureNew == 0) {
+      MySetPoints[SetPoint].TemperatureNew = MySetPoints[SetPoint].Temperature;
+    }
+    int lastnew = MySetPoints[SetPoint].TemperatureNew;
+    MySetPoints[SetPoint].TemperatureNew = MySetPoints[SetPoint].TemperatureNew + moveamount;
+
+    delay(100);
+    DrawMovedSetPoint(SetPoint);
+
+  }
+}
+
+void myGLCD_fillRect(rect & Rect) {
   myGLCD.fillRect(Rect.x, Rect.y, Rect.xmax, Rect.ymax);
 }
-void myGLCD_drawRect(rect& Rect) {
+
+void myGLCD_drawRect(rect & Rect) {
   myGLCD.drawRect(Rect.x, Rect.y, Rect.xmax, Rect.ymax);
 }
 

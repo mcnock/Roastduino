@@ -5,7 +5,7 @@
 void   TouchClick()
 {
 
-     OutlineButton(TouchButtonSet,TouchButton,BLACK);
+     OutlineMenuButton(TouchButtonSet,TouchButton,BLACK);
 
      //Serial.print("Touch Click calling menuID:");Serial.print(TouchButtonSet->menuID);Serial.print(" buttonID:");Serial.println(TouchButton);
      
@@ -17,9 +17,9 @@ void   TouchClick()
 void   TouchLongPress()
 {
 
-       OutlineButton(TouchButtonSet,TouchButton,BLACK);
+       OutlineMenuButton(TouchButtonSet,TouchButton,BLACK);
     
-       DrawButton(*TouchButtonSet, TouchButton, true);
+       DrawMenuButton(*TouchButtonSet, TouchButton, true);
 }
              
 
@@ -56,7 +56,7 @@ boolean DetectTouch()
     
     }
 //Serial.print("found button presss menu:");Serial.print(TouchButtonSet->menuID);Serial.print(" button");Serial.println(TouchButton);
-    OutlineButton(TouchButtonSet,TouchButton,WHITE);
+    OutlineMenuButton(TouchButtonSet,TouchButton,WHITE);
     return true;
 }
 
