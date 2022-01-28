@@ -232,7 +232,8 @@ void processSerial(Stream &Serial)
           Serial.println("");
 
           Serial.print (F("G:"));Serial.print(Gain);Serial.print (F("I:"));Serial.println(Integral);
-          Serial.print (F("FanDecrease DelayMin:"));Serial.print(FanSpeedPWNDelayDecreaseByMinutes);Serial.print (F("Decrease:"));Serial.print(FanSpeedPWMAutoDecrease);Serial.print (F("DecreaseMinutes"));Serial.println(FanSpeedPWNDecreaseByMinutes);
+          //Serial.print (F("FanDecrease DelayMin:"));Serial.println(FanSpeedPWNMinutesToA);
+          //Serial.print (F("Decrease:"));Serial.print(FanSpeedPWMAutoDecrease);Serial.print (F("DecreaseMinutes"));Serial.println(FanSpeedPWNDecreaseByMinutes);
 
 
 

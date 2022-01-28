@@ -190,11 +190,7 @@ void ProcessHorFanMenu(int i) {
       change = 10;       
       break;
     case 4:
-      FanSpeedPWMStart = FanSpeedPWM;
-      EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
-      FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
-      EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
-      //DrawFanGraph_ex(true);
+      
       break;
   }
   if (change != 0){    
@@ -214,7 +210,7 @@ void ProcessHorFanMenu(int i) {
             if (FanSpeedPWM > 254){FanSpeedPWM = 254;}
             if (FanSpeedPWM < 0){FanSpeedPWM = 0;}
              
-             FanDeviation = FanSpeedPWM -FanSpeedPWMStart;
+             FanDeviation = FanSpeedPWM -FanSetPoints[0].PWM;
               
             sendFanPWM_Wire();
         }
@@ -231,14 +227,8 @@ void ProcessHorFanMenu(int i) {
     VerticalMenuPrior = VerticalMenuShowing; 
     VerticalMenuShowing = iMenu;
     myButtonVertMenus[iMenu].inputbutton = iButton;
-    //Serial.print("draw v menu");Serial.println(iMenu);
-    //Serial_println_rect(myButtonVertMenus[iMenu].bounding);
-    
     if (iMenu == VmenuEmpty && iButton != -1)
     {
-        //Serial.println ("blacking out");
-    
-        //Serial_println_rect(myButtonVertMenus[Vmenubase].bounding);
         myGLCD.setColor(BLACK);
         myGLCD_drawRect(myButtonVertMenus[Vmenubase].bounding);
         myGLCD_fillRect(myButtonVertMenus[Vmenubase].bounding);
@@ -412,9 +402,9 @@ void Process_135_VMenu(int i) {
           MoveLast3Point();
        }
        if (spSelected == 9 ) {
-          FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + moveamount;
-           sendFanPWM_Wire();
-           graphFanProfile();
+          //FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + moveamount;
+          // sendFanPWM_Wire();
+          // graphFanProfile();
            
            spSelected =-1;
        }
@@ -424,35 +414,57 @@ void Process_135_VMenu(int i) {
            //Serial.print("fan125 button clicked:");Serial.println(i);
            //Serial.print("fan125 inputbutton:");Serial.println(myButtonVertMenus[VerticalMenuShowing].inputbutton);
            if (myButtonVertMenus[VerticalMenuShowing].inputbutton == 3) {
-              FanSpeedPWMStart = FanSpeedPWMStart + moveamount;
+              FanSetPoints[0].PWM = FanSetPoints[0].PWM + moveamount;
 
-            if (FanSpeedPWMStart > 254){
-                 FanSpeedPWMStart = 254;
+            if (FanSetPoints[0].PWM > 254){
+                 FanSetPoints[0].PWM = 254;
             }
-            if (FanSpeedPWMStart < 125){
-                 FanSpeedPWMStart = 125;
+            if (FanSetPoints[0].PWM < 125){
+                 FanSetPoints[0].PWM = 125;
             }
 
-            EEPROM.write(FanSpeedPWMStart_EP,FanSpeedPWMStart);
+            EEPROM.put(FanSetPoints_EP[0],FanSetPoints[0]);
            }
-           if (myButtonVertMenus[VerticalMenuShowing].inputbutton == 4) {
-           FanSpeedPWMAutoDecrease = FanSpeedPWMAutoDecrease + moveamount;
+            if (myButtonVertMenus[VerticalMenuShowing].inputbutton == 4) {
+              FanSetPoints[1].PWM = FanSetPoints[1].PWM + moveamount;
 
-            if (FanSpeedPWMAutoDecrease + FanGraphMinPWM > FanSpeedPWMStart ){
-                FanSpeedPWMAutoDecrease = FanSpeedPWMStart -  FanGraphMinPWM;
-                 //Serial.print("A:");Serial.println(FanGraphMinPWM);
-                 //Serial.print("Aa:");Serial.println(FanSpeedPWMStart);
-    
-                 //Serial.print("B:");Serial.println(FanSpeedPWMAutoDecrease);
-          
+            if (FanSetPoints[1].PWM > FanSetPoints[0].PWM){
+                 FanSetPoints[1].PWM = FanSetPoints[0].PWM;
             }
-            if (FanSpeedPWMAutoDecrease < 10){
-                FanSpeedPWMAutoDecrease = 10;
+            if (FanSetPoints[1].PWM < 100){
+                 FanSetPoints[1].PWM = 100;
             }
 
-            EEPROM.write(FanSpeedPWMAutoDecrease_EP,FanSpeedPWMAutoDecrease);
+            EEPROM.put(FanSetPoints_EP[1],FanSetPoints[1]);
+           }
+            if (myButtonVertMenus[VerticalMenuShowing].inputbutton == 5) {
+              FanSetPoints[2].PWM = FanSetPoints[2].PWM + moveamount;
+
+            if (FanSetPoints[2].PWM > FanSetPoints[2].PWM){
+                 FanSetPoints[2].PWM = FanSetPoints[2].PWM;
+            }
+            if (FanSetPoints[2].PWM < 100){
+                 FanSetPoints[2].PWM = 100;
+            }
+
+            EEPROM.put(FanSetPoints_EP[2],FanSetPoints[2]);
+           }
            
-           }
+           if (myButtonVertMenus[VerticalMenuShowing].inputbutton == 6) {
+            
+               FanSetPoints[3].PWM = FanSetPoints[3].PWM + moveamount;
+
+            if (FanSetPoints[3].PWM > FanSetPoints[3].PWM){
+                 FanSetPoints[3].PWM = FanSetPoints[3].PWM;
+            }
+            if (FanSetPoints[3].PWM < 100){
+                 FanSetPoints[3].PWM = 100;
+            }
+
+            EEPROM.put(FanSetPoints_EP[3],FanSetPoints[3]);
+          }
+
+           
            graphFanProfile();
       }
 
@@ -600,21 +612,21 @@ void ProcessFanVmenu(int i) {
         
         break;
     case 1:  //A+
-        if (FanSpeedPWNDelayDecreaseByMinutes < 5){
-        FanSpeedPWNDelayDecreaseByMinutes = FanSpeedPWNDelayDecreaseByMinutes + 1;
-        EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);}
+        if (FanSetPoints[1].Minutes < FanSetPoints[2].Minutes - 2 ){
+        FanSetPoints[1].Minutes = FanSetPoints[1].Minutes + 1;
+        EEPROM.put(FanSetPoints_EP[1],FanSetPoints[1]);}
 
         
         break;
    
     case 2: //A-
-        if (FanSpeedPWNDelayDecreaseByMinutes > 0 ){
-        FanSpeedPWNDelayDecreaseByMinutes = FanSpeedPWNDelayDecreaseByMinutes - 1;
-        EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP,FanSpeedPWNDelayDecreaseByMinutes);}
+        if (FanSetPoints[1].Minutes > 2){
+        FanSetPoints[1].Minutes = FanSetPoints[1].Minutes - 1;
+        EEPROM.put(FanSetPoints_EP[1],FanSetPoints[1]);}
 
         
         break;
-    case 3: //A
+    case 3: //Start
         myButtonVertMenus[VmenuAdj_1_3_5].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
         myButtonVertMenus[VmenuAdj_1_3_5].buttondefs[1].AlternateLableID.ButtonID = i;
         DrawVMenu(VmenuAdj_1_3_5,i);
@@ -625,19 +637,27 @@ void ProcessFanVmenu(int i) {
         DrawVMenu(VmenuAdj_1_3_5,i);
         break;
     case 5://C+
-     if (FanSpeedPWNDecreaseByMinutes < (MySetPoints[EndingSetPoint].Minutes - FanSpeedPWNDelayDecreaseByMinutes)){
-        FanSpeedPWNDecreaseByMinutes = FanSpeedPWNDecreaseByMinutes + 1;
-            EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP,FanSpeedPWNDecreaseByMinutes);}
+        myButtonVertMenus[VmenuAdj_1_3_5].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+        myButtonVertMenus[VmenuAdj_1_3_5].buttondefs[1].AlternateLableID.ButtonID = i;
+        DrawVMenu(VmenuAdj_1_3_5,i);
         break;
     
-    case 6: //c-
-     if (FanSpeedPWNDecreaseByMinutes > 0 ){
-        FanSpeedPWNDecreaseByMinutes = FanSpeedPWNDecreaseByMinutes - 1;
-        EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP,FanSpeedPWNDecreaseByMinutes);}
+    case 6: //end
+        myButtonVertMenus[VmenuAdj_1_3_5].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
+        myButtonVertMenus[VmenuAdj_1_3_5].buttondefs[1].AlternateLableID.ButtonID = i;
+        DrawVMenu(VmenuAdj_1_3_5,i);
         break;
-    case 7: //C
+            break;
+    case 7: //C+
+        if (FanSetPoints[2].Minutes < FanSetPoints[3].Minutes - 2 ){
+        FanSetPoints[2].Minutes = FanSetPoints[2].Minutes + 1;
+        EEPROM.put(FanSetPoints_EP[2],FanSetPoints[2]);}
       break;
     case 8:
+        if (FanSetPoints[2].Minutes > FanSetPoints[1].Minutes + 2 ){
+        FanSetPoints[2].Minutes = FanSetPoints[2].Minutes - 1;
+        EEPROM.put(FanSetPoints_EP[2],FanSetPoints[2]);}
+
         break;
     default:
         break;
@@ -689,7 +709,7 @@ void ProcessOnOffVMenu(int iButPressed) {
 //            digitalWrite(VIBRELAYp, !ONOFF);
             break;
         case 6: //fan
-            if (FanSpeedPWM == 0) {FanSpeedPWM = FanSpeedPWMStart ;}
+            if (FanSpeedPWM == 0) {FanSpeedPWM = FanSetPoints[0].PWM ;}
             digitalWrite(FANRELAYp_2, !ONOFF);
             break;
         }

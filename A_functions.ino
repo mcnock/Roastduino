@@ -5,8 +5,7 @@
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 
 int GetHistoryIDfromLineID(int lineID){
-
-  for (int i = 1; i < 2; i++) {
+  for (int i = 0; i < 2; i++) {
     if (GraphHistory[i].LineID == lineID)
     {
       return i;
@@ -21,30 +20,27 @@ int  CalcFanPWMForATime(double minutes){
       //Serial.print("deviation:");Serial.println(FanDeviation);
      int calcedFanSpeed;
      int newFanSpeed;
-     if (minutes == double(0.00)){
-            //Serial.println("zeir minutes dedtected");
-            //Serial.println(minutes);
-            calcedFanSpeed = FanSpeedPWMStart;
-     }
-     else if (minutes <= FanSpeedPWNDelayDecreaseByMinutes){
-            calcedFanSpeed = FanSpeedPWMStart;
+     float ratio;
+     if (minutes <= FanSetPoints[1].Minutes){
+            ratio = (float)(minutes  )/(float)(FanSetPoints[1].Minutes);
+            calcedFanSpeed =   FanSetPoints[0].PWM  + (ratio * (FanSetPoints[1].PWM -FanSetPoints[0].PWM  )) ; 
+    }
+    
+     else if (minutes < FanSetPoints[2].Minutes){     
+            ratio = (float)(minutes - FanSetPoints[1].Minutes )/(float)(FanSetPoints[2].Minutes- FanSetPoints[1].Minutes);
+            calcedFanSpeed =   FanSetPoints[1].PWM  + (ratio * (FanSetPoints[2].PWM -FanSetPoints[1].PWM  )) ; 
         }
-     else if (minutes < FanSpeedPWNDecreaseByMinutes){
-            
-            float ratio = (float)(minutes-FanSpeedPWNDelayDecreaseByMinutes)/(float)(FanSpeedPWNDecreaseByMinutes - FanSpeedPWNDelayDecreaseByMinutes);
-            //Serial.print("ratio:");Serial.println(ratio);
-            calcedFanSpeed =   (FanSpeedPWMStart - (ratio * FanSpeedPWMAutoDecrease)) ; 
+     else if (minutes <= FanSetPoints[3].Minutes) //this should roast end
+     {
+              ratio = (float)(minutes - FanSetPoints[2].Minutes )/(float)(FanSetPoints[3].Minutes- FanSetPoints[2].Minutes);
+              calcedFanSpeed =   FanSetPoints[2].PWM  + (ratio * (FanSetPoints[3].PWM -FanSetPoints[2].PWM  )) ; 
         }
-     else
+     else  //this should be paste roaste - ie cooling
        {
-           //Serial.println( FanSpeedPWMStart);
-           //Serial.println( FanSpeedPWMAutoDecrease);
-           
-           calcedFanSpeed =  ( FanSpeedPWMStart - FanSpeedPWMAutoDecrease);
+          calcedFanSpeed =  FanSetPoints[3].PWM * 1.1;
        }
-
       newFanSpeed = calcedFanSpeed + FanDeviation;
-      if (FanSpeedPWMStart > 254){
+      if (FanSetPoints[0].PWM > 254){
           if (FanDeviation > 0)
           {
               FanDeviation = 254 - calcedFanSpeed;
@@ -53,19 +49,23 @@ int  CalcFanPWMForATime(double minutes){
        
        }
           
-       if (FanSpeedPWMStart < 10){
+       if (FanSetPoints[0].PWM < 10){
           if (FanDeviation < 0)
           {
               FanDeviation =  calcedFanSpeed - 10;
               if (FanDeviation < 0){FanDeviation = 0;} 
           }
         
-        FanSpeedPWMStart = 10;}
+        FanSetPoints[0].PWM = 10;}
 
        //Serial.print("return:");Serial.println(newFanSpeed);
        return newFanSpeed;
 }
 
+int  XforAFanMin(double minute)
+{
+   return (FanGraphXStart + (PixelsPerMinFan * minute));
+}
 int  YforAFan(int fanpwm) {
        //Serial.print("starting YforAFan");Serial.println(fanpwm);
 

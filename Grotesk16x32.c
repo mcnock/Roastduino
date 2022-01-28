@@ -1,11 +1,8 @@
-// Grotesk16x32.c
-// Font type    : Full (95 characters)
-// Font size    : 16x32 pixels
-// Memory usage : 6084 bytes
 
-#if defined(__AVR__)
-    #include <avr/pgmspace.h>
-    #define fontdatatype const uint8_t
+
+  #if defined(__AVR__)
+      #include <avr/pgmspace.h>
+      #define fontdatatype const uint8_t
 #elif defined(__PIC32MX__)
     #define PROGMEM
     #define fontdatatype const unsigned char

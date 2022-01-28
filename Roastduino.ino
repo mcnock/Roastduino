@@ -12,17 +12,17 @@
 #include <UTFT.h>
 #include <UTouch.h>
 #include <stdio.h>  // for function sprintf
+#include <stdarg.h>
+#include <Arduino.h>
+
 extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
 extern uint8_t SevenSegmentFull[];
 extern uint8_t Grotesk24x48[];
 extern uint8_t Retro8x16[];
 
-// Remember to change the model parameter to suit your display module!
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
 UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, byte dout, byte irq
-
-//Adafruit_MCP4725 dac;
 
 // Assign human-readable names to some common 16-bit color values:
 
@@ -44,6 +44,10 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define VGA_TRANSPARENT 0xFFFFFFFF
 
 #define MCP4725_ADDR 0x60
+
+
+#define SpDebug Serial.println
+
 
 //PIN  definitions
 //note: the 5 TFT inch display shield has pins inserted, but does not actuall use digital pins 30-34, 10 , 12,  13 or i2c pins 20,21 
@@ -75,15 +79,15 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 //#define available A5
 //#define available A6
 
-#define TCS_G_p7  A7
-#define TCS_5v_p8 A8
-#define TSCKp A9
-#define TSD1p A10  //could share A8
-#define TCS1p A11
-#define TSD2p A12  //could share A8
-#define TCS2p A13
-#define TSD3p A14  //could share A8
-#define TCS3p A15
+#define TC_G_A7  A7
+#define TC_5v_A8 A8
+#define TC_SCK_A9 A9
+#define TC_SD1_A10 A10  //could share A8
+#define TC_CS1_A11 A11
+#define TC_SD2_A12 A12  //could share A8
+#define TC_CS2_A13 A13
+#define TC_SD3_A14 A14  //could share A8
+#define TC_CS3_A15 A15
 
 
 
@@ -102,16 +106,19 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 
 //EPROM MEMORORY
-#define FanSpeedPWMStart_EP 1
+//#define FanSpeedPWMStart_EP 1
 #define INTEGRAL_EP 0
 #define GAIN_EP 2
-#define FanSpeedPWNDelayDecreaseByMinutes_EP 3
-#define FanSpeedPWNDecreaseByMinutes_EP 4
+//#define FanSpeedPWNDelayDecreaseByMinutes_EP 3
+//#define FanSpeedPWNDecreaseByMinutes_EP 4
 const int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
 #define FanSpeedPWMAutoDecrease_EP 35
 #define RoastLength_EP 36
 #define FanGraphMinPWM_EP 37
 #define FanGraphMaxPWM_EP 38
+
+const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory locations - not data
+
 
 
 
@@ -238,8 +245,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {46,"" ,"go back","to","prior",BLACK},
     {47,"" ,"go back","to","prior",BLACK},
     {48,"" ,"go back","to","prior",BLACK}
-  }
-  ,
+  },
+
   { {50,"<<" ,"go back","to","prior",GREEN},
     {51,"" ,"go back","to","prior",GREEN},
     {52,"+.01" ,"go back","to","prior",ORANGE},
@@ -262,16 +269,16 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {68,"Save" ,"Save","and","close",GREEN}
   }
  ,
-  { {70,"<<" , "go to"      ,"prior"      ,"menu",GREEN},
-    {71,"A+1" ,"Add 1 min"  ,"to start"   ,"period",ORANGE},
-    {72,"A-1" ,"Rmv 1 min"  ,"to start"   ,"period",ORANGE},
-    {73,"A" ,"Adjust" ,"start" ," PWM" ,ORANGE},
-    {74,"B" ,"Adjust" ,"drop in"," PWM" ,ORANGE},
-    {75,"C+1" ,"Rmv 1 unit" ,"to fan"     ,"Drop" ,ORANGE},
-    {76,"C-1" ,"Rmv 5 unit" ,"to fan"     ,"Drop" ,ORANGE},
-    {77,"Max" ,"Adjust"  ,"Y scale "  ,"max PWM" ,ORANGE},
-    {78,"Min" ,"Adjust"  ,"Y scale"  ,"min PWM",ORANGE}
-  }
+  { {70,"<<"       , "go to"     ,"prior"      ,"menu",GREEN},
+    {71,"A+1"      ,"Add 1 min"  ,"to A"       ,"period",ORANGE},
+    {72,"A-1"      ,"Rmv 1 min"  ,"to A"       ,"period",ORANGE},
+    {73,"S PWM"    ,"Adjust"     ,"Start"      ,"PWM" ,ORANGE},
+    {74,"A PWM"    ,"Adjust"     ,"A"          ,"PWM",ORANGE},
+    {75,"C PWM"    ,"Adjust"     ,"C"          ,"PWM" ,ORANGE},
+    {76,"E PWM"    ,"Adjust"     ,"End"        ,"PWM" ,ORANGE},
+    {77,"C+1"      ,"Add 1 min"  ,"to C"       ,"period" ,ORANGE},
+    {78,"C-1"      ,"Rmv 1 min"  ,"to C"       ,"period" ,ORANGE}
+   }
 ,
   { {80,">>" ,"go to","next","menu",GREEN},
     {81,""  ,"go back","to","prior",AQUA},
@@ -320,7 +327,8 @@ int lastStateUpdated;
 String errmsg;
 boolean newerrmsg;
 int lenlasterrmsg;
-int TEMPCOILTOOHOT = 700;
+
+int TEMPCOILTOOHOT = 600;
 
 boolean serialOutPutTempsBySecond ;
 boolean serialOutPutTempsBy3Seconds ;
@@ -328,11 +336,9 @@ boolean serialOutPutStatusBy3Seconds;
 boolean serialOutPutStatusBySecond;
 
 
-MAX6675 thermocouple1(TSCKp, TCS1p, TSD1p);
-MAX6675 thermocouple2(TSCKp, TCS2p, TSD2p);
-MAX6675 thermocouple3(TSCKp, TCS3p, TSD3p);
-//global variablers for temp control
-int Gain = 100;  //read from eeprom
+MAX6675 thermocouple1(TC_SCK_A9, TC_CS1_A11, TC_SD1_A10);
+MAX6675 thermocouple2(TC_SCK_A9, TC_CS2_A13, TC_SD2_A12);
+MAX6675 thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
 
 //for python serial  commands
 char Commandsp1[7] = "xxxxx ";
@@ -343,17 +349,18 @@ int iCommandsp = 0;
 int spSelected = -1;
 
 char _debug ='a';
+
+
+PWMSetpoint FanSetPoints[4];
 int FanSpeedPWM = 0;
-int FanSpeedPWMStart = 0;
-
-
-
-//int FanSpeedPWMAutoEnd=0;
-int FanSpeedPWMAutoDecrease = 90;
-int FanSpeedPWMAutoDecreaseStart = 90;
+//int FanSpeedPWMStart = 0;
+//int FanSpeedPWMA = 0;
+//int FanSpeedPWMC = 0;
+//int FanSpeedPWMEnd = 90;
+//int FanSpeedPWMAutoDecreaseStart = 90;
 bool FanSpeedPWMAutoMode = false;
-int FanSpeedPWNDelayDecreaseByMinutes = 2;
-int FanSpeedPWNDecreaseByMinutes = 8;
+//int FanSpeedPWNMinutesToA = 2;
+//int FanSpeedPWNMinutesToC = 8;
 int FanSpeedResistanceLast = 0;
 int FanSpeedResistanceCurrent = 0;
 
@@ -371,16 +378,16 @@ point FanPixelHistory[160];
 
 
 const int FanGraphXStart = 410;//starting col of fan graph - a little past half
-const int FanGraphXWidth = 310;  //uses 1/4 of screen width
-const int FanGraphHeight = 125;  //uses 1/4 of screen width
+const int FanGraphXWidth = 390;  //uses 1/4 of screen width
+const int FanGraphHeight = 165;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
 const int FanGraphBottom = 455;
  int FanGraphMinPWM = 110;
  int FanGraphMaxPWM = 254;
 
 long PixelsPerMinFan;
-   //Y for a temp, for values under 300 is linear. So we are going graph the 0-254 values of fan as if they where temps   
 
+int Gain = 0;  //read from eeprom
 double Integral = 0.1;  //read from eeprom
 long unsigned IntegralLastTime = 0;
 float IntegralSum = 0;
@@ -394,12 +401,11 @@ int PIDIntegralUdateTimeValue;
 int PIDWindowSize;
 
 boolean setpointschanged = true;
-double MyMinuteTemperature[30];
+long MyMinuteTemperature[30];
 
+
+//read from eprom
 setpoint MySetPoints[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
-setpoint MySetPoints_Last[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
-
-
 const int SetPointCount = 6;  //0,1,2,3,4,t0t5
  int EndingSetPoint = 5;
 int TimeScreenLeft = 0;
@@ -407,7 +413,6 @@ int TimeScreenLeft = 0;
 double TempYMax = 800;
 double TempSplitHigh = 460;
 double TempSplitLow = 390;
-
 double PixelYSplit2;
 double PixelYSplit;
 long   PixelsPerMin;
@@ -417,10 +422,6 @@ double TempPerPixH = 0;
 
 double CurrentSetPointTemp = 0;
 
-//int BeforeTemp = 0;
-//int BeforeTime = 0;
-
-int badLastTempCount = 0;
 int LoopsPerSecond;
 
 boolean TouchDetected;
@@ -442,7 +443,7 @@ Chrono MeasureTempTimer(Chrono::MILLIS);
 Average<double> TBeanAvgRoll(3);
 Average<double> TCoilRoll(3);  //this is minute avg
 
-int OVERHEATFANCount;
+//int OVERHEATFANCount;
 int TEMPCOILTOOHOTCount;
 int TempReachedCount;
 int TempSpikeCount;
@@ -515,21 +516,21 @@ void setup() {
   //pinMode(FanOutDirp, OUTPUT);
   //pinMode(FanOutCsp, OUTPUT);
 
-  pinMode(TSD1p, INPUT_PULLUP);
-  pinMode(TSD2p, INPUT_PULLUP);
-  pinMode(TSD3p, INPUT_PULLUP);
+  pinMode(TC_SD1_A10, INPUT_PULLUP);
+  pinMode(TC_SD2_A12, INPUT_PULLUP);
+  pinMode(TC_SD3_A14, INPUT_PULLUP);
 
-  pinMode(TCS1p, OUTPUT);
-  pinMode(TCS2p, OUTPUT);
-  pinMode(TCS3p, OUTPUT);
+  pinMode(TC_CS1_A11, OUTPUT);
+  pinMode(TC_CS2_A13, OUTPUT);
+  pinMode(TC_CS3_A15, OUTPUT);
 
-  pinMode(TCS_G_p7,OUTPUT);
-  digitalWrite(TCS_G_p7, LOW);   //0V
+  pinMode(TC_G_A7,OUTPUT);
+  digitalWrite(TC_G_A7, LOW);   //0V
 
-  pinMode(TCS_5v_p8,OUTPUT);
-  digitalWrite(TCS_5v_p8, HIGH);   //5V
+  pinMode(TC_5v_A8,OUTPUT);
+  digitalWrite(TC_5v_A8, HIGH);   //5V
 
-  pinMode(TSCKp, OUTPUT);
+  pinMode(TC_SCK_A9, OUTPUT);
   
 
   
@@ -554,16 +555,26 @@ if (testiffirstrun == 0)
     EEPROM.put(RoastLength_EP,14);
     EEPROM.update(INTEGRAL_EP , (int)(.04 * 100));
     EEPROM.update(GAIN_EP , 30);
-    EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 2);
-    EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 8);
-    EEPROM.write(FanSpeedPWMAutoDecrease_EP, 50);
+  
 }
-//EEPROM.write(FanSpeedPWMAutoDecrease_EP, 50);
-//EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, 1);
-//EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, 10);
-    
 
+  for (int i = 0; i < 4; i++) {
+      EEPROM.get(FanSetPoints_EP[i], FanSetPoints[0]);
+      
+  }
 
+  if ( FanSetPoints[1].PWM == 0 || FanSetPoints[1].Minutes == 0 )
+  {
+        FanSetPoints[0].PWM = 185;
+        FanSetPoints[0].Minutes = 0;
+        FanSetPoints[1].PWM = 160;
+        FanSetPoints[1].Minutes = 2;
+        FanSetPoints[2].PWM = 145 ;
+        FanSetPoints[2].Minutes = 8;
+        FanSetPoints[3].PWM = 135;
+        FanSetPoints[3].Minutes = 14;
+   
+  }
         
   Gain = EEPROM.read(GAIN_EP);
   Integral = (double)EEPROM.read(INTEGRAL_EP) / 100;
@@ -594,35 +605,9 @@ if (testiffirstrun == 0)
   setpointschanged = true;
   ;
 
-  
-  FanSpeedPWMStart = EEPROM.read(FanSpeedPWMStart_EP);
 
 
-  FanSpeedPWNDelayDecreaseByMinutes = EEPROM.read(FanSpeedPWNDelayDecreaseByMinutes_EP);
-  if (FanSpeedPWNDelayDecreaseByMinutes < 0 or FanSpeedPWNDelayDecreaseByMinutes > 5) {
-    FanSpeedPWNDelayDecreaseByMinutes = 2;
-    EEPROM.write(FanSpeedPWNDelayDecreaseByMinutes_EP, FanSpeedPWNDelayDecreaseByMinutes);
-  }
-
-  FanSpeedPWNDecreaseByMinutes = EEPROM.read(FanSpeedPWNDecreaseByMinutes_EP);
-  if (FanSpeedPWNDecreaseByMinutes < 0 or FanSpeedPWNDecreaseByMinutes > 10) {
-    FanSpeedPWNDecreaseByMinutes = 8;
-    EEPROM.write(FanSpeedPWNDecreaseByMinutes_EP, FanSpeedPWNDecreaseByMinutes);
-  }
-
-  FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
-  if (FanSpeedPWMAutoDecrease < 0 or FanSpeedPWMAutoDecrease > 200) {
-    FanSpeedPWMAutoDecrease = 80;
-    EEPROM.write(FanSpeedPWMAutoDecrease_EP, FanSpeedPWMAutoDecrease);
-  }
-
-  if (FanSpeedPWMAutoDecrease > FanSpeedPWMStart) {
-    FanSpeedPWMAutoDecrease = FanSpeedPWMStart;
-    EEPROM.write(FanSpeedPWMAutoDecrease_EP, FanSpeedPWMAutoDecrease);
-  }
-  FanSpeedPWM = FanSpeedPWMStart;
-  FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
-  FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
+  FanSpeedPWM = FanSetPoints[0].PWM;
 
   Serial.println(F("wire i2c for fan begin"));
    

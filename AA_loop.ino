@@ -48,7 +48,7 @@ void theloop() {
         break;
       case 1:
         TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
-        //Serial.print("New bean 1 temp:");Serial.println(TCoil);
+        //SpDebug("New bean 1 temp:" + String(TBean1));
         if (TBean1 = -1) {
           TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
         }
@@ -56,9 +56,9 @@ void theloop() {
         break;
       case 2:
         TBean2 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
-        //Serial.print("New bean 2 temp:");Serial.println(TCoil);
+        //SpDebug("New bean 2 temp" + String(TBean2));
         if (TBean2 = -1) {
-          TBean2 = getCleanTemp(thermocouple1.readFahrenheit(), 2);
+          TBean2 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
         }
         TBeanAvgThisRun = getBeanAvgTemp(TBean1, TBean2);
         if (TBeanAvgThisRun > -1) {
@@ -69,7 +69,7 @@ void theloop() {
         
         MeasureTempTimer.stop();
         //Serial.print("New temps time:");Serial.println(t);
-        
+         //Serial.print(F("bean1:"));Serial.print(TBean1);Serial.print(F(",bean2:"));Serial.print(TBean2);
         bNewTempsAvailable = true;
         break;
     }
@@ -183,17 +183,6 @@ void theloop() {
         //digitalWrite(VIBRELAYp, RELAYON);
 
         if (State == STATESTOPPED || State == STATEFANONLY) {
-
-          if (FanSpeedPWM > 0 && FanSpeedPWMStart != FanSpeedPWM) {
-
-            FanSpeedPWMStart = FanSpeedPWM;
-            EEPROM.write(FanSpeedPWMStart_EP, FanSpeedPWMStart);
-          }
-          FanSpeedPWMAutoDecrease = EEPROM.read(FanSpeedPWMAutoDecrease_EP);
-          FanSpeedPWMAutoDecreaseStart = FanSpeedPWMAutoDecrease;
-          //DrawFanGraph_ex(true);
-          //      XStartFan_Last = 0;
-
           SetAndSendFanPWMForATime(0);
           FanSpeedPWMAutoMode = true;
           TCoilRoll.clear();
@@ -201,17 +190,12 @@ void theloop() {
           TempReadingskipped[0] = 0;
           TempReadingskipped[1] = 0;
           TempReadingskipped[2] = 0;
-          StartLinebyTemp(0, ROLLMAXLINEID, YELLOW);
-          StartLinebyTemp(0, ROLLMINLINEID, YELLOW);
-
+          StartLinebyTemp(0, ROLLMAXLINEID, RED);
+          StartLinebyTemp(0, ROLLMINLINEID, BLUE);
           StartLinebyTemp(0, ROLLAVGLINEID, LGBLUE);
-
           StartLinebyTemp(0, COILLINEID, RED);
-
           StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeedPWM), FANSPEEDLINEID, AQUA);
-
           graphProfile();
-
           RoastTime.restart(0);
           RoastMinutes = 0;
         } else if (State == STATECOOLING) {
@@ -224,7 +208,7 @@ void theloop() {
     case STATECOOLING: //newstate
       {
         State = newState;
-        SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
+        SetAndSendFanPWMForATime(RoastMinutes);
         FanSpeedPWMAutoMode = false;
         //Serial.print("F:");Serial.println(LOW);
 
@@ -236,19 +220,14 @@ void theloop() {
     case STATEFANONLY: //newstate
       {
         State = newState;
-        FanSpeedPWM = FanSpeedPWMStart;
+        FanSpeedPWM = FanSetPoints[0].PWM;
         SetAndSendFanPWMForATime(0);
-        //Serial.println("VIB on");
-        //    digitalWrite(VIBRELAYp, RELAYON);
-        //Serial.println("Fan on");
         digitalWrite(FANRELAYp_2, RELAYON);
         break;
       }
     case STATEOVERHEATED: //newstate
       {
         State = newState;
-        //Serial.print("G:");Serial.println(LOW);
-
         digitalWrite(SSR1_p7, LOW);
         digitalWrite(SSR2_p6, LOW);
         delay(1000);
@@ -257,8 +236,6 @@ void theloop() {
     case STATENOFANCURRENT: //newstate
       {
         State = newState;
-        //Serial.print("H:");Serial.println(LOW);
-
         digitalWrite(SSR1_p7, LOW);
         digitalWrite(SSR2_p6, LOW);
         break;
@@ -274,7 +251,6 @@ void theloop() {
   }
 
   //Action base on state
-
 
   if (State == DEBUGTOGGLE || State == DEBUGCOIL) {
     SetAndSendFanPWMForATime(0);
@@ -412,6 +388,7 @@ void theloop() {
       SerialOutputTempsForPlotting();
     }
     if (serialOutPutStatusBySecond == true) {
+      
       SerialOutputStatus();
     }
     if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING){
@@ -437,7 +414,7 @@ void theloop() {
       SerialOutputStatus();
     }
     if (State == STATECOOLING) {
-      SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes - 2);
+      SetAndSendFanPWMForATime(RoastMinutes);
     }
     if (State == STATEROASTING) {
       //Serial.println('b');
