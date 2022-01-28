@@ -374,15 +374,15 @@ void theloop() {
 
   //What to output to UI real time
   if (newState > 0) {
-    UpdateRealTime(ValuesOnly);
+    UpdateStateDisplayArea(ValuesOnly);
     newState = 0;  //this clears it for next run
   }
 
   //what to output to UI each second
   if (bNewSecond) {
     //Serial.println("update after reach new temp");
-    UpdateRealTime(ValuesOnly);
-    UpdateEachSecond(ValuesOnly);
+    UpdateStateDisplayArea(ValuesOnly);
+    UpdateTempDisplayArea(ValuesOnly);
     UpdateFanPWMValuesDisplay();
     if (serialOutPutTempsBySecond == true) {
       SerialOutputTempsForPlotting();
@@ -421,7 +421,7 @@ void theloop() {
       SetAndSendFanPWMForATime(RoastMinutes);
       //SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes);
     }
-    UpdateDisplayDetailA(true);
+    UpdateProgessDisplayArea(ValuesOnly);
     LcdUdateTime.restart(0);
   }
 

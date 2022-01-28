@@ -7,7 +7,6 @@
 typedef struct PWMSetpoint{
  byte PWM = 0;
  byte Minutes = 0;
- byte Span =0;
 };
 
 typedef struct point {

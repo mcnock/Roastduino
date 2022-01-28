@@ -50,7 +50,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 
 //PIN  definitions
-//note: the 5 TFT inch display shield has pins inserted, but does not actuall use digital pins 30-34, 10 , 12,  13 or i2c pins 20,21 
+//note: the 5 TFT inch display shield has pins inserted, but does not actuall use digital pins 30-34, 10 , 12,  13 or i2c pins 20,21
 
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
@@ -92,7 +92,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 
 
-  
+
 
 #define VBUT0 0
 #define VBUT1 1
@@ -106,21 +106,14 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 
 //EPROM MEMORORY
-//#define FanSpeedPWMStart_EP 1
+
 #define INTEGRAL_EP 0
 #define GAIN_EP 2
-//#define FanSpeedPWNDelayDecreaseByMinutes_EP 3
-//#define FanSpeedPWNDecreaseByMinutes_EP 4
 const int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
-#define FanSpeedPWMAutoDecrease_EP 35
 #define RoastLength_EP 36
 #define FanGraphMinPWM_EP 37
 #define FanGraphMaxPWM_EP 38
-
 const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory locations - not data
-
-
-
 
 #define TEMPCOOLINGDONE 250
 #define STATEROASTING 1
@@ -177,17 +170,17 @@ const char Mname9  = "HmenuCTRL";
 const char Mname10  = "HmenuFAN";
 
 const char*  menunames[] = {
-Mname0,
-Mname1,
-Mname2,
-Mname3,
-Mname4,
-Mname5,
-Mname6,
-Mname7,
-Mname8,
-Mname9,
-Mname10,
+  Mname0,
+  Mname1,
+  Mname2,
+  Mname3,
+  Mname4,
+  Mname5,
+  Mname6,
+  Mname7,
+  Mname8,
+  Mname9,
+  Mname10,
 };
 
 
@@ -196,126 +189,126 @@ char debug = 'a';
 #define VmenuCount 9
 #define MaxButtonCount 9
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
-  { {0,">>" ,"go back"  ,"to"     ,"prior",GREEN},
-    {1,"" ,"go back"  ,"to"     ,"prior",GREEN},
-    {2,"Gain" ,"Ajdust" ,"Gain"   ,"Value",YELLOW},
-    {3,"Int" ,"Ajdust"  ,"Intergal","Value",YELLOW},
-    {4,"SPs" ,"Select"  ,"Setpoints","to adjust",YELLOW},
-    {5,"Fan" ,"Adjust"  ,"fan auto","decrease",YELLOW},
-    {6,"rT+1" ,"Add 1"    ,"minute to" ,"this roast",YELLOW},
-    {7,"rT-1" ,"Remove 1" ,"minute tp" ,"this roast",YELLOW},
-    {8,"cCut" ,"Adjust" ,"Hightemp","Cut out",YELLOW}
+  { {0, ">>" , "go back"  , "to"     , "prior", GREEN},
+    {1, "" , "go back"  , "to"     , "prior", GREEN},
+    {2, "Gain" , "Ajdust" , "Gain"   , "Value", YELLOW},
+    {3, "Int" , "Ajdust"  , "Intergal", "Value", YELLOW},
+    {4, "SPs" , "Select"  , "Setpoints", "to adjust", YELLOW},
+    {5, "Fan" , "Adjust"  , "fan auto", "decrease", YELLOW},
+    {6, "rT+1" , "Add 1"    , "minute to" , "this roast", YELLOW},
+    {7, "rT-1" , "Remove 1" , "minute tp" , "this roast", YELLOW},
+    {8, "cCut" , "Adjust" , "Hightemp", "Cut out", YELLOW}
   },
-  { {10,"<<"  ,"back"       ,"to prior" ,"menu",GREEN},
-    {11,"sp1" ,"Adjust"     ,"setpoint" ,"#1",YELLOW},
-    {12,"sp2" ,"Adjust"     ,"setpoint" ,"#2",YELLOW},
-    {13,"sp3" ,"Adjust"     ,"setpoint" ,"#3",YELLOW},
-    {14,"sp4" ,"Adjust"     ,"setpoint" ,"#4",YELLOW},
-    {15,"sp5" ,"Adjust"     ,"setpoint" ,"#5",YELLOW},
-    {16,"ls3" ,"Adjust"     ,"last 3"   ,"setpoint",YELLOW},
-    {17,"T+1" ,"Increase"   ,"roast len"    ,"by 1 min",YELLOW},
-    {18,"T-1" ,"Decrease"   ,"roast len"    ,"by 1 min",YELLOW}
+  { {10, "<<"  , "back"       , "to prior" , "menu", GREEN},
+    {11, "sp1" , "Adjust"     , "setpoint" , "#1", YELLOW},
+    {12, "sp2" , "Adjust"     , "setpoint" , "#2", YELLOW},
+    {13, "sp3" , "Adjust"     , "setpoint" , "#3", YELLOW},
+    {14, "sp4" , "Adjust"     , "setpoint" , "#4", YELLOW},
+    {15, "sp5" , "Adjust"     , "setpoint" , "#5", YELLOW},
+    {16, "ls3" , "Adjust"     , "last 3"   , "setpoint", YELLOW},
+    {17, "T+1" , "Increase"   , "roast len"    , "by 1 min", YELLOW},
+    {18, "T-1" , "Decrease"   , "roast len"    , "by 1 min", YELLOW}
   },
-  { {20,"<<" ,"go back","to","prior",GREEN},
-    {21,"" ,"go back","to","prior",YELLOW},
-    {22,"+1" ,"go back","to","prior",ORANGE},
-    {23,"+3" ,"go back","to","prior",ORANGE},
-    {24,"+5" ,"go back","to","prior",ORANGE},
-    {25,"-1" ,"go back","to","prior",ORANGE},
-    {26,"-3" ,"go back","to","prior",ORANGE},
-    {27,"-5" ,"go back","to","prior",ORANGE},
-    {28,"SAVE" ,"go back","to","prior",YELLOW}
+  { {20, "<<" , "go back", "to", "prior", GREEN},
+    {21, "" , "go back", "to", "prior", YELLOW},
+    {22, "+1" , "go back", "to", "prior", ORANGE},
+    {23, "+3" , "go back", "to", "prior", ORANGE},
+    {24, "+5" , "go back", "to", "prior", ORANGE},
+    {25, "-1" , "go back", "to", "prior", ORANGE},
+    {26, "-3" , "go back", "to", "prior", ORANGE},
+    {27, "-5" , "go back", "to", "prior", ORANGE},
+    {28, "SAVE" , "go back", "to", "prior", YELLOW}
   },
-  { {30,">>" ,"go to","next","menu",GREEN},
-    {31,"" ,"go back","to","prior",GREEN},
-    {32,"DBG" ,"subject","of","menu",YELLOW},
-    {33,"C1" ,"toggle","coil 1 SSR","on and off",YELLOW},
-    {34,"C2" ,"toggle","coil 2 SSR","on and off",YELLOW},
-    {35,"" ,"go back","to","prior",YELLOW},
-    {36,"Fan" ,"toggle","fan relay","on and off",YELLOW},
-    {37,"Duty" ,"Manually","set","duty",YELLOW},
-    {38,"Temp" ,"go back","to","prior",YELLOW}
-  },  
-  { {40,"<<" ,"go to","prior","menu",GREEN},
-    {41,"" ,"selected","device","to debug",GREEN},
-    {42,"ON" ,"turn","device","on",ORANGE},
-    {43,"OFF" ,"turn","device","off",ORANGE},
-    {44,"" ,"go back","to","prior",BLACK},
-    {45,"" ,"go back","to","prior",BLACK},
-    {46,"" ,"go back","to","prior",BLACK},
-    {47,"" ,"go back","to","prior",BLACK},
-    {48,"" ,"go back","to","prior",BLACK}
+  { {30, ">>" , "go to", "next", "menu", GREEN},
+    {31, "" , "go back", "to", "prior", GREEN},
+    {32, "DBG" , "subject", "of", "menu", YELLOW},
+    {33, "C1" , "toggle", "coil 1 SSR", "on and off", YELLOW},
+    {34, "C2" , "toggle", "coil 2 SSR", "on and off", YELLOW},
+    {35, "" , "go back", "to", "prior", YELLOW},
+    {36, "Fan" , "toggle", "fan relay", "on and off", YELLOW},
+    {37, "Duty" , "Manually", "set", "duty", YELLOW},
+    {38, "Temp" , "go back", "to", "prior", YELLOW}
+  },
+  { {40, "<<" , "go to", "prior", "menu", GREEN},
+    {41, "" , "selected", "device", "to debug", GREEN},
+    {42, "ON" , "turn", "device", "on", ORANGE},
+    {43, "OFF" , "turn", "device", "off", ORANGE},
+    {44, "" , "go back", "to", "prior", BLACK},
+    {45, "" , "go back", "to", "prior", BLACK},
+    {46, "" , "go back", "to", "prior", BLACK},
+    {47, "" , "go back", "to", "prior", BLACK},
+    {48, "" , "go back", "to", "prior", BLACK}
   },
 
-  { {50,"<<" ,"go back","to","prior",GREEN},
-    {51,"" ,"go back","to","prior",GREEN},
-    {52,"+.01" ,"go back","to","prior",ORANGE},
-    {53,"+.05" ,"go back","to","prior",ORANGE},
-    {54,"+.10" ,"go back","to","prior",ORANGE},
-    {55,"-.01" ,"go back","to","prior",ORANGE},
-    {56,"-.05" ,"go back","to","prior",ORANGE},
-    {57,"-.10" ,"go back","to","prior",ORANGE},
-    {58,"Save" ,"Save","and","close",GREEN}
-  }
- ,
-  { {60,"<<" ,"go to","prior","menu",GREEN},
-    {61,"" ,"go back","to","prior",GREEN},
-    {62,"+1" ,"go back","to","prior",ORANGE},
-    {63,"+5" ,"go back","to","prior",ORANGE},
-    {64,"+10" ,"go back","to","prior",ORANGE},
-    {65,"-1" ,"go back","to","prior",ORANGE},
-    {66,"-5" ,"go back","to","prior",ORANGE},
-    {67,"-10" ,"go back","to","prior",ORANGE},
-    {68,"Save" ,"Save","and","close",GREEN}
-  }
- ,
-  { {70,"<<"       , "go to"     ,"prior"      ,"menu",GREEN},
-    {71,"A+1"      ,"Add 1 min"  ,"to A"       ,"period",ORANGE},
-    {72,"A-1"      ,"Rmv 1 min"  ,"to A"       ,"period",ORANGE},
-    {73,"S PWM"    ,"Adjust"     ,"Start"      ,"PWM" ,ORANGE},
-    {74,"A PWM"    ,"Adjust"     ,"A"          ,"PWM",ORANGE},
-    {75,"C PWM"    ,"Adjust"     ,"C"          ,"PWM" ,ORANGE},
-    {76,"E PWM"    ,"Adjust"     ,"End"        ,"PWM" ,ORANGE},
-    {77,"C+1"      ,"Add 1 min"  ,"to C"       ,"period" ,ORANGE},
-    {78,"C-1"      ,"Rmv 1 min"  ,"to C"       ,"period" ,ORANGE}
-   }
-,
-  { {80,">>" ,"go to","next","menu",GREEN},
-    {81,""  ,"go back","to","prior",AQUA},
-    {82,""   ,"go","to","prior",   AQUA},
-    {83,"" ,"go back","to","prior",AQUA},
-    {84,""  ,"go back","to","prior",AQUA},
-    {85,"" ,"go back","to","prior",GREEN},
-    {86,"" ,"go back","to","prior",GREEN},
-    {87,"" ,"go back","to","prior",GREEN},
-    {88,"" ,"go back","to","prior",GREEN}
-  }
-,  
-  
-  { 
-    {90,"Start" ,"Start"      ,"Roast"  ,"",GREEN},
-    {91,"Stop"  ,"End Roast"  ,"or Fan" ,"" ,RED},
-    {92,"Fan"   ,"Start"      ,"Fan"    ,""  ,AQUA},
-    {93, "rfs"  ,"Redraw"     ,"screen" ,"",WHITE},
-    {94,"^" ,"go back","to","prior",GREEN},
-    {95,"" ,"go back","to","prior",GREEN},
-    {96,"" ,"go back","to","prior",GREEN},
-    {97,"" ,"go back","to","prior",GREEN},
-    {98,"" ,"go back","to","prior",GREEN}
-    
+  { {50, "<<" , "go back", "to", "prior", GREEN},
+    {51, "" , "go back", "to", "prior", GREEN},
+    {52, "+.01" , "go back", "to", "prior", ORANGE},
+    {53, "+.05" , "go back", "to", "prior", ORANGE},
+    {54, "+.10" , "go back", "to", "prior", ORANGE},
+    {55, "-.01" , "go back", "to", "prior", ORANGE},
+    {56, "-.05" , "go back", "to", "prior", ORANGE},
+    {57, "-.10" , "go back", "to", "prior", ORANGE},
+    {58, "Save" , "Save", "and", "close", GREEN}
   }
   ,
-  { {100,"-10" ,"Decrease","fan 10","prior",AQUA},
-    {101,"-3"  ,"Decrease","fan 3","prior",AQUA},
-    {102,"+3"   ,"Increase","fan 3","prior",AQUA},
-    {103,"+10" ,"Increase","fan 10","prior",AQUA},
-    {104,"SAVE" ,"save as","start","prior",AQUA},
-    {105,"" ,"go back","to","prior",GREEN},
-    {106,"" ,"go back","to","prior",GREEN},
-    {107,"" ,"go back","to","prior",GREEN},
-    {108,"" ,"go back","to","prior",GREEN}
+  { {60, "<<" , "go to", "prior", "menu", GREEN},
+    {61, "" , "go back", "to", "prior", GREEN},
+    {62, "+1" , "go back", "to", "prior", ORANGE},
+    {63, "+5" , "go back", "to", "prior", ORANGE},
+    {64, "+10" , "go back", "to", "prior", ORANGE},
+    {65, "-1" , "go back", "to", "prior", ORANGE},
+    {66, "-5" , "go back", "to", "prior", ORANGE},
+    {67, "-10" , "go back", "to", "prior", ORANGE},
+    {68, "Save" , "Save", "and", "close", GREEN}
   }
-  
+  ,
+  { {70, "<<"       , "go to"     , "prior"      , "menu", GREEN},
+    {71, "A+1"      , "Add 1 min"  , "to A"       , "period", ORANGE},
+    {72, "A-1"      , "Rmv 1 min"  , "to A"       , "period", ORANGE},
+    {73, "S PWM"    , "Adjust"     , "Start"      , "PWM" , ORANGE},
+    {74, "A PWM"    , "Adjust"     , "A"          , "PWM", ORANGE},
+    {75, "C PWM"    , "Adjust"     , "C"          , "PWM" , ORANGE},
+    {76, "E PWM"    , "Adjust"     , "End"        , "PWM" , ORANGE},
+    {77, "C+1"      , "Add 1 min"  , "to C"       , "period" , ORANGE},
+    {78, "C-1"      , "Rmv 1 min"  , "to C"       , "period" , ORANGE}
+  }
+  ,
+  { {80, ">>" , "go to", "next", "menu", GREEN},
+    {81, ""  , "go back", "to", "prior", AQUA},
+    {82, ""   , "go", "to", "prior",   AQUA},
+    {83, "" , "go back", "to", "prior", AQUA},
+    {84, ""  , "go back", "to", "prior", AQUA},
+    {85, "" , "go back", "to", "prior", GREEN},
+    {86, "" , "go back", "to", "prior", GREEN},
+    {87, "" , "go back", "to", "prior", GREEN},
+    {88, "" , "go back", "to", "prior", GREEN}
+  }
+  ,
+
+  {
+    {90, "Start" , "Start"      , "Roast"  , "", GREEN},
+    {91, "Stop"  , "End Roast"  , "or Fan" , "" , RED},
+    {92, "Fan"   , "Start"      , "Fan"    , ""  , AQUA},
+    {93, "rfs"  , "Redraw"     , "screen" , "", WHITE},
+    {94, "^" , "go back", "to", "prior", GREEN},
+    {95, "" , "go back", "to", "prior", GREEN},
+    {96, "" , "go back", "to", "prior", GREEN},
+    {97, "" , "go back", "to", "prior", GREEN},
+    {98, "" , "go back", "to", "prior", GREEN}
+
+  }
+  ,
+  { {100, "-10" , "Decrease", "fan 10", "prior", AQUA},
+    {101, "-3"  , "Decrease", "fan 3", "prior", AQUA},
+    {102, "+3"   , "Increase", "fan 3", "prior", AQUA},
+    {103, "+10" , "Increase", "fan 10", "prior", AQUA},
+    {104, "SAVE" , "save as", "start", "prior", AQUA},
+    {105, "" , "go back", "to", "prior", GREEN},
+    {106, "" , "go back", "to", "prior", GREEN},
+    {107, "" , "go back", "to", "prior", GREEN},
+    {108, "" , "go back", "to", "prior", GREEN}
+  }
+
 };
 
 buttontext myArrayLocal;
@@ -348,7 +341,7 @@ int iCommandsp = 0;
 
 int spSelected = -1;
 
-char _debug ='a';
+char _debug = 'a';
 
 
 PWMSetpoint FanSetPoints[4];
@@ -370,22 +363,22 @@ point TempPixelHistory[160];
 point FanPixelHistory[160];
 
 //LineID;SkipCount;SkipLimit;PixelsP;ArraySize;Array
-  graphhistory GraphHistory[] = {
-  {ROLLAVGLINEID,0,5,0,160,TempPixelHistory }
+graphhistory GraphHistory[] = {
+  {ROLLAVGLINEID, 0, 5, 0, 160, TempPixelHistory }
   ,
-  {FANSPEEDLINEID,0,5,0,160,FanPixelHistory }
+  {FANSPEEDLINEID, 0, 5, 0, 160, FanPixelHistory }
 };
 
 
 const int FanGraphXStart = 410;//starting col of fan graph - a little past half
-const int FanGraphXWidth = 390;  //uses 1/4 of screen width
+//int FanGraphXWidth = 390;  //uses 1/4 of screen width
 const int FanGraphHeight = 165;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
 const int FanGraphBottom = 455;
- int FanGraphMinPWM = 110;
- int FanGraphMaxPWM = 254;
+int FanGraphMinPWM = 110;
+int FanGraphMaxPWM = 254;
 
-long PixelsPerMinFan;
+float PixelsPerMinFan;
 
 int Gain = 0;  //read from eeprom
 double Integral = 0.1;  //read from eeprom
@@ -407,7 +400,7 @@ long MyMinuteTemperature[30];
 //read from eprom
 setpoint MySetPoints[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
 const int SetPointCount = 6;  //0,1,2,3,4,t0t5
- int EndingSetPoint = 5;
+int EndingSetPoint = 5;
 int TimeScreenLeft = 0;
 
 double TempYMax = 800;
@@ -471,7 +464,7 @@ double RoastMinutes = 0;
 
 int FanDeviation = 0;
 
-boolean bNewTempsAvailable =false;
+boolean bNewTempsAvailable = false;
 int ReadTempFlag = -1;
 int TCoil;
 int TBean1;
@@ -500,9 +493,9 @@ void setup() {
   pinMode(FANRELAYp_2, OUTPUT);
   digitalWrite(FANRELAYVCCp_3, HIGH);   //5V
 
-  
-  pinMode(SSRgr_14,OUTPUT);
-  digitalWrite(SSRgr_14, LOW); 
+
+  pinMode(SSRgr_14, OUTPUT);
+  digitalWrite(SSRgr_14, LOW);
   pinMode(SSR1_p7, OUTPUT);
   pinMode(SSR2_p6, OUTPUT);
 
@@ -524,16 +517,16 @@ void setup() {
   pinMode(TC_CS2_A13, OUTPUT);
   pinMode(TC_CS3_A15, OUTPUT);
 
-  pinMode(TC_G_A7,OUTPUT);
+  pinMode(TC_G_A7, OUTPUT);
   digitalWrite(TC_G_A7, LOW);   //0V
 
-  pinMode(TC_5v_A8,OUTPUT);
+  pinMode(TC_5v_A8, OUTPUT);
   digitalWrite(TC_5v_A8, HIGH);   //5V
 
   pinMode(TC_SCK_A9, OUTPUT);
-  
 
-  
+
+
   //set fan and vibrator relays to high - cause that means off
   digitalWrite(FANRELAYp_2, RELAYOFF);
   //digitalWrite(VIBRELAYp, RELAYOFF);
@@ -541,53 +534,73 @@ void setup() {
   delay(1000);
   MaxVread = 512;  //this is the expected half way value
   RoastTime.stop();
-int testiffirstrun;
-EEPROM.get(SETPOINTTEMP_EP[1],testiffirstrun);
-if (testiffirstrun == 0)
-{
-   //first run on this mega
-    EEPROM.put(SETPOINTTEMP_EP[0], (int)390);             
+  int testiffirstrun;
+  EEPROM.get(SETPOINTTEMP_EP[1], testiffirstrun);
+  if (testiffirstrun == 0)
+  {
+    //first run on this mega
+    EEPROM.put(SETPOINTTEMP_EP[0], (int)390);
     EEPROM.put(SETPOINTTEMP_EP[1], (int)390);
     EEPROM.put(SETPOINTTEMP_EP[2], (int)400);
     EEPROM.put(SETPOINTTEMP_EP[3], (int)410);
     EEPROM.put(SETPOINTTEMP_EP[4], (int)430);
     EEPROM.put(SETPOINTTEMP_EP[5], (int)440);
-    EEPROM.put(RoastLength_EP,14);
+    EEPROM.put(RoastLength_EP, 14);
     EEPROM.update(INTEGRAL_EP , (int)(.04 * 100));
     EEPROM.update(GAIN_EP , 30);
-  
-}
+    FanSetPoints[0].PWM = 185;
+    FanSetPoints[0].Minutes = 0;
+    FanSetPoints[1].PWM = 160;
+    FanSetPoints[1].Minutes = 2;
+    FanSetPoints[2].PWM = 145 ;
+    FanSetPoints[2].Minutes = 8;
+    FanSetPoints[3].PWM = 135;
+    FanSetPoints[3].Minutes = 14;
+
+  }
+
 
   for (int i = 0; i < 4; i++) {
-      EEPROM.get(FanSetPoints_EP[i], FanSetPoints[0]);
-      
+    EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
   }
 
   if ( FanSetPoints[1].PWM == 0 || FanSetPoints[1].Minutes == 0 )
   {
-        FanSetPoints[0].PWM = 185;
-        FanSetPoints[0].Minutes = 0;
-        FanSetPoints[1].PWM = 160;
-        FanSetPoints[1].Minutes = 2;
-        FanSetPoints[2].PWM = 145 ;
-        FanSetPoints[2].Minutes = 8;
-        FanSetPoints[3].PWM = 135;
-        FanSetPoints[3].Minutes = 14;
-   
+    FanSetPoints[0].PWM = 185;
+    FanSetPoints[0].Minutes = 0;
+    FanSetPoints[1].PWM = 160;
+    FanSetPoints[1].Minutes = 2;
+    FanSetPoints[2].PWM = 145 ;
+    FanSetPoints[2].Minutes = 8;
+    FanSetPoints[3].PWM = 135;
+    FanSetPoints[3].Minutes = 14;
+    EEPROM.put(FanSetPoints_EP[0],FanSetPoints[0]);
+    EEPROM.put(FanSetPoints_EP[1],FanSetPoints[1]);
+    EEPROM.put(FanSetPoints_EP[2],FanSetPoints[2]);
+    EEPROM.put(FanSetPoints_EP[3],FanSetPoints[3]);
+    for (int i = 0; i < 4; i++) {
+       EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
+    }
   }
-        
+  
+  for (int i = 0; i < 4; i++) {
+     SpDebug("FanSP " + String(i) + " min:" + String(FanSetPoints[i].Minutes) + " pwm:" + String(FanSetPoints[i].PWM));
+  }
+ 
+
+
   Gain = EEPROM.read(GAIN_EP);
   Integral = (double)EEPROM.read(INTEGRAL_EP) / 100;
   if (Integral > 1) Integral = 0.00;
   if (Gain > 75) Gain = 75;
   if (Gain < 10) Gain = 10;
-  
+
   SecondTimer.restart(0);
 
 
 
   // -------------------------------------------------------------
-  if (HasDisplay == true){
+  if (HasDisplay == true) {
     Serial.println("Initializing LCD");
 
     myGLCD.InitLCD();
@@ -596,7 +609,7 @@ if (testiffirstrun == 0)
     myTouch.InitTouch();
     myTouch.setPrecision(PREC_MEDIUM);
     // -------------------------------------------------------------
-  } 
+  }
   delay(2000);
 
   intializeMenus();
@@ -610,15 +623,15 @@ if (testiffirstrun == 0)
   FanSpeedPWM = FanSetPoints[0].PWM;
 
   Serial.println(F("wire i2c for fan begin"));
-   
-  
-  Wire.begin();  
-  
+
+
+  Wire.begin();
+
   StopAndSendFanPWM();
-  
+
   graphProfile();
   Serial.println("loop is starting...");
-  
+
 }
 
 
