@@ -26,22 +26,19 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 // Assign human-readable names to some common 16-bit color values:
 
-#define BLACK 0x0000
-#define WHITE 0xFFFF
-#define BLUE 0xF800  //255 0 0  red
-#define RED 0x001F   //0  0  255  blud
 #define ORANGE 0x0339   //0,102,204 med blue
-#define BLUEMED 0xCB20  //204,102, 0 orange
-#define LIME 0x07E0   //0,255,0
-#define GREEN 0x05E0  //0,190,0
-#define YELLOW 0x0FFF  //pair 255,255,0 (aqua)
-#define AQUA 0x07FF    //pair 0,255,255 (yellow)
-#define TAN 0x9E7F     // 152,204,255
 #define LGBLUE 0xFE73  // 255,204,152 (tan)
-#define PINK 0xFB3F  // 255,100,255
-#define MAROON 0x0010    //128,0,255
-#define BLUEDEEP 0xF810  //255,0,128
-#define VGA_TRANSPARENT 0xFFFFFFFF
+
+#define DARKBLUE 0x0804
+#define BLACK    0x0000
+#define WHITE   0xFFFF
+#define RED     0xF800
+#define GREEN   0x0400
+#define BLUE    0x001F
+#define GRAY    0xE69A
+#define YELLOW    0xFFE0
+#define ORANGE    0xFBA0
+#define AQUA    0x1D5C
 
 #define MCP4725_ADDR 0x60
 
@@ -263,14 +260,14 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   }
   ,
   { {70, "<<"       , "go to"     , "prior"      , "menu", GREEN},
-    {71, "A+1"      , "Add 1 min"  , "to A"       , "period", ORANGE},
-    {72, "A-1"      , "Rmv 1 min"  , "to A"       , "period", ORANGE},
-    {73, "S PWM"    , "Adjust"     , "Start"      , "PWM" , ORANGE},
-    {74, "A PWM"    , "Adjust"     , "A"          , "PWM", ORANGE},
-    {75, "C PWM"    , "Adjust"     , "C"          , "PWM" , ORANGE},
-    {76, "E PWM"    , "Adjust"     , "End"        , "PWM" , ORANGE},
-    {77, "C+1"      , "Add 1 min"  , "to C"       , "period" , ORANGE},
-    {78, "C-1"      , "Rmv 1 min"  , "to C"       , "period" , ORANGE}
+    {71, "A+1"      , "Add 1 min"  , "to A"       , "period", AQUA},
+    {72, "A-1"      , "Rmv 1 min"  , "to A"       , "period", AQUA},
+    {73, "A PWM"    , "Adjust"     , "A"      , "PWM" , AQUA},
+    {74, "B PWM"    , "Adjust"     , "B"          , "PWM", AQUA},
+    {75, "C PWM"    , "Adjust"     , "C"          , "PWM" , AQUA},
+    {76, "D PWM"    , "Adjust"     , "D"        , "PWM" , AQUA},
+    {77, "C+1"      , "Add 1 min"  , "to C"       , "period" , AQUA},
+    {78, "C-1"      , "Rmv 1 min"  , "to C"       , "period" , AQUA}
   }
   ,
   { {80, ">>" , "go to", "next", "menu", GREEN},
@@ -290,7 +287,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {91, "Stop"  , "End Roast"  , "or Fan" , "" , RED},
     {92, "Fan"   , "Start"      , "Fan"    , ""  , AQUA},
     {93, "rfs"  , "Redraw"     , "screen" , "", WHITE},
-    {94, "^" , "go back", "to", "prior", GREEN},
+    {94, "" , "go back", "to", "prior", GREEN},
     {95, "" , "go back", "to", "prior", GREEN},
     {96, "" , "go back", "to", "prior", GREEN},
     {97, "" , "go back", "to", "prior", GREEN},
@@ -302,7 +299,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {101, "-3"  , "Decrease", "fan 3", "prior", AQUA},
     {102, "+3"   , "Increase", "fan 3", "prior", AQUA},
     {103, "+10" , "Increase", "fan 10", "prior", AQUA},
-    {104, "SAVE" , "save as", "start", "prior", AQUA},
+    {104, ""    , "save as", "start", "prior", AQUA},
     {105, "" , "go back", "to", "prior", GREEN},
     {106, "" , "go back", "to", "prior", GREEN},
     {107, "" , "go back", "to", "prior", GREEN},
@@ -564,8 +561,9 @@ void setup() {
     EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
   }
 
-  if ( FanSetPoints[1].PWM == 0 || FanSetPoints[1].Minutes == 0 )
+  if ( FanSetPoints[0].PWM == 0 || FanSetPoints[0].PWM == 255 )
   {
+    Serial.println(F("Setting FanSetPointEprom"));
     FanSetPoints[0].PWM = 185;
     FanSetPoints[0].Minutes = 0;
     FanSetPoints[1].PWM = 160;
@@ -584,7 +582,7 @@ void setup() {
   }
   
   for (int i = 0; i < 4; i++) {
-     SpDebug("FanSP " + String(i) + " min:" + String(FanSetPoints[i].Minutes) + " pwm:" + String(FanSetPoints[i].PWM));
+     //SpDebug("FanSP " + String(i) + " min:" + String(FanSetPoints[i].Minutes) + " pwm:" + String(FanSetPoints[i].PWM));
   }
  
 
@@ -629,6 +627,7 @@ void setup() {
 
   StopAndSendFanPWM();
 
+  VerticalMenuShowing = VmenuEmpty;
   graphProfile();
   Serial.println("loop is starting...");
 

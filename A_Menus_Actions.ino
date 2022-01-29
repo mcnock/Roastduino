@@ -231,14 +231,26 @@ void DrawVMenu(int iMenu, int iButton) {
   VerticalMenuPrior = VerticalMenuShowing;
   VerticalMenuShowing = iMenu;
   myButtonVertMenus[iMenu].inputbutton = iButton;
-  if (iMenu == VmenuEmpty && iButton != -1)
+  
+  boolean bRedraw = false;
+  if (iMenu == VmenuEmpty )
   {
     myGLCD.setColor(BLACK);
     myGLCD_drawRect(myButtonVertMenus[Vmenubase].bounding);
     myGLCD_fillRect(myButtonVertMenus[Vmenubase].bounding);
+    bRedraw = true;
+  }
+  else if (VerticalMenuPrior == VmenuEmpty) 
+  {  bRedraw = true;
   }
   DrawMenuButtons(myButtonVertMenus[iMenu]);
-}
+  
+  if (bRedraw) {
+    UpdateTempDisplayArea(All);
+    graphFanProfile();
+   } 
+  
+ }
 
 void ProcessEmptyVmenu(int i) {
   DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu, -1);
@@ -344,8 +356,8 @@ void ProcessSetPointSelectVMenu(int i) {
 }
 
 void Process_135_VMenu(int i) {
-  //Serial.print ("ProcessSetPointAdjustmentVMenu:");Serial.println (i);
-  //Serial.print ("spSelected:");Serial.print (spSelected);
+  //SpDebug ("Process_135_VMenu i:" + String(i) + " for VerticalMenuPrior:" + String(VerticalMenuPrior) + " inputbutton:" + String(myButtonVertMenus[VmenuAdj_1_3_5].inputbutton)) ;
+  
   moveamount = 0;
   switch (i) {
     case 0:
@@ -387,7 +399,7 @@ void Process_135_VMenu(int i) {
         graphProfile();
       }
 
-      break;
+      
       if (VerticalMenuPrior == VmenuFan) {
 
         DrawVMenu(VmenuFan, -1);
@@ -416,7 +428,7 @@ void Process_135_VMenu(int i) {
     }
     else if (VerticalMenuPrior == VmenuFan)
     {
-      int PWMIndex = i - 3;  //3 > 0, 4> 1, 5>2 and 6 > 3
+      int PWMIndex = myButtonVertMenus[VmenuAdj_1_3_5].inputbutton - 3;  //3 > 0, 4> 1, 5>2 and 6 > 3
       if (PWMIndex >= 0 and PWMIndex < 4) {
         FanSetPoints[PWMIndex].PWM = FanSetPoints[PWMIndex].PWM + moveamount;
 
@@ -427,7 +439,9 @@ void Process_135_VMenu(int i) {
         if (FanSetPoints[PWMIndex].PWM < 100) {
           FanSetPoints[PWMIndex].PWM = 100;
         }
+        SpDebug("Saving FanSetPoint index:" + String(PWMIndex) + " to:" + FanSetPoints[PWMIndex].PWM); 
         EEPROM.put(FanSetPoints_EP[PWMIndex], FanSetPoints[PWMIndex]);
+        
         graphFanProfile();
       }
       else
@@ -594,7 +608,7 @@ void ProcessFanVmenu(int i) {
       break;
 
     case 2: //A-
-      if (FanSetPoints[1].Minutes > 2) {
+      if (FanSetPoints[1].Minutes > 1) {
         FanSetPoints[1].Minutes = FanSetPoints[1].Minutes - 1;
         EEPROM.put(FanSetPoints_EP[1], FanSetPoints[1]);
       }
