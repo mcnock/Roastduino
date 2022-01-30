@@ -318,7 +318,7 @@ String errmsg;
 boolean newerrmsg;
 int lenlasterrmsg;
 
-int TEMPCOILTOOHOT = 600;
+int TEMPCOILTOOHOT = 700;
 
 boolean serialOutPutTempsBySecond ;
 boolean serialOutPutTempsBy3Seconds ;
@@ -372,7 +372,7 @@ const int FanGraphXStart = 410;//starting col of fan graph - a little past half
 const int FanGraphHeight = 165;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
 const int FanGraphBottom = 455;
-int FanGraphMinPWM = 110;
+int FanGraphMinPWM = 100;
 int FanGraphMaxPWM = 254;
 
 float PixelsPerMinFan;
@@ -410,6 +410,8 @@ double TempPerPixL = 0;
 double TempPerPixM = 0;
 double TempPerPixH = 0;
 
+int HorScaleLineY[20];
+int HorScaleLineYCount = 0;
 double CurrentSetPointTemp = 0;
 
 int LoopsPerSecond;

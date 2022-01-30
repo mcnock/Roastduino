@@ -236,9 +236,20 @@ void DrawVMenu(int iMenu, int iButton) {
   if (iMenu == VmenuEmpty )
   {
     myGLCD.setColor(BLACK);
-    myGLCD_drawRect(myButtonVertMenus[Vmenubase].bounding);
-    myGLCD_fillRect(myButtonVertMenus[Vmenubase].bounding);
+    int xstart = 800 - myButtonVertMenus[Vmenubase].W;
+    //myGLCD.drawRect(xstart,myButtonVertMenus[Vmenubase].H,800,480);
+    myGLCD.fillRect(xstart -1,myButtonVertMenus[Vmenubase].H,800,480);
     bRedraw = true;
+    myGLCD.setColor(GRAY);
+    
+    for (int i = 0; i < HorScaleLineYCount; i++) {
+        //SpDebug("menuRedrawYScale:" + String(i)+ " x:"+  String(xstart) + " y:" + String(HorScaleLineY[i]));
+        myGLCD.drawLine(xstart-2,HorScaleLineY[i],800,HorScaleLineY[i]);
+        
+    }
+    myGLCD.setColor(BLACK);
+    
+  
   }
   else if (VerticalMenuPrior == VmenuEmpty) 
   {  bRedraw = true;

@@ -26,7 +26,7 @@ void graphProfile() {
       MySetPoints[2].Minutes = 7;
       MySetPoints[3].Minutes = 10;
       MySetPoints[4].Minutes = 13;
-      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 5;
+      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 2;
 
     }
     else if (MySetPoints[EndingSetPoint].Minutes >= 11)
@@ -35,7 +35,7 @@ void graphProfile() {
       MySetPoints[2].Minutes = 6;
       MySetPoints[3].Minutes = 8;
       MySetPoints[4].Minutes = 10;
-      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 3;
+      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 2;
 
     }
     else
@@ -44,7 +44,7 @@ void graphProfile() {
       MySetPoints[2].Minutes = 5;
       MySetPoints[3].Minutes = 7;
       MySetPoints[4].Minutes = 9;
-      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 2;
+      TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 1;
 
     }
 
@@ -82,11 +82,11 @@ void graphProfile() {
 
     //perform some necesary calculations to size our scales to the display
     //yscale is done in 3 ranges
-    TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 3;
+    TimeScreenLeft =  MySetPoints[EndingSetPoint].Minutes + 2;
     TempYMax = 800;
     TempSplitHigh = 440;
     TempSplitHigh = MySetPoints[EndingSetPoint].Temperature ;
-    PixelYSplit2 = 400;//180;
+    PixelYSplit2 = 390;//180;
     //  TempSplitLow = (MySetPoints[2].Temperature - Gain) ;
     TempSplitLow = (MySetPoints[1].Temperature ) ;
 
@@ -130,22 +130,27 @@ void graphProfile() {
   //Low range A
   myGLCD.setColor(GRAY);
 
-
   for (int t = 50; t < (TempSplitLow - 50); t = t + 50) {
     //Serial.println(t);
-    myGLCD.drawLine(yaxislable,  YforATemp(t), myGLCD.getDisplayXSize(), YforATemp(t) );
-    myGLCD.printNumI(t, 2 , YforATemp(t) - 5);
+    int y = YforATemp(t);
+  
+    myGLCD.drawLine(yaxislable,  y, myGLCD.getDisplayXSize(), y );
+    myGLCD.printNumI(t, 2 , y - 5);
     lastt = t;
   }
 
   myGLCD.setColor(GRAY);
 
-
+  HorScaleLineYCount = -1; //we only need to capture med and high range
+  
   //med range
   //  myGLCD.setColor(WHITE);
   for (int t = TempSplitLow; t < (TempSplitHigh + 5); t = t + 5) {
-    myGLCD.drawLine(yaxislable,  YforATemp(t), myGLCD.getDisplayXSize(),  YforATemp(t));
-    myGLCD.printNumI(t, 2, YforATemp(t) - 5);
+    HorScaleLineYCount++;
+    int y = YforATemp(t);
+    HorScaleLineY[HorScaleLineYCount] = y;
+    myGLCD.drawLine(yaxislable,  y, myGLCD.getDisplayXSize(), y);
+    myGLCD.printNumI(t, 2, y - 5);
     lastt = t;
   }
 
@@ -162,14 +167,18 @@ void graphProfile() {
 
   myGLCD.setColor(GRAY);
   for (int t = tstart; t < TempYMax ; t = t + 100) {
-    myGLCD.drawLine(yaxislable,  YforATemp(t), myGLCD.getDisplayXSize(),  YforATemp(t));
-    myGLCD.printNumI(t, 2 , YforATemp(t) - 5);
+    HorScaleLineYCount++;
+    int y = YforATemp(t);
+    HorScaleLineY[HorScaleLineYCount] = y;
+
+    myGLCD.drawLine(yaxislable,  y, myGLCD.getDisplayXSize(),  y);
+    myGLCD.printNumI(t, 2 , y - 5);
   }
 
 
 
   //draw the profile by and setpoint
-  StartLinebyTemp ( MySetPoints[0].Temperature, PROFILELINEID , WHITE);
+  StartLinebyTemp ( MySetPoints[0].Temperature - 50, PROFILELINEID , WHITE);
 
   for (int Minutes = 1; Minutes <= MySetPoints[EndingSetPoint].Minutes; Minutes++) {
     AddLinebyTimeAndTemp(Minutes, MyMinuteTemperature[Minutes], PROFILELINEID);
@@ -221,8 +230,7 @@ void graphFanProfile() {
  
   else
   {
-    SpDebug("B");
-
+    
      
     FanGraphXWidth = 800 - FanGraphXStart - 80 - 10;
   }
@@ -263,7 +271,7 @@ void graphFanProfile() {
   //draw horizontal pwm grid lines and labels
   //myGLCD.setColor(GREY);
   int xgridpwm = 0;
-  FanGraphMaxPWM = round5(FanSetPoints[0].PWM + 40);
+  FanGraphMaxPWM = round5(FanSetPoints[0].PWM + 20);
   for (xgridpwm = FanGraphMinPWM; xgridpwm < FanGraphMaxPWM ; xgridpwm = xgridpwm + FanGraphHorGridSpacingPWM) {
     int Y = YforAFan(xgridpwm);
     if (Y != FanGraphBottom and xgridpwm != FanGraphTop) //Do not override top and bottom
@@ -496,8 +504,8 @@ void UpdateTempDisplayArea(boolean bValuesOnly) {
   int col;
   col =  610;
   int end = 800;
-  int col2 = col + 60;  //number
-  int col5 = col2 + 65; //lable
+  int col2 = col + 75;  //number
+  int col5 = col2 + 70; //lable
   
   if (VerticalMenuShowing != VmenuEmpty)
   {
@@ -516,23 +524,23 @@ void UpdateTempDisplayArea(boolean bValuesOnly) {
     myGLCD.setColor(WHITE);
 
     row = row + rowheight;
-    myGLCD.print("Tvg :", col , row);  
+    myGLCD.print("TAvg  ", col , row);  
     if (VerticalMenuShowing == VmenuEmpty){myGLCD.print(" F", col5 , row);}
     myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 4, ' ');
     row = row + rowheight;
-    myGLCD.print("Tmp1:", col , row);
+    myGLCD.print("Temp1", col , row);
     if (VerticalMenuShowing == VmenuEmpty){myGLCD.print(" F", col5 , row);}
     myGLCD.printNumI(TBean1, col2, row, 4, ' ');
     row = row + rowheight;
-    myGLCD.print("Tmp2:", col, row);
+    myGLCD.print("Temp2", col, row);
     if (VerticalMenuShowing == VmenuEmpty){myGLCD.print(" F", col5 , row);}
     myGLCD.printNumI(TBean2, col2, row, 4, ' ');
     row = row + rowheight;
-    myGLCD.print("Coil:", col, row); 
+    myGLCD.print("Coil ", col, row); 
     if (VerticalMenuShowing == VmenuEmpty){myGLCD.print(" F", col5 , row);}
     myGLCD.printNumI(TCoil, col2, row, 4, ' ');
     row = row + rowheight;
-    myGLCD.print("Cvg :", col, row); 
+    myGLCD.print("CAvg ", col, row); 
     if (VerticalMenuShowing == VmenuEmpty){myGLCD.print(" F", col5 , row);}  
     myGLCD.printNumI(TCoilRoll.mean(), col2, row, 4, ' ');
 
@@ -541,13 +549,13 @@ void UpdateTempDisplayArea(boolean bValuesOnly) {
   { //this is copy of above with myLCD commented out
   
     row = row + rowheight;
-    //myGLCD.print("Tvg :",col , row);  myGLCD.print("F",col5 , row);
+    //myGLCD.print("TAvg ",col , row);  myGLCD.print("F",col5 , row);
     myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 4, ' ');
     row = row + rowheight;
-    //myGLCD.print("Temp1:",col , row);   myGLCD.print("F",col5 , row);
+    //myGLCD.print("Temp1",col , row);   myGLCD.print("F",col5 , row);
     myGLCD.printNumI(TBean1, col2, row, 4, ' ');
     row = row + rowheight;
-    //myGLCD.print("Temp2:", col, row);        myGLCD.print("F",col5 , row);
+    //myGLCD.print("Temp2", col, row);        myGLCD.print("F",col5 , row);
     myGLCD.printNumI(TBean2, col2, row, 4, ' ');
     row = row + rowheight;
     //          myGLCD.print("Coil:", col, row); myGLCD.print("F",col5 , row);
