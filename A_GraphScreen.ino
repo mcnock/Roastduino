@@ -733,8 +733,9 @@ void DrawSetPoint(int setpoint, uint16_t color) {
   //myGLCD.setColor(BLACK);
  // myGLCD.fillRect(X - 35, Y - 8, X + 10, Y - 12 - myGLCD.getFontYsize());
 
-  myGLCD.setColor(WHITE);
+  myGLCD.setColor(YELLOW);
   myGLCD.fillCircle(X, Y, 5);
+  myGLCD.setColor(WHITE);
   
   myGLCD.printNumI(setpoint, X + (myGLCD.getFontXsize()/2), Y - (myGLCD.getFontYsize() * 2) - 5 );
   myGLCD.print("#", X - (myGLCD.getFontXsize()/2) , Y - (myGLCD.getFontYsize() * 2) - 5 );

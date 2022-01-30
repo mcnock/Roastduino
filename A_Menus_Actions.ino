@@ -275,7 +275,7 @@ void ProcessBaseVMenu(int i) {
       DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu, 0);
       break;
     case VBUT1:
-      //DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu,-1);
+      DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu,-1);
       break;
     case VBUT2:
       myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;

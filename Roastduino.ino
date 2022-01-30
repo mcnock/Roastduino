@@ -36,8 +36,8 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define GREEN   0x0400
 #define BLUE    0x001F
 #define GRAY    0xE69A
-#define YELLOW    0xFFE0
-#define ORANGE    0xFBA0
+#define YELLOW    0xC781
+#define ORANGE    0xF241
 #define AQUA    0x1D5C
 
 #define MCP4725_ADDR 0x60
@@ -186,8 +186,8 @@ char debug = 'a';
 #define VmenuCount 9
 #define MaxButtonCount 9
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
-  { {0, ">>" , "go back"  , "to"     , "prior", GREEN},
-    {1, "" , "go back"  , "to"     , "prior", GREEN},
+  { {0, ">>" , "forward"  , "to"     , "next", GREEN},
+    {1, "<<" , "back"  , "to"     , "prior", GREEN},
     {2, "Gain" , "Ajdust" , "Gain"   , "Value", YELLOW},
     {3, "Int" , "Ajdust"  , "Intergal", "Value", YELLOW},
     {4, "SPs" , "Select"  , "Setpoints", "to adjust", YELLOW},
@@ -216,8 +216,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {27, "-5" , "go back", "to", "prior", ORANGE},
     {28, "SAVE" , "go back", "to", "prior", YELLOW}
   },
-  { {30, ">>" , "go to", "next", "menu", GREEN},
-    {31, "" , "go back", "to", "prior", GREEN},
+  { {30, ">>" , "foward", "to", "next", GREEN},
+    {31, "<<" , "back", "to", "prior", GREEN},
     {32, "DBG" , "subject", "of", "menu", YELLOW},
     {33, "C1" , "toggle", "coil 1 SSR", "on and off", YELLOW},
     {34, "C2" , "toggle", "coil 2 SSR", "on and off", YELLOW},
@@ -286,7 +286,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {90, "Start" , "Start"      , "Roast"  , "", GREEN},
     {91, "Stop"  , "End Roast"  , "or Fan" , "" , RED},
     {92, "Fan"   , "Start"      , "Fan"    , ""  , AQUA},
-    {93, "rfs"  , "Redraw"     , "screen" , "", WHITE},
+    {93, "rfs"  , "Redraw"     , "screen" , "", ORANGE},
     {94, "" , "go back", "to", "prior", GREEN},
     {95, "" , "go back", "to", "prior", GREEN},
     {96, "" , "go back", "to", "prior", GREEN},
