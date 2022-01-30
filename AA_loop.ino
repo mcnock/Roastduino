@@ -190,11 +190,11 @@ void theloop() {
           TempReadingskipped[0] = 0;
           TempReadingskipped[1] = 0;
           TempReadingskipped[2] = 0;
-          StartLinebyTemp(0, ROLLMAXLINEID, RED);
-          StartLinebyTemp(0, ROLLMINLINEID, BLUE);
-          StartLinebyTemp(0, ROLLAVGLINEID, LGBLUE);
-          StartLinebyTemp(0, COILLINEID, RED);
-          StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeedPWM), FANSPEEDLINEID, AQUA);
+          StartLinebyTemp(0, ROLLMAXLINEID);
+          StartLinebyTemp(0, ROLLMINLINEID);
+          StartLinebyTemp(0, ROLLAVGLINEID);
+          StartLinebyTemp(0, COILLINEID);
+          StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeedPWM), FANSPEEDLINEID);
           graphProfile();
           RoastTime.restart(0);
           RoastMinutes = 0;

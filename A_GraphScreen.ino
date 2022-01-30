@@ -128,18 +128,18 @@ void graphProfile() {
   int yaxislable = 30;
   int lastt = 0;
   //Low range A
-  myGLCD.setColor(GRAY);
-
+  
   for (int t = 50; t < (TempSplitLow - 50); t = t + 50) {
     //Serial.println(t);
     int y = YforATemp(t);
-  
+    myGLCD.setColor(LIGHTGRAY);
     myGLCD.drawLine(yaxislable,  y, myGLCD.getDisplayXSize(), y );
+    myGLCD.setColor(GRAY);
+
     myGLCD.printNumI(t, 2 , y - 5);
     lastt = t;
   }
 
-  myGLCD.setColor(GRAY);
 
   HorScaleLineYCount = -1; //we only need to capture med and high range
   
@@ -149,7 +149,11 @@ void graphProfile() {
     HorScaleLineYCount++;
     int y = YforATemp(t);
     HorScaleLineY[HorScaleLineYCount] = y;
+    
+  myGLCD.setColor(LIGHTGRAY);
     myGLCD.drawLine(yaxislable,  y, myGLCD.getDisplayXSize(), y);
+  
+  myGLCD.setColor(GRAY);
     myGLCD.printNumI(t, 2, y - 5);
     lastt = t;
   }
@@ -165,20 +169,22 @@ void graphProfile() {
     tstart = 450;
   }
 
-  myGLCD.setColor(GRAY);
   for (int t = tstart; t < TempYMax ; t = t + 100) {
     HorScaleLineYCount++;
     int y = YforATemp(t);
     HorScaleLineY[HorScaleLineYCount] = y;
 
+  myGLCD.setColor(LIGHTGRAY);
     myGLCD.drawLine(yaxislable,  y, myGLCD.getDisplayXSize(),  y);
+   
+  myGLCD.setColor(GRAY);
     myGLCD.printNumI(t, 2 , y - 5);
   }
 
 
 
   //draw the profile by and setpoint
-  StartLinebyTemp ( MySetPoints[0].Temperature - 50, PROFILELINEID , WHITE);
+  StartLinebyTemp ( MySetPoints[0].Temperature - 50, PROFILELINEID );
 
   for (int Minutes = 1; Minutes <= MySetPoints[EndingSetPoint].Minutes; Minutes++) {
     AddLinebyTimeAndTemp(Minutes, MyMinuteTemperature[Minutes], PROFILELINEID);
@@ -209,7 +215,7 @@ void graphProfile() {
 
   UpdateProgessDisplayArea(All);
 
-  DrawLineFromHistoryArray(ORANGE, ROLLAVGLINEID);
+  DrawLineFromHistoryArray(ROLLAVGLINEID);
   
 }
 
@@ -308,7 +314,7 @@ void graphFanProfile() {
    myGLCD.printNumI(FanSetPoints[3].PWM , XforAFanMin(FanSetPoints[3].Minutes) - (myGLCD.getFontXsize() * 3) - 3  , YforAFan(FanSetPoints[3].PWM) - myGLCD.getFontYsize()  );  
       
 
-  DrawLineFromHistoryArray(ORANGE, FANSPEEDLINEID);
+  DrawLineFromHistoryArray(FANSPEEDLINEID);
   ////UpdateFanPWMValuesDisplay();
 }
 
@@ -586,7 +592,7 @@ void UpdateFanPWMValuesDisplay() {
 
 }
 
-void StartLinebyTemp(int temp, int lineID, uint16_t color) {
+void StartLinebyTemp(int temp, int lineID) {
 
   int Y = 0;
   if (temp > 0) {
@@ -596,15 +602,14 @@ void StartLinebyTemp(int temp, int lineID, uint16_t color) {
   else {
     Y = 480;
   }
-  StartLinebyXAndY(0, Y, lineID, color);
+  StartLinebyXAndY(0, Y, lineID);
 }
 
-void StartLinebyXAndY(int X, int Y, int lineID, uint16_t color) {
+void StartLinebyXAndY(int X, int Y, int lineID) {
 
   LastforLineID[lineID].x = X;
   LastforLineID[lineID].y = Y;
 
-  LineColorforLineID[lineID] = color;
   int HistoryID = GetHistoryIDfromLineID(lineID);
   if (HistoryID > -1) {
    //SpDebug("Reseting history for lineID:" + String(lineID));
@@ -692,10 +697,13 @@ void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double time
   myGLCD.drawLine(PixelsPerMin * timemins1, YforATemp(temp1), PixelsPerMin * timemins2, YforATemp(temp2));
 }
 
-void DrawLineFromHistoryArray(int color, int LineID ) {
+void DrawLineFromHistoryArray(int LineID ) {
   int HistoryID = GetHistoryIDfromLineID(LineID);
+
+  
   if (HistoryID > -1) {
    //SpDebug("Redrawing lineid:\t" + String(LineID));       
+    myGLCD.setColor(LineColorforLineID[LineID]);
     LastforLineID[LineID].x = GraphHistory[HistoryID].Pixels[0].x;
     LastforLineID[LineID].y = GraphHistory[HistoryID].Pixels[0].y;
     for (int i = 1; i < GraphHistory[HistoryID].ArraySize; i++) {

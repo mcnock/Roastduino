@@ -26,8 +26,8 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 // Assign human-readable names to some common 16-bit color values:
 
-#define ORANGE 0x0339   //0,102,204 med blue
-#define LGBLUE 0xFE73  // 255,204,152 (tan)
+#define ORANGE 0x0339   
+#define LGBLUE 0xFE73  
 
 #define DARKBLUE 0x0804
 #define BLACK    0x0000
@@ -35,13 +35,13 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define RED     0xF800
 #define GREEN   0x0400
 #define BLUE    0x001F
-#define GRAY    0xE69A
+#define GRAY    0x630C
+#define LIGHTGRAY    0x3186
 #define YELLOW    0xC781
 #define ORANGE    0xF241
 #define AQUA    0x1D5C
 
 #define MCP4725_ADDR 0x60
-
 
 #define SpDebug Serial.println
 
@@ -130,7 +130,12 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define COILLINEID 3
 #define FANSPEEDLINEID 4
 #define ROLLMINLINEID 5
+
 #define GRAPHLINECOUNT 6
+
+uint16_t LineColorforLineID[GRAPHLINECOUNT] =
+{WHITE,YELLOW,RED,RED,ORANGE,ORANGE};
+
 
 //800 pixels / every 4 seconds = 200
 
@@ -455,7 +460,6 @@ char s5[5];
 char spFormat[5] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
 point LastforLineID[GRAPHLINECOUNT];
-uint16_t LineColorforLineID[GRAPHLINECOUNT];
 
 int moveamount = -1;
 
