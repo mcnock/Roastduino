@@ -19,34 +19,34 @@ int round5(int n) {
 }
 
 int  CalcFanPWMForATime(double minutes){
-     SpDebug("Starting CalcFanPWM");
+     //SpDebug("Starting CalcFanPWM");
      int calcedFanSpeed;
      int newFanSpeed;
      float ratio;
          if (minutes <= FanSetPoints[1].Minutes){
                 ratio = (float)(minutes  )/(float)(FanSetPoints[1].Minutes);
                 calcedFanSpeed =   FanSetPoints[0].PWM  + (ratio * (FanSetPoints[1].PWM -FanSetPoints[0].PWM  )) ; 
-                SpDebug("CaclPMW < sp1 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
+                //SpDebug("CaclPMW < sp1 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
         }
         
          else if (minutes < FanSetPoints[2].Minutes){     
                 ratio = (float)(minutes - FanSetPoints[1].Minutes )/(float)(FanSetPoints[2].Minutes- FanSetPoints[1].Minutes);
                 calcedFanSpeed =   FanSetPoints[1].PWM  + (ratio * (FanSetPoints[2].PWM -FanSetPoints[1].PWM  )) ; 
-                SpDebug("CaclPMW < sp2 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
+                //SpDebug("CaclPMW < sp2 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
         
             }
          else if (minutes <= FanSetPoints[3].Minutes) //this should roast end
          {
                   ratio = (float)(minutes - FanSetPoints[2].Minutes )/(float)(FanSetPoints[3].Minutes- FanSetPoints[2].Minutes);
                   calcedFanSpeed =   FanSetPoints[2].PWM  + (ratio * (FanSetPoints[3].PWM -FanSetPoints[2].PWM  )) ; 
-                  SpDebug("CaclPMW < sp3  mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
+                  //SpDebug("CaclPMW < sp3  mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
         
             }
         else  //this should be paste roaste - ie cooling
        {
           
            calcedFanSpeed =  FanSetPoints[3].PWM * 1.1;
-           SpDebug("CaclPMW > 3   mins: " + String(minutes) +  " pwm:" + String(calcedFanSpeed));
+           //SpDebug("CaclPMW > 3   mins: " + String(minutes) +  " pwm:" + String(calcedFanSpeed));
         
        }
       newFanSpeed = calcedFanSpeed + FanDeviation;

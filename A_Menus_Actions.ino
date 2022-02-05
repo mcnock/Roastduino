@@ -44,7 +44,7 @@ void intializeMenus() {
           break;
         }
       case VmenuAdj_1_3_5: {
-          bsd->ClickHandler = Process_135_VMenu;
+          bsd->ClickHandler = Process_1_3_5_VMenu;
           bsd->nextMenu = -1;
           bsd->backMenu = VmenuSetPointSelect;
           break;
@@ -194,7 +194,7 @@ void ProcessHorFanMenu(int i) {
       break;
   }
   if (change != 0) {
-    if (FanSpeedPWMAutoMode == true) {
+    if (State == STATEROASTING   ) {
 
       FanDeviation = FanDeviation + change;
 
@@ -231,37 +231,37 @@ void DrawVMenu(int iMenu, int iButton) {
   VerticalMenuPrior = VerticalMenuShowing;
   VerticalMenuShowing = iMenu;
   myButtonVertMenus[iMenu].inputbutton = iButton;
-  
+
   boolean bRedraw = false;
   if (iMenu == VmenuEmpty )
   {
     myGLCD.setColor(BLACK);
     int xstart = 800 - myButtonVertMenus[Vmenubase].W;
     //myGLCD.drawRect(xstart,myButtonVertMenus[Vmenubase].H,800,480);
-    myGLCD.fillRect(xstart -1,myButtonVertMenus[Vmenubase].H,800,480);
+    myGLCD.fillRect(xstart - 1, myButtonVertMenus[Vmenubase].H, 800, 480);
     bRedraw = true;
-    myGLCD.setColor(GRAY);
-    
+    myGLCD.setColor(LIGHTGRAY);
+
     for (int i = 0; i < HorScaleLineYCount; i++) {
-        //SpDebug("menuRedrawYScale:" + String(i)+ " x:"+  String(xstart) + " y:" + String(HorScaleLineY[i]));
-        myGLCD.drawLine(xstart-2,HorScaleLineY[i],800,HorScaleLineY[i]);
-        
+      //SpDebug("menuRedrawYScale:" + String(i)+ " x:"+  String(xstart) + " y:" + String(HorScaleLineY[i]));
+      myGLCD.drawLine(xstart - 2, HorScaleLineY[i], 800, HorScaleLineY[i]);
+
     }
     myGLCD.setColor(BLACK);
-    
-  
+
+
   }
-  else if (VerticalMenuPrior == VmenuEmpty) 
-  {  bRedraw = true;
+  else if (VerticalMenuPrior == VmenuEmpty)
+  { bRedraw = true;
   }
   DrawMenuButtons(myButtonVertMenus[iMenu]);
-  
+
   if (bRedraw) {
     UpdateTempDisplayArea(All);
     graphFanProfile();
-   } 
-  
- }
+  }
+
+}
 
 void ProcessEmptyVmenu(int i) {
   DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu, -1);
@@ -275,7 +275,7 @@ void ProcessBaseVMenu(int i) {
       DrawVMenu(myButtonVertMenus[VerticalMenuShowing].nextMenu, 0);
       break;
     case VBUT1:
-      DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu,-1);
+      DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu, -1);
       break;
     case VBUT2:
       myButtonVertMenus[VMenuAdj_1_5_10_V].buttondefs[1].AlternateLableID.MenuID = VerticalMenuShowing;
@@ -304,7 +304,29 @@ void ProcessBaseVMenu(int i) {
       if (State == STATEROASTING && RoastTime.elapsed() > 61)
       {
         RoastTime.add(-60);
+
+      } 
+      else  if (State == STATECOOLING && RoastTime.elapsed() > 61)
+      {
+        RoastTime.add(-60);
+        if (RoastTime.elapsed() / 60 < MySetPoints[EndingSetPoint].Minutes)
+        {
+          SpDebug("Adding 1 minute roast time when cooling. restartng roast requested");
+          RoastRestartNeeded = true;
+        }
+        else
+        {
+          SpDebug("Adding 1 minute roast time when cooling. restartng roast not yet neccesary");
+
+        }
+
+
+
+
+
       }
+
+
       break;
 
 
@@ -366,9 +388,9 @@ void ProcessSetPointSelectVMenu(int i) {
 
 }
 
-void Process_135_VMenu(int i) {
-  //SpDebug ("Process_135_VMenu i:" + String(i) + " for VerticalMenuPrior:" + String(VerticalMenuPrior) + " inputbutton:" + String(myButtonVertMenus[VmenuAdj_1_3_5].inputbutton)) ;
-  
+void Process_1_3_5_VMenu(int i) {
+  //SpDebug ("Process_1_3_5_VMenu i:" + String(i) + " for VerticalMenuPrior:" + String(VerticalMenuPrior) + " inputbutton:" + String(myButtonVertMenus[VmenuAdj_1_3_5].inputbutton)) ;
+
   moveamount = 0;
   switch (i) {
     case 0:
@@ -410,7 +432,7 @@ void Process_135_VMenu(int i) {
         graphProfile();
       }
 
-      
+
       if (VerticalMenuPrior == VmenuFan) {
 
         DrawVMenu(VmenuFan, -1);
@@ -446,22 +468,22 @@ void Process_135_VMenu(int i) {
         if (FanSetPoints[PWMIndex].PWM > 254) {
           FanSetPoints[PWMIndex].PWM = 254;
         }
-       
+
         if (FanSetPoints[PWMIndex].PWM < 100) {
           FanSetPoints[PWMIndex].PWM = 100;
         }
-        SpDebug("Saving FanSetPoint index:" + String(PWMIndex) + " to:" + FanSetPoints[PWMIndex].PWM); 
+        SpDebug("Saving FanSetPoint index:" + String(PWMIndex) + " to:" + FanSetPoints[PWMIndex].PWM);
         EEPROM.put(FanSetPoints_EP[PWMIndex], FanSetPoints[PWMIndex]);
-        
+
         graphFanProfile();
       }
       else
       {
-         Serial.print("Error PWMIndex not between 0 and 3 it was:");Serial.println(PWMIndex);
+        Serial.print("Error PWMIndex not between 0 and 3 it was:"); Serial.println(PWMIndex);
       }
 
 
-      
+
     }
 
 

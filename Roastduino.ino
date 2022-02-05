@@ -38,6 +38,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define GRAY    0x630C
 #define LIGHTGRAY    0x3186
 #define YELLOW    0xC781
+#define PALEYELLOW   0xDFD4
 #define ORANGE    0xF241
 #define AQUA    0x1D5C
 
@@ -101,6 +102,9 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define VBUT7 7
 #define VBUT8 8
 
+#define TCoilID 0
+#define TBean1ID 1
+#define TBean2ID 2
 
 //EPROM MEMORORY
 
@@ -113,16 +117,69 @@ const int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom mem
 const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory locations - not data
 
 #define TEMPCOOLINGDONE 250
+//#define TEMPCOOLINGDONE 100
+
 #define STATEROASTING 1
 #define STATESTOPPED 2
 #define STATECOOLING 3
 #define STATEOVERHEATED 4
-#define STATEFANONLY 6
-#define STATENOFANCURRENT 7
-#define STATECHANGED 8
-#define DEBUGTOGGLE 9
-#define DEBUGDUTY 10
-#define DEBUGCOIL 11
+#define STATEFANONLY 5
+#define STATENOFANCURRENT 6
+#define STATECHANGED 7
+#define DEBUGTOGGLE 8
+#define DEBUGDUTY 9
+#define DEBUGCOIL 10
+#define STATERESTARTROASTING 11
+
+const char Sname0[]  = "";
+const char Sname1[]  = "Roasting  ";
+const char Sname2[]  = "Stopped   ";
+const char Sname3[]  = "Cooling   ";
+const char Sname4[]  = "Overheated";
+const char Sname5[]  = "FanOnly   ";
+const char Sname6[]  = "NoFanCurre";
+const char Sname7[]  = "Changed   ";
+const char Sname8[]  = "DebugTog  ";
+const char Sname9[]  = "DebugDuty ";
+const char Sname10[]  = "DebugCoil";
+const char Sname11[]  = "STATERESTARTROASTING";
+
+bool RoastRestartNeeded =false;
+
+const uint16_t  StateColor[] = {
+  0,
+  GREEN,
+  RED,
+  BLUE,
+  YELLOW,
+  YELLOW,
+  YELLOW,
+  YELLOW,
+  YELLOW,
+  YELLOW,
+  YELLOW,
+  GREEN
+};
+
+const char*  StateName[] = {
+  Sname0,
+  Sname1,
+  Sname2,
+  Sname3,
+  Sname4,
+  Sname5,
+  Sname6,
+  Sname7,
+  Sname8,
+  Sname9,
+  Sname10,
+  Sname11
+};
+
+
+
+
+
 
 #define PROFILELINEID 0
 #define ROLLAVGLINEID 1
@@ -133,8 +190,11 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 
 #define GRAPHLINECOUNT 6
 
-uint16_t LineColorforLineID[GRAPHLINECOUNT] =
-{WHITE,YELLOW,RED,RED,ORANGE,ORANGE};
+const uint16_t LineColorforLineID[GRAPHLINECOUNT] =
+{WHITE,YELLOW,RED,RED,YELLOW,ORANGE};
+
+const boolean LineBoldforLineID[GRAPHLINECOUNT] =
+{false,false,false,false,true,false};
 
 
 //800 pixels / every 4 seconds = 200
@@ -197,8 +257,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     {3, "Int" , "Ajdust"  , "Intergal", "Value", YELLOW},
     {4, "SPs" , "Select"  , "Setpoints", "to adjust", YELLOW},
     {5, "Fan" , "Adjust"  , "fan auto", "decrease", YELLOW},
-    {6, "rT+1" , "Add 1"    , "minute to" , "this roast", YELLOW},
-    {7, "rT-1" , "Remove 1" , "minute tp" , "this roast", YELLOW},
+    {6, "Adv" , "Advance"    , "roast" , "by 1 min", YELLOW},
+    {7, "Rtd" , "Retard " , "roast" , "by 1 min", YELLOW},
     {8, "cCut" , "Adjust" , "Hightemp", "Cut out", YELLOW}
   },
   { {10, "<<"  , "back"       , "to prior" , "menu", GREEN},
@@ -316,10 +376,10 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
 buttontext myArrayLocal;
 
 int State;
-char StateName[9] = "12345678";
 int newState;
 int lastStateUpdated;
 String errmsg;
+String errmsglast;
 boolean newerrmsg;
 int lenlasterrmsg;
 
@@ -353,7 +413,7 @@ int FanSpeedPWM = 0;
 //int FanSpeedPWMC = 0;
 //int FanSpeedPWMEnd = 90;
 //int FanSpeedPWMAutoDecreaseStart = 90;
-bool FanSpeedPWMAutoMode = false;
+//bool FanSpeedPWMAutoMode = false;
 //int FanSpeedPWNMinutesToA = 2;
 //int FanSpeedPWNMinutesToC = 8;
 int FanSpeedResistanceLast = 0;

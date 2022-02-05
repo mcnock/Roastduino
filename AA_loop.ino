@@ -41,10 +41,10 @@ void theloop() {
           TCoilRoll.push(TCoil);
         }
         ReadTempFlag++;
-        
-      
+
+
         //Serial.print("New Coil temp time:");Serial.println(t);
-        
+
         break;
       case 1:
         TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
@@ -66,38 +66,47 @@ void theloop() {
         }
         ReadTempFlag = -1;
         long t = MeasureTempTimer.elapsed();
-        
+
         MeasureTempTimer.stop();
         //Serial.print("New temps time:");Serial.println(t);
-         //Serial.print(F("bean1:"));Serial.print(TBean1);Serial.print(F(",bean2:"));Serial.print(TBean2);
+        //Serial.print(F("bean1:"));Serial.print(TBean1);Serial.print(F(",bean2:"));Serial.print(TBean2);
         bNewTempsAvailable = true;
         break;
     }
   }
 
-  //DETERIM NEW STATE BASE ON TEMPERATURE or TIME
-  if (State == STATEROASTING) {
-    if (TBeanAvgRoll.mean() > (MySetPoints[EndingSetPoint].Temperature) + 5) {
-      TempReachedCount++;
-      if (TempReachedCount > 20) {
-        newState = STATECOOLING;
-        //Serial.println("Roast Temp Reached. Cooling starting End:");
+  //DETERIM NEW STATE BASE ON STATE TEMPERATURE or TIME
+  switch (State) {
+    case STATEROASTING: {
+        if (TBeanAvgRoll.mean() > (MySetPoints[EndingSetPoint].Temperature) + 20) {
+          TempReachedCount++;
+          if (TempReachedCount > 20) {
+            newState = STATECOOLING;
+            //Serial.println("Roast Temp Reached. Cooling starting End:");
+          }
+        } else {
+          TempReachedCount = 0;
+        }
+        if (RoastMinutes > MySetPoints[EndingSetPoint].Minutes) {
+          newState = STATECOOLING;
+          Serial.println(F("Max time reached. Cooling starting"));
+        }
+        break;
       }
-    } else {
-      TempReachedCount = 0;
-    }
-
-    if (RoastMinutes > MySetPoints[EndingSetPoint].Minutes) {
-      newState = STATECOOLING;
-      Serial.println(F("Max time reached. Cooling starting"));
-    }
-  } else if (State == STATECOOLING) {
-    if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
-      newState = STATESTOPPED;
-      Serial.println(F("Auto Cooling Complete "));
-    }
+    case STATECOOLING: {
+        if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
+            newState = STATESTOPPED;
+            Serial.println(F("Auto Cooling Complete "));
+        }
+        else if (RoastMinutes < MySetPoints[EndingSetPoint].Minutes & RoastRestartNeeded)
+        {
+          newState = STATEROASTING;
+          RoastRestartNeeded =false;
+          Serial.println(F("RestartRoasting request detected"));
+       }
+      break;
+      }
   }
-
   //determin action based on input from touch or serial
   if (HasDisplay) {
     if (myTouch.dataAvailable()) {
@@ -153,6 +162,11 @@ void theloop() {
   }
 
   //Action is state is changing
+  if (newState != 0 )
+  {
+    Serial.print("Moving  to new state:");Serial.println(StateName[newState]);
+  
+  }
   switch (newState) {
     case STATESTOPPED: //newstate
       {
@@ -169,7 +183,7 @@ void theloop() {
           digitalWrite(FANRELAYp_2, RELAYOFF);
           //digitalWrite(VIBRELAYp, RELAYOFF);
           RoastTime.stop();
-          FanSpeedPWMAutoMode = false;
+          //  FanSpeedPWMAutoMode = false;
           FanSpeedPWM = 0;
         } else {
           newState = STATECOOLING;
@@ -177,19 +191,25 @@ void theloop() {
         }
         break;
       }
+    case STATERESTARTROASTING:
+      {
+        State = STATEROASTING;
+        break;
+      }
+
     case STATEROASTING:  //newstate
       {
         digitalWrite(FANRELAYp_2, RELAYON);
         //digitalWrite(VIBRELAYp, RELAYON);
 
+
         if (State == STATESTOPPED || State == STATEFANONLY) {
           SetAndSendFanPWMForATime(0);
-          FanSpeedPWMAutoMode = true;
           TCoilRoll.clear();
           TBeanAvgRoll.clear();
-          TempReadingskipped[0] = 0;
-          TempReadingskipped[1] = 0;
-          TempReadingskipped[2] = 0;
+          TempReadingskipped[TCoilID] = 0;
+          TempReadingskipped[TBean1ID] = 0;
+          TempReadingskipped[TBean2ID] = 0;
           StartLinebyTemp(0, ROLLMAXLINEID);
           StartLinebyTemp(0, ROLLMINLINEID);
           StartLinebyTemp(0, ROLLAVGLINEID);
@@ -198,7 +218,9 @@ void theloop() {
           graphProfile();
           RoastTime.restart(0);
           RoastMinutes = 0;
-        } else if (State == STATECOOLING) {
+          RoastRestartNeeded =false;
+        } 
+        else if (State == STATECOOLING) {
           //nothing is needed
         }
         State = STATEROASTING;
@@ -209,7 +231,7 @@ void theloop() {
       {
         State = newState;
         SetAndSendFanPWMForATime(RoastMinutes);
-        FanSpeedPWMAutoMode = false;
+        //FanSpeedPWMAutoMode = false;
         //Serial.print("F:");Serial.println(LOW);
 
         digitalWrite(SSR1_p7, LOW);
@@ -388,21 +410,21 @@ void theloop() {
       SerialOutputTempsForPlotting();
     }
     if (serialOutPutStatusBySecond == true) {
-      
+
       SerialOutputStatus();
     }
-    if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING){
-        AddLinebyTimeAndFan(RoastMinutes);
+    if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
+      AddLinebyTimeAndFan(RoastMinutes);
     }
   }
-  
+
   if (bNewTempsAvailable)
   {
-    if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING){
-        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
-        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
-        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
-        AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+    if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
+      AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
+      AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
+      AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+      AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
     }
   }
   //what to output to UI each 3 seconds
