@@ -383,7 +383,7 @@ String errmsglast;
 boolean newerrmsg;
 int lenlasterrmsg;
 
-int TEMPCOILTOOHOT = 700;
+int TEMPCOILTOOHOT = 800;
 
 boolean serialOutPutTempsBySecond ;
 boolean serialOutPutTempsBy3Seconds ;

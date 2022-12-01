@@ -228,18 +228,17 @@ void graphFanProfile() {
 
   int FanGraphXWidth;
   //SpDebug("VerticalmenuShowing:" + String(VerticalMenuShowing));
-  if (VerticalMenuShowing == VmenuEmpty)
-  {
+  //if (VerticalMenuShowing == VmenuEmpty)
+  //{
      //SpDebug("A");
-     FanGraphXWidth = 800 - FanGraphXStart - 5 ;
-  }
+  //   FanGraphXWidth = 800 - FanGraphXStart - 5 ;
+  //}
  
-  else
-  {
-    
+  //else
+  //{
      
     FanGraphXWidth = 800 - FanGraphXStart - 80 - 10;
-  }
+  //}
 
   PixelsPerMinFan = (float)FanGraphXWidth / (float)MySetPoints[EndingSetPoint].Minutes;
 
