@@ -49,7 +49,7 @@ void theloop() {
       case 1:
         TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
         //SpDebug("New bean 1 temp:" + String(TBean1));
-        if (TBean1 = -1) {
+        if (TBean1 == -1) {
           TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
         }
         ReadTempFlag++;
@@ -57,15 +57,16 @@ void theloop() {
       case 2:
         TBean2 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
         //SpDebug("New bean 2 temp" + String(TBean2));
-        if (TBean2 = -1) {
+        if (TBean2 == -1) {
           TBean2 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
         }
         TBeanAvgThisRun = getBeanAvgTemp(TBean1, TBean2);
         if (TBeanAvgThisRun > -1) {
           TBeanAvgRoll.push(TBeanAvgThisRun);
+          //SpDebug("Added value:" + String(TBeanAvgThisRun) + " to TbeanAvgRoll with new max of:\t" + String(TBeanAvgRoll.maximum()) + "/t avg of:" + String(TBeanAvgRoll.mean())  );
         }
         ReadTempFlag = -1;
-        long t = MeasureTempTimer.elapsed();
+//        long t = MeasureTempTimer.elapsed();
 
         MeasureTempTimer.stop();
         //Serial.print("New temps time:");Serial.println(t);
@@ -98,7 +99,7 @@ void theloop() {
             newState = STATESTOPPED;
             Serial.println(F("Auto Cooling Complete "));
         }
-        else if (RoastMinutes < MySetPoints[EndingSetPoint].Minutes & RoastRestartNeeded)
+        else if ((RoastMinutes < MySetPoints[EndingSetPoint].Minutes) & RoastRestartNeeded)
         {
           newState = STATEROASTING;
           RoastRestartNeeded =false;
@@ -280,41 +281,37 @@ void theloop() {
 
   //calculate new PID for coils
   if (State == STATEROASTING) {
-    //if (false){
-    //Serial.println("A");
-    //Err, Duty, DutyRaw,.mean(), integralsum, integral,CurrentSetpointTemp all floats
-    //only gain is an Int
     CurrentSetPointTemp = SetpointforATime(RoastMinutes);
-    Err = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint. Positive it temp is under setupt
-    PIDIntegralUdateTimeValue = 5000;
-    if (abs(Err) < Gain) {
-      if (PIDIntegralUdateTime.elapsed() > PIDIntegralUdateTimeValue) {  //every 5 seconds we add the err to be a sum of err
-        if (ErrI < Gain) {
-          IntegralSum = IntegralSum + Err;
-          if (IntegralSum < 0) {
-            IntegralSum = 0;
+    ErrTemp = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint. Positive it temp is under setupt
+    PIDIntegralUdateTimeValueTemp = 5000;
+    if (abs(ErrTemp) < GainTemp) {
+      if (PIDIntegralUdateTimeTemp.elapsed() > PIDIntegralUdateTimeValueTemp) {  //every 5 seconds we add the err to be a sum of err
+        if (ErrITemp < GainTemp) {
+          IntegralSumTemp = IntegralSumTemp + ErrTemp;
+          if (IntegralSumTemp < 0) {
+            IntegralSumTemp = 0;
           }
-          ErrI = (IntegralSum * Integral);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
+          ErrITemp = (IntegralSumTemp * IntegralTemp);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
           //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);
-          PIDIntegralUdateTime.restart(0);
+          PIDIntegralUdateTimeTemp.restart(0);
         }
       }
-      Duty = ((Err + ErrI) / (double)Gain);
+      DutyTemp = ((ErrTemp + ErrITemp) / (double)GainTemp);
 
-      if (Duty > 1.0) {
-        Duty = 1.0;
+      if (DutyTemp > 1.0) {
+        DutyTemp = 1.0;
       }
 
     } else {  //clear out the integral before set point 1.
-      Duty = 1.0;
+      DutyTemp = 1.0;
       //  ErrI = 0;
       //  IntegralSum= 0;
       //  PIDIntegralUdateTime.restart(0);
       //   IntegralLastTime = 0;
     }
   } else {
-    ErrI = 0.0;
-    IntegralSum = 0.0;
+    ErrITemp = 0.0;
+    IntegralSumTemp = 0.0;
   }
 
   //set SSR of coils
@@ -322,31 +319,31 @@ void theloop() {
     int SSR1 = LOW;
     int SSR2 = LOW;
     //APPLY THE ERROR WITH THE PID WINDOW
-    PIDWindowSize = 1000;
+    PIDWindowSizeTemp = 1000;
     unsigned long now = millis();
-    boolean ExceedsWholePidWindow = (PIDWindowStartTime == 0) || (now - PIDWindowStartTime > PIDWindowSize);
+    boolean ExceedsWholePidWindow = (PIDWindowStartTimeTemp == 0) || (now - PIDWindowStartTimeTemp > PIDWindowSizeTemp);
     if (ExceedsWholePidWindow) {  //keep checking if we need to start a new PID window
-      PIDWindowStartTime = now;
-      if (Duty > 0.0) {
+      PIDWindowStartTimeTemp = now;
+      if (DutyTemp > 0.0) {
         SSR1 = HIGH;
       }
-      if (Duty > 0.5) {
+      if (DutyTemp > 0.5) {
         SSR2 = HIGH;
       }
     } else {
-      if (Duty <= 0.5 && ((now - PIDWindowStartTime) <= (Duty * 2 * PIDWindowSize))) {
+      if (DutyTemp <= 0.5 && ((now - PIDWindowStartTimeTemp) <= (DutyTemp * 2 * PIDWindowSizeTemp))) {
         SSR1 = HIGH;
         //Serial.println("SSR1 is high");
       }
-      if (Duty >= 1.0) {
+      if (DutyTemp >= 1.0) {
         SSR1 = HIGH;
         //Serial.println("SSR1 is high");
 
         SSR2 = HIGH;
       }
-      if (Duty > 0.5) {
+      if (DutyTemp > 0.5) {
         SSR1 = HIGH;
-        if ((now - PIDWindowStartTime) <= ((Duty - .5) * 2 * PIDWindowSize)) {
+        if ((now - PIDWindowStartTimeTemp) <= ((DutyTemp - .5) * 2 * PIDWindowSizeTemp)) {
           SSR2 = HIGH;
         }
       }
@@ -356,7 +353,7 @@ void theloop() {
       if (TEMPCOILTOOHOTCount > 10) {
         bNewSecond = true;  //force display immediately
 
-        newerrmsg == true;
+        newerrmsg = true;
         errmsg = "HOT COIL CUTOUT";
         //Serial.println("too hot");
       }
@@ -367,7 +364,7 @@ void theloop() {
 
       if (TEMPCOILTOOHOTCount > 0) {
         if (errmsg == "HOT COIL CUTOUT") {
-          newerrmsg == true;
+          newerrmsg = true;
           errmsg = "";
         }
 
@@ -387,11 +384,11 @@ void theloop() {
 
     digitalWrite(SSR1_p7, LOW);
     digitalWrite(SSR2_p6, LOW);
-    Duty = 0;
-    Err = 0;
+    DutyTemp = 0;
+    ErrTemp = 0;
     CurrentSetPointTemp = 0;
-    IntegralSum = 0;
-    IntegralLastTime = 0;
+    IntegralSumTemp = 0;
+    IntegralLastTimeTemp = 0;
   }
 
   //What to output to UI real time
@@ -421,6 +418,7 @@ void theloop() {
   if (bNewTempsAvailable)
   {
     if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
+      //SpDebug("Adding maxium of:\t" + String(TBeanAvgRoll.maximum()));
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);

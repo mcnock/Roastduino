@@ -9,7 +9,7 @@ void processSerial(Stream &Serial)
     // read the incoming byte:
     int incomingByte = Serial.read();
     int incomingByte2 = 0;
-    int incomingByte3 = 0;
+    //int incomingByte3 = 0;
     delay(100);
     if (Serial.available() > 0) {
       incomingByte2 = Serial.read();
@@ -18,7 +18,8 @@ void processSerial(Stream &Serial)
     delay(100);
     
     if (Serial.available() > 0) {
-      incomingByte3 = Serial.read();
+      //int incomingByte3 = Serial.read();
+      Serial.read();
     }
     // say what you got:
     switch (incomingByte) {
@@ -231,7 +232,7 @@ void processSerial(Stream &Serial)
           }
           Serial.println("");
 
-          Serial.print (F("G:"));Serial.print(Gain);Serial.print (F("I:"));Serial.println(Integral);
+          Serial.print (F("GTemp:"));Serial.print(GainTemp);Serial.print (F("Itemp:"));Serial.println(IntegralTemp);
           //Serial.print (F("FanDecrease DelayMin:"));Serial.println(FanSpeedPWNMinutesToA);
           //Serial.print (F("Decrease:"));Serial.print(FanSpeedPWMAutoDecrease);Serial.print (F("DecreaseMinutes"));Serial.println(FanSpeedPWNDecreaseByMinutes);
 
@@ -320,9 +321,9 @@ void SerialOutputStatus()
   Serial.print(F("/"));
   Serial.print(MySetPoints[SetPointCount - 1].Temperature);
   Serial.print( F(" Delta:-"));
-  Serial.print(Err, 1);
+  Serial.print(ErrTemp, 1);
   Serial.print(F(" Duty:"));
-  Serial.print(Duty, 2);
+  Serial.print(DutyTemp, 2);
   Serial.print(F(" Coil Temp:"));
   Serial.print(TCoilRoll.mean(), 1);
   Serial.print(F(" FanPWM:"));

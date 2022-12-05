@@ -94,6 +94,52 @@ int  YforAFan(int fanpwm) {
 
 }
 
+
+void  SetFanFromOpticalSensor() {
+      //Serial.println("Call From SetFan");
+     //Serial.println(minutes);
+     //read x y ticks and divide by time
+
+     
+     //get tick rate error from setpoint
+      beanflow.readMotionCount(&deltaXflow, &deltaYflow);
+
+     //calculated fan voltage error based on a gain   
+     //calc an integral-add to error corretiion
+     //add to current voltage
+ if (State == STATEROASTING) {
+   
+    ErrFlow = setpointflow - deltaYflow; //negative if temp is over setpoint. Positive it temp is under setupt
+    PIDIntegralUdateTimeValueFlow = 5000;
+    if (abs(ErrFlow) < GainFlow) {
+      if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every 5 seconds we add the err to be a sum of err
+        if (ErrIFlow < GainFlow) {
+          IntegralSumFlow = IntegralSumFlow + ErrFlow;
+          if (IntegralSumFlow < 0) {
+            IntegralSumFlow = 0;
+          }
+          ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
+          //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);
+          PIDIntegralUdateTimeFlow.restart(0);
+        }
+      }
+      DutyFlow = ((ErrFlow + ErrIFlow) / (double)GainFlow);
+
+      if (DutyFlow > 1.0) {
+        DutyFlow = 1.0;
+      }
+
+    } else {  //clear out the integral before set point 1.
+      DutyFlow = 1.0;
+    }
+  } else {
+    ErrIFlow = 0.0;
+    IntegralSumFlow = 0.0;
+  }
+
+}
+
+
 void  SetAndSendFanPWMForATime(double minutes) {
       //Serial.println("Call From SetFan");
      //Serial.println(minutes);
@@ -130,8 +176,8 @@ void  sendFanPWM_Wire() {
  
 }
 
-int  YforATemp(double temp) {
-  int result = 0;
+  uint16_t YforATemp(double temp) {
+  uint16_t result =  0;
   if ( temp < 0.0 ) {
     temp = 0.0;
   }

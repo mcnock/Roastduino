@@ -9,7 +9,7 @@ void   TouchClick()
 
      //Serial.print("Touch Click calling menuID:");Serial.print(TouchButtonSet->menuID);Serial.print(" buttonID:");Serial.println(TouchButton);
      
-     TouchButtonSet->ClickHandler(TouchButton);
+     TouchButtonSet->pClickHandler(TouchButton);
 
 }
 
@@ -30,7 +30,7 @@ boolean DetectTouch()
        int16_t Ytouch = myTouch.getY();
           
      
-        int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
+       // int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
         //Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
     if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
@@ -64,7 +64,7 @@ void ProcessTouch(int Xtouch, int Ytouch)
 {
 
     
-    int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
+    //int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
     //Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
     if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
@@ -83,7 +83,7 @@ void ProcessTouch(int Xtouch, int Ytouch)
     if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
       //Serial.print("found vertical1  buttons");
         int k = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
-        myButtonVertMenus[VerticalMenuShowing].ClickHandler(k);
+        myButtonVertMenus[VerticalMenuShowing].pClickHandler(k);
         return;
     }
 

@@ -4,14 +4,14 @@
 
 #include <WString.h>
 
-typedef struct PWMSetpoint{
+ struct PWMSetpoint{
  byte PWM = 0;
  byte Minutes = 0;
 };
 
 typedef struct point {
-  int x = 0 ;
-  int y = -1;
+  uint16_t x = 0 ;
+  uint16_t y = -1;
  } point;
 
 typedef struct graphhistory {
@@ -54,7 +54,7 @@ typedef struct indexed10strings {
 
 typedef struct buttontext {
     byte key;
-    char label[6] ;
+    char label[7] ;
     char tip1[12] ;
     char tip2[12] ;
     char tip3[12] ;
@@ -69,7 +69,7 @@ typedef struct buttondef {
   lableID AlternateLableID;
 } buttondef;
 
-typedef int (*ClickHandler) (const int MenuID);
+typedef void (*ClickHandler) (const int MenuID);
 
 typedef struct buttonsetdef {
   rect bounding = {999,999,-1,-1};
@@ -82,7 +82,7 @@ typedef struct buttonsetdef {
   int rowstart = 0;
   boolean vertical;
   boolean visable;
-  ClickHandler ClickHandler;
+  ClickHandler  pClickHandler;
   int nextMenu;
   int backMenu;
   int inputbutton;
@@ -94,7 +94,7 @@ typedef struct buttonsetdef {
 
 typedef struct  setpoint {
   
-  int Minutes;
+  unsigned int Minutes;
   int TemperatureDefault ;
   int Temperature  ;
   int SpanMinutes  ;

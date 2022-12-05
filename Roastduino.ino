@@ -14,6 +14,7 @@
 #include <stdio.h>  // for function sprintf
 #include <stdarg.h>
 #include <Arduino.h>
+#include "src/Bitcraze_PMW3901.h"
 
 extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
@@ -26,21 +27,21 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 // Assign human-readable names to some common 16-bit color values:
 
-#define ORANGE 0x0339   
-#define LGBLUE 0xFE73  
+
+#define LGBLUE 0xFE73
 
 #define DARKBLUE 0x0804
-#define BLACK    0x0000
-#define WHITE   0xFFFF
-#define RED     0xF800
-#define GREEN   0x0400
-#define BLUE    0x001F
-#define GRAY    0x630C
-#define LIGHTGRAY    0x3186
-#define YELLOW    0xC781
-#define PALEYELLOW   0xDFD4
-#define ORANGE    0xF241
-#define AQUA    0x1D5C
+#define BLACK 0x0000
+#define WHITE 0xFFFF
+#define RED 0xF800
+#define GREEN 0x0400
+#define BLUE 0x001F
+#define GRAY 0x630C
+#define LIGHTGRAY 0x3186
+#define YELLOW 0xC781
+#define PALEYELLOW 0xDFD4
+#define ORANGE 0xF241
+#define AQUA 0x1D5C
 
 #define MCP4725_ADDR 0x60
 
@@ -52,7 +53,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
-#define FanPWMp_4 4
+//#define available 4
 //#define available 5
 #define SSR2_p6 6
 #define SSR1_p7 7
@@ -77,7 +78,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 //#define available A5
 //#define available A6
 
-#define TC_G_A7  A7
+#define TC_G_A7 A7
 #define TC_5v_A8 A8
 #define TC_SCK_A9 A9
 #define TC_SD1_A10 A10  //could share A8
@@ -86,11 +87,6 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define TC_CS2_A13 A13
 #define TC_SD3_A14 A14  //could share A8
 #define TC_CS3_A15 A15
-
-
-
-
-
 
 #define VBUT0 0
 #define VBUT1 1
@@ -108,16 +104,22 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 //EPROM MEMORORY
 
-#define INTEGRAL_EP 0
-#define GAIN_EP 2
+#define INTEGRALTEMP_EP 0
+#define GAINTEMP_EP 2
+
 const int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
 #define RoastLength_EP 36
 #define FanGraphMinPWM_EP 37
 #define FanGraphMaxPWM_EP 38
 const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory locations - not data
+#define INTEGRALFLOW_EP 70
+#define GAINFLOW_EP 72
+#define SETPOINTFLOW_EP 76
+
+
+
 
 #define TEMPCOOLINGDONE 250
-//#define TEMPCOOLINGDONE 100
 
 #define STATEROASTING 1
 #define STATESTOPPED 2
@@ -131,22 +133,22 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define DEBUGCOIL 10
 #define STATERESTARTROASTING 11
 
-const char Sname0[]  = "";
-const char Sname1[]  = "Roasting  ";
-const char Sname2[]  = "Stopped   ";
-const char Sname3[]  = "Cooling   ";
-const char Sname4[]  = "Overheated";
-const char Sname5[]  = "FanOnly   ";
-const char Sname6[]  = "NoFanCurre";
-const char Sname7[]  = "Changed   ";
-const char Sname8[]  = "DebugTog  ";
-const char Sname9[]  = "DebugDuty ";
-const char Sname10[]  = "DebugCoil";
-const char Sname11[]  = "STATERESTARTROASTING";
+const char Sname0[] = "";
+const char Sname1[] = "Roasting  ";
+const char Sname2[] = "Stopped   ";
+const char Sname3[] = "Cooling   ";
+const char Sname4[] = "Overheated";
+const char Sname5[] = "FanOnly   ";
+const char Sname6[] = "NoFanCurre";
+const char Sname7[] = "Changed   ";
+const char Sname8[] = "DebugTog  ";
+const char Sname9[] = "DebugDuty ";
+const char Sname10[] = "DebugCoil";
+const char Sname11[] = "STATERESTARTROASTING";
 
-bool RoastRestartNeeded =false;
+bool RoastRestartNeeded = false;
 
-const uint16_t  StateColor[] = {
+const uint16_t StateColor[] = {
   0,
   GREEN,
   RED,
@@ -161,7 +163,7 @@ const uint16_t  StateColor[] = {
   GREEN
 };
 
-const char*  StateName[] = {
+const char* StateName[] = {
   Sname0,
   Sname1,
   Sname2,
@@ -178,6 +180,9 @@ const char*  StateName[] = {
 
 
 
+Bitcraze_PMW3901 beanflow(10);
+int16_t deltaXflow, deltaYflow, setpointflow;
+
 
 
 
@@ -190,11 +195,9 @@ const char*  StateName[] = {
 
 #define GRAPHLINECOUNT 6
 
-const uint16_t LineColorforLineID[GRAPHLINECOUNT] =
-{WHITE,YELLOW,RED,RED,YELLOW,ORANGE};
+const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 
-const boolean LineBoldforLineID[GRAPHLINECOUNT] =
-{false,false,false,false,true,false};
+const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
 
 
 //800 pixels / every 4 seconds = 200
@@ -219,19 +222,19 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] =
 #define HmenuFAN 10
 
 
-const char Mname0  = "Vmenubase";
-const char Mname1  = "VmenuSetPointSelect";
-const char Mname2  = "VmenuAdj_1_3_5";
-const char Mname3  = "VmenuDebug";
-const char Mname4  = "VmenuOnOff";
-const char Mname5  = "VmenuAjd_01";
-const char Mname6  = "VMenuAdj_1_5_10_V";
-const char Mname7  = "VmenuFan";
-const char Mname8  = "VmenuEmpty";
-const char Mname9  = "HmenuCTRL";
-const char Mname10  = "HmenuFAN";
+const char *Mname0 = "Vmenubase";
+const char *Mname1 = "VmenuSetPointSelect";
+const char *Mname2 = "VmenuAdj_1_3_5";
+const char *Mname3 = "VmenuDebug";
+const char *Mname4 = "VmenuOnOff";
+const char *Mname5 = "VmenuAjd_01";
+const char *Mname6 = "VMenuAdj_1_5_10_V";
+const char *Mname7 = "VmenuFan";
+const char *Mname8 = "VmenuEmpty";
+const char *Mname9 = "HmenuCTRL";
+const char *Mname10 = "HmenuFAN";
 
-const char*  menunames[] = {
+const char* menunames[] = {
   Mname0,
   Mname1,
   Mname2,
@@ -251,126 +254,108 @@ char debug = 'a';
 #define VmenuCount 9
 #define MaxButtonCount 9
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
-  { {0, ">>" , "forward"  , "to"     , "next", GREEN},
-    {1, "<<" , "back"  , "to"     , "prior", GREEN},
-    {2, "Gain" , "Ajdust" , "Gain"   , "Value", YELLOW},
-    {3, "Int" , "Ajdust"  , "Intergal", "Value", YELLOW},
-    {4, "SPs" , "Select"  , "Setpoints", "to adjust", YELLOW},
-    {5, "Fan" , "Adjust"  , "fan auto", "decrease", YELLOW},
-    {6, "Adv" , "Advance"    , "roast" , "by 1 min", YELLOW},
-    {7, "Rtd" , "Retard " , "roast" , "by 1 min", YELLOW},
-    {8, "cCut" , "Adjust" , "Hightemp", "Cut out", YELLOW}
-  },
-  { {10, "<<"  , "back"       , "to prior" , "menu", GREEN},
-    {11, "sp1" , "Adjust"     , "setpoint" , "#1", YELLOW},
-    {12, "sp2" , "Adjust"     , "setpoint" , "#2", YELLOW},
-    {13, "sp3" , "Adjust"     , "setpoint" , "#3", YELLOW},
-    {14, "sp4" , "Adjust"     , "setpoint" , "#4", YELLOW},
-    {15, "sp5" , "Adjust"     , "setpoint" , "#5", YELLOW},
-    {16, "ls3" , "Adjust"     , "last 3"   , "setpoint", YELLOW},
-    {17, "T+1" , "Increase"   , "roast len"    , "by 1 min", YELLOW},
-    {18, "T-1" , "Decrease"   , "roast len"    , "by 1 min", YELLOW}
-  },
-  { {20, "<<" , "go back", "to", "prior", GREEN},
-    {21, "" , "go back", "to", "prior", YELLOW},
-    {22, "+1" , "go back", "to", "prior", ORANGE},
-    {23, "+3" , "go back", "to", "prior", ORANGE},
-    {24, "+5" , "go back", "to", "prior", ORANGE},
-    {25, "-1" , "go back", "to", "prior", ORANGE},
-    {26, "-3" , "go back", "to", "prior", ORANGE},
-    {27, "-5" , "go back", "to", "prior", ORANGE},
-    {28, "SAVE" , "go back", "to", "prior", YELLOW}
-  },
-  { {30, ">>" , "foward", "to", "next", GREEN},
-    {31, "<<" , "back", "to", "prior", GREEN},
-    {32, "DBG" , "subject", "of", "menu", YELLOW},
-    {33, "C1" , "toggle", "coil 1 SSR", "on and off", YELLOW},
-    {34, "C2" , "toggle", "coil 2 SSR", "on and off", YELLOW},
-    {35, "" , "go back", "to", "prior", YELLOW},
-    {36, "Fan" , "toggle", "fan relay", "on and off", YELLOW},
-    {37, "Duty" , "Manually", "set", "duty", YELLOW},
-    {38, "Temp" , "go back", "to", "prior", YELLOW}
-  },
-  { {40, "<<" , "go to", "prior", "menu", GREEN},
-    {41, "" , "selected", "device", "to debug", GREEN},
-    {42, "ON" , "turn", "device", "on", ORANGE},
-    {43, "OFF" , "turn", "device", "off", ORANGE},
-    {44, "" , "go back", "to", "prior", BLACK},
-    {45, "" , "go back", "to", "prior", BLACK},
-    {46, "" , "go back", "to", "prior", BLACK},
-    {47, "" , "go back", "to", "prior", BLACK},
-    {48, "" , "go back", "to", "prior", BLACK}
-  },
+  { { 0, ">>", "forward", "to", "next", GREEN },
+    { 1, "<<", "back", "to", "prior", GREEN },
+    { 2, "GainT", "Ajdust", "Temp Gain", "Value", YELLOW },
+    { 3, "IntT", "Ajdust", "Intergal", "Value", YELLOW },
+    { 4, "SPs", "Select", "Setpoints", "to adjust", YELLOW },
+    { 5, "Fan", "Adjust", "fan auto", "decrease", YELLOW },
+    { 6, "Adv", "Advance", "roast", "by 1 min", YELLOW },
+    { 7, "Rtd", "Retard ", "roast", "by 1 min", YELLOW },
+    { 8, "cCut", "Adjust", "Hightemp", "Cut out", YELLOW } },
+  { { 10, "<<", "back", "to prior", "menu", GREEN },
+    { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW },
+    { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW },
+    { 13, "sp3", "Adjust", "setpoint", "#3", YELLOW },
+    { 14, "sp4", "Adjust", "setpoint", "#4", YELLOW },
+    { 15, "sp5", "Adjust", "setpoint", "#5", YELLOW },
+    { 16, "ls3", "Adjust", "last 3", "setpoint", YELLOW },
+    { 17, "T+1", "Increase", "roast len", "by 1 min", YELLOW },
+    { 18, "T-1", "Decrease", "roast len", "by 1 min", YELLOW } },
+  { { 20, "<<", "go back", "to", "prior", GREEN },
+    { 21, "", "go back", "to", "prior", YELLOW },
+    { 22, "+1", "go back", "to", "prior", ORANGE },
+    { 23, "+3", "go back", "to", "prior", ORANGE },
+    { 24, "+5", "go back", "to", "prior", ORANGE },
+    { 25, "-1", "go back", "to", "prior", ORANGE },
+    { 26, "-3", "go back", "to", "prior", ORANGE },
+    { 27, "-5", "go back", "to", "prior", ORANGE },
+    { 28, "SAVE", "go back", "to", "prior", YELLOW } },
+  { { 30, ">>", "foward", "to", "next", GREEN },
+    { 31, "<<", "back", "to", "prior", GREEN },
+    { 32, "DBG", "subject", "of", "menu", YELLOW },
+    { 33, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
+    { 34, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
+    { 35, "", "go back", "to", "prior", YELLOW },
+    { 36, "Fan", "toggle", "fan relay", "on and off", YELLOW },
+    { 37, "Duty", "Manually", "set", "duty", YELLOW },
+    { 38, "Temp", "go back", "to", "prior", YELLOW } },
+  { { 40, "<<", "go to", "prior", "menu", GREEN },
+    { 41, "", "selected", "device", "to debug", GREEN },
+    { 42, "ON", "turn", "device", "on", ORANGE },
+    { 43, "OFF", "turn", "device", "off", ORANGE },
+    { 44, "", "go back", "to", "prior", BLACK },
+    { 45, "", "go back", "to", "prior", BLACK },
+    { 46, "", "go back", "to", "prior", BLACK },
+    { 47, "", "go back", "to", "prior", BLACK },
+    { 48, "", "go back", "to", "prior", BLACK } },
+  { { 50, "<<", "go back", "to", "prior", GREEN },
+    { 51, "", "go back", "to", "prior", GREEN },
+    { 52, "+.01", "go back", "to", "prior", ORANGE },
+    { 53, "+.05", "go back", "to", "prior", ORANGE },
+    { 54, "+.10", "go back", "to", "prior", ORANGE },
+    { 55, "-.01", "go back", "to", "prior", ORANGE },
+    { 56, "-.05", "go back", "to", "prior", ORANGE },
+    { 57, "-.10", "go back", "to", "prior", ORANGE },
+    { 58, "Save", "Save", "and", "close", GREEN } },
+  { { 60, "<<", "go to", "prior", "menu", GREEN },
+    { 61, "", "go back", "to", "prior", GREEN },
+    { 62, "+1", "go back", "to", "prior", ORANGE },
+    { 63, "+5", "go back", "to", "prior", ORANGE },
+    { 64, "+10", "go back", "to", "prior", ORANGE },
+    { 65, "-1", "go back", "to", "prior", ORANGE },
+    { 66, "-5", "go back", "to", "prior", ORANGE },
+    { 67, "-10", "go back", "to", "prior", ORANGE },
+    { 68, "Save", "Save", "and", "close", GREEN } },
+  { { 70, "<<", "go to", "prior", "menu", GREEN },
+    { 71, "Gain F", "Gain", "of", "Fan", AQUA },
+    { 72, "Int F", "Int", "of", "Fan", AQUA },
+    { 73, "A PWM", "Adjust", "A", "PWM", AQUA },
+    { 74, "B PWM", "Adjust", "B", "PWM", AQUA },
+    { 75, "C PWM", "Adjust", "C", "PWM", AQUA },
+    { 76, "D PWM", "Adjust", "D", "PWM", AQUA },
+    { 77, "C+1", "Add 1 min", "to C", "period", AQUA },
+    { 78, "C-1", "Rmv 1 min", "to C", "period", AQUA } },
+  { { 80, ">>", "go to", "next", "menu", GREEN },
+    { 81, "", "go back", "to", "prior", AQUA },
+    { 82, "", "go", "to", "prior", AQUA },
+    { 83, "", "go back", "to", "prior", AQUA },
+    { 84, "", "go back", "to", "prior", AQUA },
+    { 85, "", "go back", "to", "prior", GREEN },
+    { 86, "", "go back", "to", "prior", GREEN },
+    { 87, "", "go back", "to", "prior", GREEN },
+    { 88, "", "go back", "to", "prior", GREEN } },
+  { { 90, "Start", "Start", "Roast", "", GREEN },
+    { 91, "Stop", "End Roast", "or Fan", "", RED },
+    { 92, "Fan", "Start", "Fan", "", AQUA },
+    { 93, "rfs", "Redraw", "screen", "", ORANGE },
+    { 94, "", "go back", "to", "prior", GREEN },
+    { 95, "", "go back", "to", "prior", GREEN },
+    { 96, "", "go back", "to", "prior", GREEN },
+    { 97, "", "go back", "to", "prior", GREEN },
+    { 98, "", "go back", "to", "prior", GREEN }
 
-  { {50, "<<" , "go back", "to", "prior", GREEN},
-    {51, "" , "go back", "to", "prior", GREEN},
-    {52, "+.01" , "go back", "to", "prior", ORANGE},
-    {53, "+.05" , "go back", "to", "prior", ORANGE},
-    {54, "+.10" , "go back", "to", "prior", ORANGE},
-    {55, "-.01" , "go back", "to", "prior", ORANGE},
-    {56, "-.05" , "go back", "to", "prior", ORANGE},
-    {57, "-.10" , "go back", "to", "prior", ORANGE},
-    {58, "Save" , "Save", "and", "close", GREEN}
-  }
-  ,
-  { {60, "<<" , "go to", "prior", "menu", GREEN},
-    {61, "" , "go back", "to", "prior", GREEN},
-    {62, "+1" , "go back", "to", "prior", ORANGE},
-    {63, "+5" , "go back", "to", "prior", ORANGE},
-    {64, "+10" , "go back", "to", "prior", ORANGE},
-    {65, "-1" , "go back", "to", "prior", ORANGE},
-    {66, "-5" , "go back", "to", "prior", ORANGE},
-    {67, "-10" , "go back", "to", "prior", ORANGE},
-    {68, "Save" , "Save", "and", "close", GREEN}
-  }
-  ,
-  { {70, "<<"       , "go to"     , "prior"      , "menu", GREEN},
-    {71, "A+1"      , "Add 1 min"  , "to A"       , "period", AQUA},
-    {72, "A-1"      , "Rmv 1 min"  , "to A"       , "period", AQUA},
-    {73, "A PWM"    , "Adjust"     , "A"      , "PWM" , AQUA},
-    {74, "B PWM"    , "Adjust"     , "B"          , "PWM", AQUA},
-    {75, "C PWM"    , "Adjust"     , "C"          , "PWM" , AQUA},
-    {76, "D PWM"    , "Adjust"     , "D"        , "PWM" , AQUA},
-    {77, "C+1"      , "Add 1 min"  , "to C"       , "period" , AQUA},
-    {78, "C-1"      , "Rmv 1 min"  , "to C"       , "period" , AQUA}
-  }
-  ,
-  { {80, ">>" , "go to", "next", "menu", GREEN},
-    {81, ""  , "go back", "to", "prior", AQUA},
-    {82, ""   , "go", "to", "prior",   AQUA},
-    {83, "" , "go back", "to", "prior", AQUA},
-    {84, ""  , "go back", "to", "prior", AQUA},
-    {85, "" , "go back", "to", "prior", GREEN},
-    {86, "" , "go back", "to", "prior", GREEN},
-    {87, "" , "go back", "to", "prior", GREEN},
-    {88, "" , "go back", "to", "prior", GREEN}
-  }
-  ,
-
-  {
-    {90, "Start" , "Start"      , "Roast"  , "", GREEN},
-    {91, "Stop"  , "End Roast"  , "or Fan" , "" , RED},
-    {92, "Fan"   , "Start"      , "Fan"    , ""  , AQUA},
-    {93, "rfs"  , "Redraw"     , "screen" , "", ORANGE},
-    {94, "" , "go back", "to", "prior", GREEN},
-    {95, "" , "go back", "to", "prior", GREEN},
-    {96, "" , "go back", "to", "prior", GREEN},
-    {97, "" , "go back", "to", "prior", GREEN},
-    {98, "" , "go back", "to", "prior", GREEN}
-
-  }
-  ,
-  { {100, "-10" , "Decrease", "fan 10", "prior", AQUA},
-    {101, "-3"  , "Decrease", "fan 3", "prior", AQUA},
-    {102, "+3"   , "Increase", "fan 3", "prior", AQUA},
-    {103, "+10" , "Increase", "fan 10", "prior", AQUA},
-    {104, ""    , "save as", "start", "prior", AQUA},
-    {105, "" , "go back", "to", "prior", GREEN},
-    {106, "" , "go back", "to", "prior", GREEN},
-    {107, "" , "go back", "to", "prior", GREEN},
-    {108, "" , "go back", "to", "prior", GREEN}
-  }
-
+  },
+  { { 100, "-10", "Decrease", "fan 10", "prior", AQUA },
+    { 101, "-3", "Decrease", "fan 3", "prior", AQUA },
+    { 102, "+3", "Increase", "fan 3", "prior", AQUA },
+    { 103, "+10", "Increase", "fan 10", "prior", AQUA },
+    { 104, "", "save as", "start", "prior", AQUA },
+    { 105, "", "go back", "to", "prior", GREEN },
+    { 106, "", "go back", "to", "prior", GREEN },
+    { 107, "", "go back", "to", "prior", GREEN },
+    { 108, "", "go back", "to", "prior", GREEN } 
+    }
 };
 
 buttontext myArrayLocal;
@@ -385,8 +370,8 @@ int lenlasterrmsg;
 
 int TEMPCOILTOOHOT = 800;
 
-boolean serialOutPutTempsBySecond ;
-boolean serialOutPutTempsBy3Seconds ;
+boolean serialOutPutTempsBySecond;
+boolean serialOutPutTempsBy3Seconds;
 boolean serialOutPutStatusBy3Seconds;
 boolean serialOutPutStatusBySecond;
 
@@ -426,13 +411,12 @@ point FanPixelHistory[160];
 
 //LineID;SkipCount;SkipLimit;PixelsP;ArraySize;Array
 graphhistory GraphHistory[] = {
-  {ROLLAVGLINEID, 0, 5, 0, 160, TempPixelHistory }
-  ,
-  {FANSPEEDLINEID, 0, 5, 0, 160, FanPixelHistory }
+  { ROLLAVGLINEID, 0, 5, 0, 160, TempPixelHistory },
+  { FANSPEEDLINEID, 0, 5, 0, 160, FanPixelHistory }
 };
 
 
-const int FanGraphXStart = 410;//starting col of fan graph - a little past half
+const int FanGraphXStart = 410;  //starting col of fan graph - a little past half
 //int FanGraphXWidth = 390;  //uses 1/4 of screen width
 const int FanGraphHeight = 165;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
@@ -442,18 +426,32 @@ int FanGraphMaxPWM = 254;
 
 float PixelsPerMinFan;
 
-int Gain = 0;  //read from eeprom
-double Integral = 0.1;  //read from eeprom
-long unsigned IntegralLastTime = 0;
-float IntegralSum = 0;
-unsigned long PIDWindowStartTime;
-boolean PIDNewWindow;
-float ErrI = 0;
-float Err = 0;
-double Duty;
+int GainTemp = 0;           //read from eeprom
+double IntegralTemp = 0.1;  //read from eeprom
+long unsigned IntegralLastTimeTemp = 0;
+float IntegralSumTemp = 0;
+unsigned long PIDWindowStartTimeTemp;
+boolean PIDNewWindowTemp;
+float ErrITemp = 0;
+float ErrTemp = 0;
+double DutyTemp;
+unsigned int PIDIntegralUdateTimeValueTemp;
+unsigned int PIDWindowSizeTemp;
 
-int PIDIntegralUdateTimeValue;
-int PIDWindowSize;
+int GainFlow = 0;           //read from eeprom
+double IntegralFlow = 0.1;  //read from eeprom
+long unsigned IntegralLastTimeFlow = 0;
+float IntegralSumFlow = 0;
+unsigned long PIDWindowStartTimeFlow;
+boolean PIDNewWindowFlow;
+float ErrIFlow = 0;
+float ErrFlow = 0;
+double DutyFlow;
+unsigned int PIDIntegralUdateTimeValueFlow;
+unsigned int PIDWindowSizeFlow;
+
+
+
 
 boolean setpointschanged = true;
 long MyMinuteTemperature[30];
@@ -470,7 +468,7 @@ double TempSplitHigh = 460;
 double TempSplitLow = 390;
 double PixelYSplit2;
 double PixelYSplit;
-long   PixelsPerMin;
+long PixelsPerMin;
 double TempPerPixL = 0;
 double TempPerPixM = 0;
 double TempPerPixH = 0;
@@ -493,7 +491,8 @@ Chrono SecondTimer(Chrono::MILLIS);
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 Chrono LcdUdateTime(Chrono::MILLIS);
-Chrono PIDIntegralUdateTime(Chrono::MILLIS);
+Chrono PIDIntegralUdateTimeTemp(Chrono::MILLIS);
+Chrono PIDIntegralUdateTimeFlow(Chrono::MILLIS);
 Chrono MeasureTempTimer(Chrono::MILLIS);
 
 //temps are read once per second
@@ -517,7 +516,7 @@ char s7[7];
 char s6[6];
 char s5[5];
 
-char spFormat[5] = "%6.2F";
+char spFormat[6] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
 point LastforLineID[GRAPHLINECOUNT];
 
@@ -539,7 +538,7 @@ double MaxVoltage, MaxVread;
 int TBeanAvg;
 
 
-boolean HasDisplay = true ;
+boolean HasDisplay = true;
 // =====================================================================================================================================================================
 // SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP
 // =====================================================================================================================================================================
@@ -554,7 +553,7 @@ void setup() {
   // Pin Conffaiguration
   pinMode(FANRELAYVCCp_3, OUTPUT);
   pinMode(FANRELAYp_2, OUTPUT);
-  digitalWrite(FANRELAYVCCp_3, HIGH);   //5V
+  digitalWrite(FANRELAYVCCp_3, HIGH);  //5V
 
 
   pinMode(SSRgr_14, OUTPUT);
@@ -581,10 +580,10 @@ void setup() {
   pinMode(TC_CS3_A15, OUTPUT);
 
   pinMode(TC_G_A7, OUTPUT);
-  digitalWrite(TC_G_A7, LOW);   //0V
+  digitalWrite(TC_G_A7, LOW);  //0V
 
   pinMode(TC_5v_A8, OUTPUT);
-  digitalWrite(TC_5v_A8, HIGH);   //5V
+  digitalWrite(TC_5v_A8, HIGH);  //5V
 
   pinMode(TC_SCK_A9, OUTPUT);
 
@@ -599,8 +598,7 @@ void setup() {
   RoastTime.stop();
   int testiffirstrun;
   EEPROM.get(SETPOINTTEMP_EP[1], testiffirstrun);
-  if (testiffirstrun == 0)
-  {
+  if (testiffirstrun == 0) {
     //first run on this mega
     EEPROM.put(SETPOINTTEMP_EP[0], (int)390);
     EEPROM.put(SETPOINTTEMP_EP[1], (int)390);
@@ -609,17 +607,19 @@ void setup() {
     EEPROM.put(SETPOINTTEMP_EP[4], (int)430);
     EEPROM.put(SETPOINTTEMP_EP[5], (int)440);
     EEPROM.put(RoastLength_EP, 14);
-    EEPROM.update(INTEGRAL_EP , (int)(.04 * 100));
-    EEPROM.update(GAIN_EP , 30);
+    EEPROM.update(INTEGRALTEMP_EP, (int)(.04 * 100));
+    EEPROM.update(GAINTEMP_EP, 30);
+    EEPROM.update(INTEGRALFLOW_EP, (int)(.04 * 100));
+    EEPROM.update(GAINFLOW_EP, 30);
+    EEPROM.update(SETPOINTFLOW_EP, 30); 
     FanSetPoints[0].PWM = 185;
     FanSetPoints[0].Minutes = 0;
     FanSetPoints[1].PWM = 160;
     FanSetPoints[1].Minutes = 2;
-    FanSetPoints[2].PWM = 145 ;
+    FanSetPoints[2].PWM = 145;
     FanSetPoints[2].Minutes = 8;
     FanSetPoints[3].PWM = 135;
     FanSetPoints[3].Minutes = 14;
-
   }
 
 
@@ -627,37 +627,42 @@ void setup() {
     EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
   }
 
-  if ( FanSetPoints[0].PWM == 0 || FanSetPoints[0].PWM == 255 )
-  {
+  if (FanSetPoints[0].PWM == 0 || FanSetPoints[0].PWM == 255) {
     Serial.println(F("Setting FanSetPointEprom"));
     FanSetPoints[0].PWM = 185;
     FanSetPoints[0].Minutes = 0;
     FanSetPoints[1].PWM = 160;
     FanSetPoints[1].Minutes = 2;
-    FanSetPoints[2].PWM = 145 ;
+    FanSetPoints[2].PWM = 145;
     FanSetPoints[2].Minutes = 8;
     FanSetPoints[3].PWM = 135;
     FanSetPoints[3].Minutes = 14;
-    EEPROM.put(FanSetPoints_EP[0],FanSetPoints[0]);
-    EEPROM.put(FanSetPoints_EP[1],FanSetPoints[1]);
-    EEPROM.put(FanSetPoints_EP[2],FanSetPoints[2]);
-    EEPROM.put(FanSetPoints_EP[3],FanSetPoints[3]);
+    EEPROM.put(FanSetPoints_EP[0], FanSetPoints[0]);
+    EEPROM.put(FanSetPoints_EP[1], FanSetPoints[1]);
+    EEPROM.put(FanSetPoints_EP[2], FanSetPoints[2]);
+    EEPROM.put(FanSetPoints_EP[3], FanSetPoints[3]);
     for (int i = 0; i < 4; i++) {
-       EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
+      EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
     }
   }
-  
+
   for (int i = 0; i < 4; i++) {
-     //SpDebug("FanSP " + String(i) + " min:" + String(FanSetPoints[i].Minutes) + " pwm:" + String(FanSetPoints[i].PWM));
+    //SpDebug("FanSP " + String(i) + " min:" + String(FanSetPoints[i].Minutes) + " pwm:" + String(FanSetPoints[i].PWM));
   }
- 
 
+  GainTemp = EEPROM.read(GAINTEMP_EP);
+  IntegralTemp = (double)EEPROM.read(INTEGRALTEMP_EP) / 100;
+  if (IntegralTemp > 1) IntegralTemp = 0.00;
+  if (GainTemp > 75) GainTemp = 75;
+  if (GainTemp < 10) GainTemp = 10;
 
-  Gain = EEPROM.read(GAIN_EP);
-  Integral = (double)EEPROM.read(INTEGRAL_EP) / 100;
-  if (Integral > 1) Integral = 0.00;
-  if (Gain > 75) Gain = 75;
-  if (Gain < 10) Gain = 10;
+  GainFlow = EEPROM.read(GAINFLOW_EP);
+  IntegralFlow = (double)EEPROM.read(INTEGRALFLOW_EP) / 100;
+  setpointflow = EEPROM.read(SETPOINTFLOW_EP);
+  if (IntegralFlow > 1) IntegralFlow = 0.00;
+  if (GainFlow > 75) GainFlow = 75;
+  if (GainFlow < 10) GainFlow = 10;
+
 
   SecondTimer.restart(0);
 
@@ -696,7 +701,6 @@ void setup() {
   VerticalMenuShowing = VmenuEmpty;
   graphProfile();
   Serial.println("loop is starting...");
-
 }
 
 
