@@ -10,8 +10,8 @@
 };
 
 typedef struct point {
-  uint16_t x = 0 ;
-  uint16_t y = -1;
+  int x = 0 ;
+  int y = -1;
  } point;
 
 typedef struct graphhistory {
