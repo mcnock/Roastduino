@@ -133,7 +133,11 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define DEBUGCOIL 10
 #define STATERESTARTROASTING 11
 
-const char Sname0[] = "";
+
+LCDW = 800;
+LCDH = 480;
+
+const char Sname0[] = "";480
 const char Sname1[] = "Roasting  ";
 const char Sname2[] = "Stopped   ";
 const char Sname3[] = "Cooling   ";

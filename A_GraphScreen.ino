@@ -86,7 +86,7 @@ void graphProfile() {
     TempYMax = 800;
     TempSplitHigh = 440;
     TempSplitHigh = MySetPoints[EndingSetPoint].Temperature ;
-    PixelYSplit2 = 390;//180;
+    PixelYSplit2 = 390;
     //  TempSplitLow = (MySetPoints[2].Temperature - Gain) ;
     TempSplitLow = (MySetPoints[1].Temperature ) ;
 
