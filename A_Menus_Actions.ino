@@ -105,6 +105,7 @@ void intializeMenus() {
 
 void DrawHorControlMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
+  return;
   DrawMenuButtons(myHorControlMenuDef);
 }
 
@@ -162,6 +163,7 @@ void ProcessHorControlMenu(int i) {
 }
 
 void DrawHorFanMenu() {
+  return;
   //these ar the buttoms on top row starting about 1/2 across screen
   DrawMenuButtons(myHorFanButtonControl);
 }
@@ -222,6 +224,7 @@ void ProcessHorFanMenu(int i) {
 }
 
 void DrawVMenu(int iMenu, int iButton) {
+  return;
   VerticalMenuPrior = VerticalMenuShowing;
   VerticalMenuShowing = iMenu;
   myButtonVertMenus[iMenu].inputbutton = iButton;

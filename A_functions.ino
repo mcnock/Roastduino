@@ -159,24 +159,41 @@ void sendFanPWM_Wire() {
   //Serial.print("Setting Fan pwm B:");Serial.println(FanSpeedPWM);
 }
 
+
+uint16_t XforATime(float time)
+{
+
+uint16_t result =0;
+if (time <= timeSplitLow)
+{
+     result = time * PixelsPerMinL;
+     return result;
+}
+else
+{
+    result =  (timeSplitLow * PixelsPerMinL) + ((time - timeSplitLow) * PixelsPerMinM);
+     
+
+}
+return result;
+
+}
+
 uint16_t YforATemp(double temp) {
   uint16_t result = 0;
   if (temp < 0.0) {
     temp = 0.0;
   }
   if (temp <= TempSplitLow) {
-    result = (myGLCD.getDisplayYSize() - ((double)temp / TempPerPixL));
-    //Serial.print("low t:");
-  } else if (temp <= TempSplitHigh) {
-    //Serial.print("mid t:");
-    result = double(myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempSplitLow) / (double)TempPerPixM);
+    result = (double)(GRTempBpx) - abs( ((double)temp / TempPerPixL));
+    Serial.print("low t:");
   } else {
-    //Serial.print("high t:");
-    result = double(myGLCD.getDisplayYSize() - PixelYSplit2) + ((double)(TempSplitHigh - temp) / (double)TempPerPixH);
+    Serial.print("high t:");
+    result = double(GRTempSplitLpx) - abs(((double)( temp - TempSplitLow ) / (double)TempPerPixM));
   }
-  //Serial.print (temp);
-  //Serial.print ( "y:");
-  //Serial.println(result);
+  Serial.print (temp);
+  Serial.print ( "y:");
+  Serial.println(result);
   if (result < 0) {
     return 1;
   } else {

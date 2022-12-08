@@ -134,10 +134,8 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define STATERESTARTROASTING 11
 
 
-LCDW = 800;
-LCDH = 480;
 
-const char Sname0[] = "";480
+const char Sname0[] = "";
 const char Sname1[] = "Roasting  ";
 const char Sname2[] = "Stopped   ";
 const char Sname3[] = "Cooling   ";
@@ -467,15 +465,6 @@ const int SetPointCount = 6;  //0,1,2,3,4,t0t5
 int EndingSetPoint = 5;
 int TimeScreenLeft = 0;
 
-double TempYMax = 800;
-double TempSplitHigh = 460;
-double TempSplitLow = 390;
-double PixelYSplit2;
-double PixelYSplit;
-long PixelsPerMin;
-double TempPerPixL = 0;
-double TempPerPixM = 0;
-double TempPerPixH = 0;
 
 int HorScaleLineY[20];
 int HorScaleLineYCount = 0;
@@ -676,7 +665,8 @@ void setup() {
   if (HasDisplay == true) {
     Serial.println("Initializing LCD");
 
-    myGLCD.InitLCD();
+    //myGLCD.InitLCD();
+    myGLCD.InitLCD(PORTRAIT);
     pinMode(8, OUTPUT);     //backlight
     digitalWrite(8, HIGH);  //on
     myTouch.InitTouch();
