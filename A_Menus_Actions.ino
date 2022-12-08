@@ -172,16 +172,16 @@ void ProcessHorFanMenu(int i) {
   switch (i) {
     case 0:
       //decrease quickly
-      change = -10;
+      change = -5;
       break;
     case 1:
-      change = -3;
+      change = -1;
       break;
     case 2:
-      change = 3;
+      change = 1;
       break;
     case 3:
-      change = 10;
+      change = 5;
       break;
     case 4:
 
@@ -393,7 +393,7 @@ void Process_1_3_5_VMenu(int i) {
           MySetPoints[xSetPoint].TemperatureNew = 0;
         }
         spSelected = -1;
-        DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu, -1);
+        DrawVMenu(VerticalMenuPrior, -1);
       }
       if (VerticalMenuPrior == VmenuFan) {
 
@@ -490,7 +490,7 @@ void ProcessAdjust_01Vmenu(int i) {
   double moveamount = 0;
   switch (i) {
     case 0:
-      newState = STATESTOPPED;
+      
       DrawVMenu(VerticalMenuPrior, -1);
       break;
     case 2:
@@ -630,7 +630,7 @@ void ProcessFanVmenu(int i) {
   switch (i) {
     case 0:
 
-      DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu, -1);
+      DrawVMenu(VerticalMenuPrior, -1);
 
       break;
     // case 1:  //gain Fan
@@ -762,8 +762,8 @@ void ProcessAdj_1_5_10_VMenu(int i) {
   int moveamount = 0;
   switch (i) {
     case 0:
-      newState = STATESTOPPED;
-      DrawVMenu(myButtonVertMenus[VerticalMenuShowing].backMenu, -1);
+     
+      DrawVMenu(VerticalMenuPrior, -1);
       break;
     case 2:
       moveamount = 1;
@@ -797,7 +797,7 @@ void ProcessAdj_1_5_10_VMenu(int i) {
       if (GainTemp < 10) {
         GainTemp = 0;
       }
-      EEPROM.update(GAINFLOW_EP , GainTemp);
+      EEPROM.update(GAINTEMP_EP , GainTemp);
       UpdateProgessDisplayArea(All);
     }
     else if (VerticalMenuPrior == VmenuFan && myButtonVertMenus[VerticalMenuShowing].inputbutton  == VBUT2 ) {
