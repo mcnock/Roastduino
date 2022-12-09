@@ -4,31 +4,31 @@
 
 #include <WString.h>
 
- struct PWMSetpoint{
- byte PWM = 0;
- byte Minutes = 0;
+struct PWMSetpoint {
+  byte PWM = 0;
+  byte Minutes = 0;
 };
 
 typedef struct point {
-  int x = 0 ;
+  int x = 0;
   int y = -1;
- } point;
+} point;
 
 typedef struct graphhistory {
-  int LineID  ;
+  int LineID;
   int SkipCount;
   int SkipLimit;
   int PixelsP;
   int ArraySize;
   point *Pixels;
- } graphhistory;
+} graphhistory;
 
 
 
 typedef struct labelID {
-  int MenuID = -1 ;
-  int ButtonID = -1 ;
- } lableID;
+  int MenuID = -1;
+  int ButtonID = -1;
+} lableID;
 
 
 typedef struct rect {
@@ -39,26 +39,26 @@ typedef struct rect {
 } rect;
 
 typedef struct indexed10strings {
-    char s_0 [12];
-    char s_1 [12];
-    char s_2 [12];
-    char s_3 [12];
-    char s_4 [12];
-    char s_5 [12];
-    char s_6 [12];
-    char s_7 [12];
-    char s_8 [12];
-    char s_9 [12];
+  char s_0[12];
+  char s_1[12];
+  char s_2[12];
+  char s_3[12];
+  char s_4[12];
+  char s_5[12];
+  char s_6[12];
+  char s_7[12];
+  char s_8[12];
+  char s_9[12];
 } indexedstrings;
 
 
 typedef struct buttontext {
-    byte key;
-    char label[7] ;
-    char tip1[12] ;
-    char tip2[12] ;
-    char tip3[12] ;
-    uint16_t color;
+  byte key;
+  char label[7];
+  char tip1[12];
+  char tip2[12];
+  char tip3[12];
+  uint16_t color;
 } buttontext;
 
 typedef struct buttondef {
@@ -69,10 +69,10 @@ typedef struct buttondef {
   lableID AlternateLableID;
 } buttondef;
 
-typedef void (*ClickHandler) (const int MenuID);
+typedef void (*ClickHandler)(const int MenuID);
 
 typedef struct buttonsetdef {
-  rect bounding = {999,999,-1,-1};
+  rect bounding = { 999, 999, -1, -1 };
   buttondef buttondefs[9];
   int menuID = -1;
   int ButtonCount = 0;
@@ -82,24 +82,24 @@ typedef struct buttonsetdef {
   int rowstart = 0;
   boolean vertical;
   boolean visable;
-  ClickHandler  pClickHandler;
+  ClickHandler pClickHandler;
   int nextMenu;
   int backMenu;
   int inputbutton;
   int priormenuID;
-  
+
 } buttonsetdef;
 
 
 
-typedef struct  setpoint {
-  
+typedef struct setpoint {
+
   unsigned int Minutes;
-  int TemperatureDefault ;
-  int Temperature  ;
-  int SpanMinutes  ;
-  int TemperatureNew ;
-  
+  int TemperatureDefault;
+  int Temperature;
+  int SpanMinutes;
+  int TemperatureNew;
+
 } roastdef;
 
 

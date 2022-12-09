@@ -33,7 +33,7 @@ void theloop() {
   if (ReadTempFlag > -1) {
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
     switch (ReadTempFlag) {
-      case 0://coil
+      case 0:  //coil
         MeasureTempTimer.restart();
         TCoil = getCleanTemp(thermocouple3.readFahrenheit(), 0);
         //Serial.print("New Coil temp:");Serial.println(TCoil);
@@ -66,7 +66,7 @@ void theloop() {
           //SpDebug("Added value:" + String(TBeanAvgThisRun) + " to TbeanAvgRoll with new max of:\t" + String(TBeanAvgRoll.maximum()) + "/t avg of:" + String(TBeanAvgRoll.mean())  );
         }
         ReadTempFlag = -1;
-//        long t = MeasureTempTimer.elapsed();
+        //        long t = MeasureTempTimer.elapsed();
 
         MeasureTempTimer.stop();
         //Serial.print("New temps time:");Serial.println(t);
@@ -78,7 +78,8 @@ void theloop() {
 
   //DETERIM NEW STATE BASE ON STATE TEMPERATURE or TIME
   switch (State) {
-    case STATEROASTING: {
+    case STATEROASTING:
+      {
         if (TBeanAvgRoll.mean() > (MySetPoints[EndingSetPoint].Temperature) + 20) {
           TempReachedCount++;
           if (TempReachedCount > 20) {
@@ -94,18 +95,17 @@ void theloop() {
         }
         break;
       }
-    case STATECOOLING: {
+    case STATECOOLING:
+      {
         if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
-            newState = STATESTOPPED;
-            Serial.println(F("Auto Cooling Complete "));
-        }
-        else if ((RoastMinutes < MySetPoints[EndingSetPoint].Minutes) & RoastRestartNeeded)
-        {
+          newState = STATESTOPPED;
+          Serial.println(F("Auto Cooling Complete "));
+        } else if ((RoastMinutes < MySetPoints[EndingSetPoint].Minutes) & RoastRestartNeeded) {
           newState = STATEROASTING;
-          RoastRestartNeeded =false;
+          RoastRestartNeeded = false;
           Serial.println(F("RestartRoasting request detected"));
-       }
-      break;
+        }
+        break;
       }
   }
   //determin action based on input from touch or serial
@@ -163,13 +163,12 @@ void theloop() {
   }
 
   //Action is state is changing
-  if (newState != 0 )
-  {
-    Serial.print("Moving  to new state:");Serial.println(StateName[newState]);
-  
+  if (newState != 0) {
+    Serial.print("Moving  to new state:");
+    Serial.println(StateName[newState]);
   }
   switch (newState) {
-    case STATESTOPPED: //newstate
+    case STATESTOPPED:  //newstate
       {
         //Serial.print("D:");Serial.println(LOW);
 
@@ -219,16 +218,15 @@ void theloop() {
           graphProfile();
           RoastTime.restart(0);
           RoastMinutes = 0;
-          RoastRestartNeeded =false;
-        } 
-        else if (State == STATECOOLING) {
+          RoastRestartNeeded = false;
+        } else if (State == STATECOOLING) {
           //nothing is needed
         }
         State = STATEROASTING;
         break;
       }
 
-    case STATECOOLING: //newstate
+    case STATECOOLING:  //newstate
       {
         State = newState;
         SetAndSendFanPWMForATime(RoastMinutes);
@@ -240,7 +238,7 @@ void theloop() {
         delay(1000);
         break;
       }
-    case STATEFANONLY: //newstate
+    case STATEFANONLY:  //newstate
       {
         State = newState;
         FanSpeedPWM = FanSetPoints[0].PWM;
@@ -248,7 +246,7 @@ void theloop() {
         digitalWrite(FANRELAYp_2, RELAYON);
         break;
       }
-    case STATEOVERHEATED: //newstate
+    case STATEOVERHEATED:  //newstate
       {
         State = newState;
         digitalWrite(SSR1_p7, LOW);
@@ -256,19 +254,19 @@ void theloop() {
         delay(1000);
         break;
       }
-    case STATENOFANCURRENT: //newstate
+    case STATENOFANCURRENT:  //newstate
       {
         State = newState;
         digitalWrite(SSR1_p7, LOW);
         digitalWrite(SSR2_p6, LOW);
         break;
       }
-    case DEBUGCOIL: //newstate
+    case DEBUGCOIL:  //newstate
       State = newState;
-    case DEBUGTOGGLE: //newstate
+    case DEBUGTOGGLE:  //newstate
       State = newState;
       break;
-    case DEBUGDUTY: //newstate
+    case DEBUGDUTY:  //newstate
       State = newState;
       break;
   }
@@ -415,10 +413,10 @@ void theloop() {
     }
   }
 
-  if (bNewTempsAvailable)
-  {
+  if (bNewTempsAvailable) {
     if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
       //SpDebug("Adding maxium of:\t" + String(TBeanAvgRoll.maximum()));
+      RoastAcumHeat + TBeanAvgRoll.mean();
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
@@ -445,4 +443,4 @@ void theloop() {
     LcdUdateTime.restart(0);
   }
 
-} //end of loop
+}  //end of loop

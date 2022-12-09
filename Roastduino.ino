@@ -468,7 +468,7 @@ double TempSplitHigh = 460;
 double TempSplitLow = 390;
 double PixelYSplit2;
 double PixelYSplit;
-long PixelsPerMin;
+
 double TempPerPixL = 0;
 double TempPerPixM = 0;
 double TempPerPixH = 0;
@@ -523,6 +523,7 @@ point LastforLineID[GRAPHLINECOUNT];
 int moveamount = -1;
 
 double RoastMinutes = 0;
+double RoastAcumHeat = 0;
 
 int FanDeviation = 0;
 

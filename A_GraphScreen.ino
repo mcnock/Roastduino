@@ -1,4 +1,10 @@
 
+byte timeSplitLow = 6;
+float PixelsPerMinL;
+float PixelsPerMinM;
+long PixelsPerMin;
+int pixelSplitLow = 150;
+
 void graphProfile() {
 
   //draw scales
@@ -97,7 +103,10 @@ void graphProfile() {
     TempPerPixH = (TempYMax - TempSplitHigh) / (480 - PixelYSplit2);
     PixelsPerMin =  (int)(800 / TimeScreenLeft);
 
-
+    PixelsPerMinL = (float)(pixelSplitLow / (float)timeSplitLow);
+  
+    PixelsPerMinM = (float)(800 - pixelSplitLow) / float((TimeScreenLeft - timeSplitLow));
+  
   }
 
   myGLCD.setColor(BLACK);
