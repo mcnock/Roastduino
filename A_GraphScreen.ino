@@ -6,6 +6,12 @@ double GRTempSplitLpx = 200;
 int GRTempBpx = 250;
 int HorButtonTopx = 250;
 int HorButtonHightpx = 40;
+int GRCoilTemp = 350;
+int GRFanSpeed = 450;
+int GRFPWR = 550;
+
+
+int TechInfoToppx = 600;
 
 
 int GRTempHpx = 0;
@@ -35,9 +41,6 @@ void graphProfile() {
     //read from memory
     int accumulatedbySetPoint = 0;
     int accumulatedMinutes = 0;
-    byte m;
-    EEPROM.get(RoastLength_EP, m);
-    MySetPoints[EndingSetPoint].Minutes = m;
     //Serial.println ("Loading new setpoints:");
     if (MySetPoints[EndingSetPoint].Minutes < 10 or MySetPoints[EndingSetPoint].Minutes > 20) {
       MySetPoints[EndingSetPoint].Minutes = 16;
@@ -94,7 +97,7 @@ void graphProfile() {
 
 
     TempSplitLow = (MySetPoints[1].Temperature);
-    TempYMax = (MySetPoints[SetPointCount - 1].Temperature) + 10;
+    TempYMax = (MySetPoints[SetPointCount - 1].Temperature) + 20;
 
     TempPerPixL = abs(TempSplitLow / (GRTempBpx - GRTempSplitLpx));
     TempPerPixM = abs((TempYMax - TempSplitLow) / (GRTempTpx - GRTempSplitLpx));
@@ -204,6 +207,7 @@ void graphProfile() {
   setpointschanged = false;
 
   UpdateProgessDisplayArea(All);
+  UpdateTechnicalArea(All);
 
   DrawLineFromHistoryArray(ROLLAVGLINEID);
 }
@@ -326,7 +330,10 @@ void UpdateProgessDisplayArea(boolean bValuesOnly) {
   if (bValuesOnly == false ) {
     myGLCD.print(F("Time:"), col, row);
     myGLCD_printNumF(MySetPoints[EndingSetPoint].Minutes - RoastMinutes, col2, row, 5, 1);
-
+    
+    row = row + rowheight;
+    myGLCD.print(F("Temp"), col, row);
+    //myGLCD.printNumI(DutyTempasPecent, col2, row, 5);
 
    
     row = row + rowheight;
@@ -339,44 +346,30 @@ void UpdateProgessDisplayArea(boolean bValuesOnly) {
     myGLCD_printNumF(MySetPoints[EndingSetPoint].Minutes - RoastMinutes, col2, row, 5, 1);
 
    
-    row = row + rowheight;
+     row = row + rowheight;
     //    myGLCD.print(F("Duty:"), col, row);
-    int DutyTempasPecent = DutyTemp * 100;
+     int DutyTempasPecent = DutyTemp * 100;
      myGLCD.printNumI(DutyTempasPecent, col2, row, 5);
 
   }
 }
 
-void UpdateProgessDisplayArea_copy(boolean bValuesOnly) {
+void UpdateTechnicalArea(boolean bValuesOnly) {
   //this is top row
-
-  myGLCD.setBackColor(BLACK);
-  int rowstart = 50;
-  int row = rowstart;
-
   myGLCD.setFont(BigFont);
-  int rowheight = myGLCD.getFontYsize() * 1.1;
+  myGLCD.setBackColor(BLACK);
+  //myGLCD.setFont(SmallFont);
+  //int rowstart = TechInfoToppx;
+  int row = TechInfoToppx;
 
-  int col = 40;
+  int col = 2;
   int col2 = col + (5 * myGLCD.getFontXsize());
 
-  myGLCD.setFont(SmallFont);
-  int rowheight2 = myGLCD.getFontYsize() * 1.5;
-  int col4 = col + (9 * myGLCD.getFontXsize());
-
-  //  if (bValuesOnly == false) {
-  // myGLCD.setColor(BLACK);
-  // myGLCD.fillRect(col - 5, row, col2 + (myGLCD.getFontYsize() * 5)  , row + (rowheight * 5));
-  // }
-  //Serial.println("AAF");
-  myGLCD.setColor(PALEYELLOW);
-  myGLCD.setFont(BigFont);
+  int rowheight = myGLCD.getFontYsize() * 1.1;
+    myGLCD.setColor(PALEYELLOW);
+  
   if (bValuesOnly == false) {
-    myGLCD.print(F("Time:"), col, row);
-    myGLCD_printNumF(MySetPoints[EndingSetPoint].Minutes - RoastMinutes, col2, row, 5, 2);
-
-
-    row = row + rowheight;
+    
     myGLCD.print(F("Set :"), col, row);
     myGLCD.printNumI(CurrentSetPointTemp, col2, row, 5);
 
@@ -394,81 +387,78 @@ void UpdateProgessDisplayArea_copy(boolean bValuesOnly) {
     row = row + rowheight;
 
 
-    myGLCD.setFont(SmallFont);
+    //myGLCD.setFont(SmallFont);
 
     myGLCD.print(F("Gain     :"), col, row);
-    myGLCD.printNumI(GainTemp, col4, row, 6, ' ');
+    myGLCD.printNumI(GainTemp, col2, row, 6, ' ');
 
-    row = row + rowheight2;
+    row = row + rowheight;
     myGLCD.print(F("Int      :"), col, row);
-    myGLCD_printNumF(IntegralTemp, col4, row, 6, 2);
+    myGLCD_printNumF(IntegralTemp, col2, row, 6, 2);
 
-    row = row + rowheight2;
+    row = row + rowheight;
     myGLCD.print(F("loops/sec:"), col, row);
-    myGLCD.printNumI(LoopsPerSecond, col4, row, 6, ' ');
+    myGLCD.printNumI(LoopsPerSecond, col2, row, 6, ' ');
 
-    row = row + rowheight2;
+    row = row + rowheight;
     myGLCD.print(F("Skiptemps:"), col, row);
     int R = TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
-    myGLCD.printNumI(R, col4, row, 6, ' ');
+    myGLCD.printNumI(R, col2, row, 6, ' ');
 
-    row = row + rowheight2;
+    row = row + rowheight;
     myGLCD.print(F("TooHotTem:"), col, row);
-    myGLCD.printNumI(TEMPCOILTOOHOT, col4, row, 6, ' ');
+    myGLCD.printNumI(TEMPCOILTOOHOT, col2, row, 6, ' ');
 
-    row = row + rowheight2;
+    row = row + rowheight;
     myGLCD.print(F("CooldwnT :"), col, row);
-    myGLCD.printNumI(TEMPCOOLINGDONE, col4, row, 6, ' ');
+    myGLCD.printNumI(TEMPCOOLINGDONE, col2, row, 6, ' ');
 
 
 
   } else {
-    //    myGLCD.print("Time:", col , row);
-    myGLCD_printNumF(MySetPoints[EndingSetPoint].Minutes - RoastMinutes, col2, row, 5, 2);
-
-    row = row + rowheight;
-    //    myGLCD.print(F("Set :"), col , row);
+      //  myGLCD.print(F("Time:"), col, row);
+    //myGLCD.print(F("Set :"), col, row);
     myGLCD.printNumI(CurrentSetPointTemp, col2, row, 5);
 
     row = row + rowheight;
-    //    myGLCD.print(F("Duty:"), col, row);
+    //myGLCD.print(F("Duty:"), col, row);
     myGLCD_printNumF(DutyTemp, col2, row, 5, 2);
 
     row = row + rowheight;
-    //    myGLCD.print(F("Err :"), col , row);
+    //myGLCD.print(F("Err :"), col, row);
     myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
 
     row = row + rowheight;
-    //    myGLCD.print(F("IEr :"), col  , row);
+    //myGLCD.print(F("IEr :"), col, row);
     myGLCD.printNumI(ErrITemp, col2, row, 5, ' ');
     row = row + rowheight;
 
-    myGLCD.setFont(SmallFont);
 
+    //myGLCD.setFont(SmallFont);
 
-    //    myGLCD.print(F("Gain     :"), col4 , row);
-    //    myGLCD.printNumI(Gain, col4 , row, 6, ' ');
+    //myGLCD.print(F("Gain     :"), col, row);
+    myGLCD.printNumI(GainTemp, col2, row, 6, ' ');
 
-    row = row + rowheight2;
-    //    myGLCD.print(F("Int      :"), col, row);
-    //    myGLCD_printNumF(Integral, col4, row, 6, 2);
+    row = row + rowheight;
+    //myGLCD.print(F("Int      :"), col, row);
+    myGLCD_printNumF(IntegralTemp, col2, row, 6, 2);
 
-    row = row + rowheight2;
-    //    myGLCD.print(F("loops/sec:"), col, row);
-    myGLCD.printNumI(LoopsPerSecond, col4, row, 6, ' ');
+    row = row + rowheight;
+    //myGLCD.print(F("loops/sec:"), col, row);
+    myGLCD.printNumI(LoopsPerSecond, col2, row, 6, ' ');
 
-    row = row + rowheight2;
-    //    myGLCD.print(F("Skiptemps:"), col, row);
+    row = row + rowheight;
+    //myGLCD.print(F("Skiptemps:"), col, row);
     int R = TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
-    myGLCD.printNumI(R, col4, row, 6, ' ');
+    myGLCD.printNumI(R, col2, row, 6, ' ');
 
-    row = row + rowheight2;
-    //    myGLCD.print(F("TooHotTem:"), col, row);
-    //    myGLCD.printNumI(TEMPCOILTOOHOT, col4 , row, 6, ' ');
+    row = row + rowheight;
+    //myGLCD.print(F("TooHotTem:"), col, row);
+    myGLCD.printNumI(TEMPCOILTOOHOT, col2, row, 6, ' ');
 
-    row = row + rowheight2;
-    //   myGLCD.print(F("CooldwnT :"), col, row);
-    //    myGLCD.printNumI(TEMPCOOLINGDONE, col4 , row, 6, ' ');
+    row = row + rowheight;
+    //myGLCD.print(F("CooldwnT :"), col, row);
+    myGLCD.printNumI(TEMPCOOLINGDONE, col2, row, 6, ' ');
   }
   //Serial.println("AAG");
 }
@@ -522,32 +512,24 @@ void UpdateStateDisplayArea(boolean OnlyChanges) {
 }
 
 void UpdateTempDisplayArea(boolean bValuesOnly) {
-  return;
+  
   myGLCD.setFont(BigFont);
 
-  int rowheight = 20;
-  int row = 160;
+  int rowheight = myGLCD.getFontYsize() * 1.1;
+  int row = TechInfoToppx;
   int col;
-  col = 610;
-  int end = 800;
+  col = 250;
   int col2 = col + 75;   //number
   int col5 = col2 + 70;  //lable
 
-  if (VerticalMenuShowing != VmenuEmpty) {
-    end = 800 - 85;
-    col2 = col + (myGLCD.getFontXsize() * 2);
-  }
-
-
-
   myGLCD.setBackColor(BLACK);
-  myGLCD.setColor(WHITE);
+  myGLCD.setColor(PALEYELLOW);
   if (bValuesOnly == false) {
-    myGLCD.setColor(BLACK);
-    myGLCD.fillRect(col - 5, row - 5 + rowheight, end, row + rowheight * 6);
-    myGLCD.setColor(WHITE);
+//    myGLCD.setColor(BLACK);
+    //myGLCD.fillRect(col - 5, row - 5 + rowheight, 480, row + rowheight * 6);
+   // myGLCD.setColor(WHITE);
 
-    row = row + rowheight;
+    
     myGLCD.print(F("TAvg  "), col, row);
     if (VerticalMenuShowing == VmenuEmpty) { myGLCD.print(F(" F"), col5, row); }
     myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 4, ' ');
@@ -570,7 +552,7 @@ void UpdateTempDisplayArea(boolean bValuesOnly) {
 
   } else {  //this is copy of above with myLCD commented out
 
-    row = row + rowheight;
+    
     //myGLCD.print("TAvg ",col , row);  myGLCD.print("F",col5 , row);
     myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 4, ' ');
     row = row + rowheight;

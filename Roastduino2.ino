@@ -525,6 +525,7 @@ point LastforLineID[GRAPHLINECOUNT];
 int moveamount = -1;
 
 double RoastMinutes = 0;
+double RoastAcumHeat = 0;
 
 int FanDeviation = 0;
 
