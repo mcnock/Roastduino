@@ -186,9 +186,7 @@ uint16_t YforATemp(double temp) {
   }
   if (temp <= TempSplitLow) {
     result = (double)(GRTempBpx) - abs( ((double)temp / TempPerPixL));
-    Serial.print("low t:");
   } else {
-    Serial.print("high t:");
     result = double(GRTempSplitLpx) - abs(((double)( temp - TempSplitLow ) / (double)TempPerPixM));
   }
   Serial.print (temp);

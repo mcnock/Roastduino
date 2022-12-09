@@ -223,6 +223,13 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define HmenuCTRL 9
 #define HmenuFAN 10
 
+int error = 0;
+int errordisplaying =0;
+char ErrWarning[12] = "...w/error!";
+char Err1[20] = "Fan must be running";
+char Err2[20] = "Before you start";
+
+
 
 const char *Mname0 = "Vmenubase";
 const char *Mname1 = "VmenuSetPointSelect";
@@ -341,8 +348,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 91, "Stop", "End Roast", "or Fan", "", RED },
     { 92, "Fan", "Start", "Fan", "", AQUA },
     { 93, "rfs", "Redraw", "screen", "", ORANGE },
-    { 94, "", "go back", "to", "prior", GREEN },
-    { 95, "", "go back", "to", "prior", GREEN },
+    { 94, "Adv", "go back", "to", "prior", GREEN },
+    { 95, ">>", "go back", "to", "prior", GREEN },
     { 96, "", "go back", "to", "prior", GREEN },
     { 97, "", "go back", "to", "prior", GREEN },
     { 98, "", "go back", "to", "prior", GREEN }
@@ -366,6 +373,8 @@ int State;
 int newState;
 int lastStateUpdated;
 String errmsg;
+String errmsgRow1;
+String errmsgRow2;
 String errmsglast;
 boolean newerrmsg;
 int lenlasterrmsg;
@@ -669,7 +678,7 @@ void setup() {
     myGLCD.InitLCD(PORTRAIT);
     pinMode(8, OUTPUT);     //backlight
     digitalWrite(8, HIGH);  //on
-    myTouch.InitTouch();
+    myTouch.InitTouch(PORTRAIT);
     myTouch.setPrecision(PREC_MEDIUM);
     // -------------------------------------------------------------
   }

@@ -80,12 +80,12 @@ void intializeMenus() {
     }
     SetMenuBoundingRect(myButtonVertMenus[i]);
   }
-  myHorControlMenuDef.H = 40;
-  myHorControlMenuDef.W = 90;
-  myHorControlMenuDef.rowstart = 0;
-  myHorControlMenuDef.colstart = 360;
+  myHorControlMenuDef.H = HorButtonHightpx;
+  myHorControlMenuDef.W = 79;
+  myHorControlMenuDef.rowstart = HorButtonTopx;
+  myHorControlMenuDef.colstart = 0;
   myHorControlMenuDef.vertical = false;
-  myHorControlMenuDef.ButtonCount = 4;
+  myHorControlMenuDef.ButtonCount = 6;
   myHorControlMenuDef.menuID = HmenuCTRL;
   myHorControlMenuDef.pClickHandler = ProcessHorControlMenu;
   SetMenuBoundingRect(myHorControlMenuDef);
@@ -105,14 +105,14 @@ void intializeMenus() {
 
 void DrawHorControlMenu() {
   //these ar the buttoms on top row starting about 1/2 across screen
-  return;
+  
   DrawMenuButtons(myHorControlMenuDef);
 }
 
 void ProcessHorControlMenu(int i) {
   //Serial.print("ProcessConrol");Serial.println (i);
-  if (errmsg == "Must be in Fan Only to start a roast") {
-    errmsg = "";
+  if (error == 1 ) {
+     error = 0;
     newerrmsg = true;
   }
   switch (i) {
@@ -126,7 +126,10 @@ void ProcessHorControlMenu(int i) {
       }
       else {
         newerrmsg = true;
-        errmsg = "Must be in Fan Only to start a roast";
+        error = 1;
+        //
+        //errmsg = "Must be in Fan Only to start a roast";
+        Serial.println("fan must be on error thrown. newerrmsg is true");
       }
       break;
     case 1:
