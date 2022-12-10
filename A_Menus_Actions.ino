@@ -81,7 +81,6 @@ void intializeMenus() {
           bsd->pClickHandler = ProcessEmptyVmenu;
           bsd->nextMenu = Vmenubase;
           bsd->ButtonCount = 1;
-          bsd->backMenu = VmenuDebug;
           break;
         }
     }
@@ -218,7 +217,6 @@ void DrawVMenu(int iMenu, int iButton) {
   VerticalMenuPrior = VerticalMenuShowing;
   VerticalMenuShowing = iMenu;
   myButtonVertMenus[iMenu].inputbutton = iButton;
-
   boolean bRedraw = false;
   if (iMenu == VmenuEmpty) {
     myGLCD.setColor(BLACK);
@@ -239,10 +237,55 @@ void DrawVMenu(int iMenu, int iButton) {
     bRedraw = true;
   }
   DrawMenuButtons(myButtonVertMenus[iMenu]);
-
   if (bRedraw) {
     UpdateTempDisplayArea(All);
     graphFanProfile();
+  }
+}
+
+void ClearActiveAdjustment() {
+
+  ActiveAdjustment.moveamount = -1;
+  ActiveAdjustment.spSelected = -1;
+  ActiveAdjustment.name = -1;
+}
+
+void ProcessVButtongClick() {
+
+  
+}
+void ProcessAdjustment() {
+  if (ActiveAdjustment.VmenuWhenCalled != VerticalMenuPrior) {
+    //possible error
+  }
+  if (ActiveAdjustment.moveamount != 0) {
+    switch (ActiveAdjustment.name) {
+      case ActionAdjustIntegralTemp:
+        IntegralTemp = IntegralTemp + ActiveAdjustment.moveamount;
+        if (IntegralTemp < 0.0) {
+          IntegralTemp = 0.0;
+        }
+        EEPROM.update(INTEGRALTEMP_EP, (int)(IntegralTemp * 100));
+        UpdateProgessDisplayArea(All);
+
+
+        break;
+      case ActionAdjustGainTemp:
+        break;
+      case ActionAdjustSetpointTemp:
+        setpointschanged = true;
+        if ((spSelected >= 0) & (spSelected <= 5)) {
+          MoveAPoint(spSelected);
+        }
+        if (spSelected == 6) {
+          MoveLast3Point();
+        }
+        break;
+      case ActionAdjustFan:
+        break;
+      default:
+        break;
+    }
   }
 }
 

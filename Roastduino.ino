@@ -148,6 +148,8 @@ const char Sname11[] = "STATERESTARTROASTING";
 
 bool RoastRestartNeeded = false;
 
+
+
 const uint16_t StateColor[] = {
   0,
   GREEN,
@@ -208,45 +210,48 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define ValuesOnly true
 #define All false
 
-#define Vmenubase 0
+#define VmenuBase 0
 #define VmenuSetPointSelect 1
-#define VmenuAdj_1_3_5 2
 #define VmenuDebug 3
 #define VmenuOnOff 4
-#define VmenuAjd_01 5
-#define VMenuAdj_1_5_10_V 6
+#define VmenuAdjustValue 5
 #define VmenuFan 7
 #define VmenuEmpty 8
-
 #define HmenuCTRL 9
 #define HmenuFAN 10
 
+#define VmenuAdj_1_3_5 77
+#define VmenuAjd_01 89
+#define VMenuAdj_1_5_10_V  90
+#define Vmenubase 0
 
-const char *Mname0 = "Vmenubase";
-const char *Mname1 = "VmenuSetPointSelect";
-const char *Mname2 = "VmenuAdj_1_3_5";
-const char *Mname3 = "VmenuDebug";
-const char *Mname4 = "VmenuOnOff";
-const char *Mname5 = "VmenuAjd_01";
-const char *Mname6 = "VMenuAdj_1_5_10_V";
-const char *Mname7 = "VmenuFan";
-const char *Mname8 = "VmenuEmpty";
-const char *Mname9 = "HmenuCTRL";
-const char *Mname10 = "HmenuFAN";
 
-const char* menunames[] = {
-  Mname0,
-  Mname1,
-  Mname2,
-  Mname3,
-  Mname4,
-  Mname5,
-  Mname6,
-  Mname7,
-  Mname8,
-  Mname9,
-  Mname10,
+
+int VerticalMenuShowing ;
+int VerticalMenuPrior;
+
+
+//action that can be assinged to a button
+#define ActionCustom
+#define ActionAdjust
+
+float AdustmentValues [][3]= {
+{.01,.03,.05},
+{1,3,5},
+{1,5,10}
 };
+
+ adjustmentspecs ActiveAdjustment;
+
+#define ActionProvideValueForAdjustment 1
+
+#define ActionAdjustments        20
+#define ActionAdjustIntegralTemp 21
+#define ActionAdjustGainTemp 22
+#define ActionAdjustSetpointTemp 23
+#define ActionAdjustFan 24
+
+
 
 
 char debug = 'a';
@@ -254,8 +259,8 @@ char debug = 'a';
 #define VmenuCount 9
 #define MaxButtonCount 9
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
-  { { 0, ">>", "forward", "to", "next", GREEN },
-    { 1, "<<", "back", "to", "prior", GREEN },
+  { { 0, "<<", "forward", "to", "next", GREEN },
+    { 1, "", "back", "to", "prior", GREEN },
     { 2, "GainT", "Ajdust", "Temp Gain", "Value", YELLOW },
     { 3, "IntT", "Ajdust", "Intergal", "Value", YELLOW },
     { 4, "SPs", "Select", "Setpoints", "to adjust", YELLOW },
@@ -288,8 +293,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 34, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
     { 35, "", "go back", "to", "prior", YELLOW },
     { 36, "Fan", "toggle", "fan relay", "on and off", YELLOW },
-    { 37, "Duty", "Manually", "set", "duty", YELLOW },
-    { 38, "Temp", "go back", "to", "prior", YELLOW } },
+    { 37, "Dut", "Manually", "set", "duty", YELLOW },
+    { 38, "Tem", "go back", "to", "prior", YELLOW } },
   { { 40, "<<", "go to", "prior", "menu", GREEN },
     { 41, "", "selected", "device", "to debug", GREEN },
     { 42, "ON", "turn", "device", "on", ORANGE },
@@ -335,12 +340,12 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 86, "", "go back", "to", "prior", GREEN },
     { 87, "", "go back", "to", "prior", GREEN },
     { 88, "", "go back", "to", "prior", GREEN } },
-  { { 90, "Start", "Start", "Roast", "", GREEN },
+  { { 90, "Strt", "Start", "Roast", "", GREEN },
     { 91, "Stop", "End Roast", "or Fan", "", RED },
     { 92, "Fan", "Start", "Fan", "", AQUA },
     { 93, "rfs", "Redraw", "screen", "", ORANGE },
-    { 94, "", "go back", "to", "prior", GREEN },
-    { 95, "", "go back", "to", "prior", GREEN },
+    { 94, "Fan+", "go back", "to", "prior", AQUA },
+    { 95, "Fan-", "go back", "to", "prior", AQUA },
     { 96, "", "go back", "to", "prior", GREEN },
     { 97, "", "go back", "to", "prior", GREEN },
     { 98, "", "go back", "to", "prior", GREEN }
@@ -479,6 +484,8 @@ double CurrentSetPointTemp = 0;
 
 int LoopsPerSecond;
 
+menustatus MenuStatus;
+
 boolean TouchDetected;
 boolean LongPressDetected;
 buttonsetdef* TouchButtonSet;
@@ -509,8 +516,8 @@ buttonsetdef myHorControlMenuDef;
 buttonsetdef myHorFanButtonControl;
 buttonsetdef myButtonVertMenus[VmenuCount];
 
-int VerticalMenuShowing = 0;
-int VerticalMenuPrior = 0;
+int VmenuShowing = -1;
+int VmenuPrior = -1;
 
 char s7[7];
 char s6[6];
@@ -523,7 +530,7 @@ point LastforLineID[GRAPHLINECOUNT];
 int moveamount = -1;
 
 double RoastMinutes = 0;
-double RoastAcumHeat = 0;
+unsigned int RoastAcumHeat = 0;
 
 int FanDeviation = 0;
 

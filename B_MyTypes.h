@@ -52,6 +52,7 @@ typedef struct indexed10strings {
 } indexedstrings;
 
 
+
 typedef struct buttontext {
   byte key;
   char label[7];
@@ -59,14 +60,27 @@ typedef struct buttontext {
   char tip2[12];
   char tip3[12];
   uint16_t color;
+  byte action;
+  byte adjustmentvalueset;
 } buttontext;
 
+typedef struct adjustmentspecs {
+    int VmenuWhenCalled = -1; 
+    int name = -1;
+    int adjustmentvalueset = -1;
+    float moveamount = -1;
+    int spSelected = -1;
+  
+
+} adjustmentspecs;
 typedef struct buttondef {
   //int h;
   //int w;
   boolean ToolTipShowing = false;
   rect Rect;
   lableID AlternateLableID;
+  int action;
+  int adjustmentvalueset;
 } buttondef;
 
 typedef void (*ClickHandler)(const int MenuID);
@@ -86,11 +100,19 @@ typedef struct buttonsetdef {
   int nextMenu;
   int backMenu;
   int inputbutton;
-  int priormenuID;
+  
 
 } buttonsetdef;
 
-
+typedef struct menustatus {
+    int VmenuShowing;
+    int VmenuPrior;
+    int VemnuBack;
+    int VbuttonClicked;
+    buttonsetdef* TouchButtonSet;
+    int ButtonClicked;
+    
+}menustatus;
 
 typedef struct setpoint {
 

@@ -126,7 +126,7 @@ void theloop() {
             LongPressDetected = true;
             //Serial.println("LONGPRESS");
 
-            TouchLongPress();
+            TouchLongPressDetected();
           }
         }
       }
@@ -142,7 +142,7 @@ void theloop() {
           if (TouchTimer.elapsed() > 100) {
             //Serial.println("CLICK!");
 
-            TouchClick();
+            TouchClickDetected();
           }
 
         } else {

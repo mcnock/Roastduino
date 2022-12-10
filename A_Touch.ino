@@ -2,17 +2,19 @@
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 // TOUCH          TOUCH          TOUCH          TOUCH          TOUCH          TOUCH          TOUCH          TOUCH
 //----------------------------------------------------------------------------------------------------------------------------------------------------
-void TouchClick() {
+void TouchClickDetected (){
 
-  OutlineMenuButton(TouchButtonSet, TouchButton, BLACK);
+   OutlineMenuButton(TouchButtonSet, TouchButton, BLACK);
 
   //Serial.print("Touch Click calling menuID:");Serial.print(TouchButtonSet->menuID);Serial.print(" buttonID:");Serial.println(TouchButton);
 
+  
   TouchButtonSet->pClickHandler(TouchButton);
+
 }
 
 
-void TouchLongPress() {
+void TouchLongPressDetected() {
 
   OutlineMenuButton(TouchButtonSet, TouchButton, BLACK);
 
@@ -30,30 +32,35 @@ boolean DetectTouch() {
   //Serial.print("touch detected X");Serial.print(Xtouch);Serial.print(" Y");Serial.println(Ytouch);
 
   if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
-    TouchButton = WhatButton(Xtouch, Ytouch, &myHorControlMenuDef);
-    TouchButtonSet = &myHorControlMenuDef;
-
+    
+    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &myHorControlMenuDef);
+    MenuStatus.TouchButtonSet = &myHorControlMenuDef;
+    ;
   } else if (InRect(Xtouch, Ytouch, &myHorFanButtonControl.bounding)) {
-    TouchButton = WhatButton(Xtouch, Ytouch, &myHorFanButtonControl);
-    TouchButtonSet = &myHorFanButtonControl;
-
+    
+    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &myHorFanButtonControl);
+    MenuStatus.TouchButtonSet = &myHorFanButtonControl;
+  
   }
 
   else if (InRect(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing].bounding)) {
-    TouchButton = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
-    TouchButtonSet = &myButtonVertMenus[VerticalMenuShowing];
-    //myButtonVertMenus[VerticalMenuShowing].ClickHandler(TouchButton);
+    MenuStatus.VbuttonClicked = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[VerticalMenuShowing]);
+    MenuStatus.TouchButtonSet = &myButtonVertMenus[VerticalMenuShowing];
+    myButtonVertMenus[VerticalMenuShowing].ClickHandler(TouchButton);
 
   } else {
     //Serial.print ("looking but no match vmenu is");Serial.println(VerticalMenuShowing);
     return false;
   }
   //Serial.print("found button presss menu:");Serial.print(TouchButtonSet->menuID);Serial.print(" button");Serial.println(TouchButton);
-  OutlineMenuButton(TouchButtonSet, TouchButton, WHITE);
+  
+     OutlineMenuButton(MenuStatus.TouchButtonSet, MenuStatus.ButtonClicked, WHITE);
+
+  
   return true;
 }
 
-void ProcessTouch(int Xtouch, int Ytouch) {
+void xProcessTouch(int Xtouch, int Ytouch) {
 
 
   //int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
