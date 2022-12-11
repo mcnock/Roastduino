@@ -202,14 +202,15 @@ void graphProfile() {
   DrawHorFanMenu();
 
   //if sp is  selected, assume user is adjusting setpoint redraw the menu
+  graphFanProfile();
+
   if (spSelected >= 0) {
     DrawVMenu(VmenuSetPointSelect, -1);
   } else {
-    DrawVMenu(VerticalMenuShowing, myButtonVertMenus[VerticalMenuShowing].inputbutton);
+    DrawVMenu(MenuStatus.VmenuShowing , -1);
   }
 
-  graphFanProfile();
-
+  
   UpdateTempDisplayArea(All);
   UpdateStateDisplayArea(All);
   setpointschanged = false;
@@ -227,16 +228,6 @@ void graphFanProfile() {
   myGLCD.setColor(fancolor);
 
   int FanGraphXWidth;
-  //SpDebug("VerticalmenuShowing:" + String(VerticalMenuShowing));
-  //if (VerticalMenuShowing == VmenuEmpty)
-  //{
-  //SpDebug("A");
-  //   FanGraphXWidth = 800 - FanGraphXStart - 5 ;
-  //}
-
-  //else
-  //{
-
   FanGraphXWidth = 800 - FanGraphXStart - 5;
   //}
 

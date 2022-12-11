@@ -156,12 +156,12 @@ void processSerial(Stream &Serial)
               }
             case 65: //A
               { Serial.println(F("Add a minute"));
-                ProcessBaseVMenu(7);
+                //ProcessBaseVMenu(7);
                 break;
               }
             case 82: //R
               { Serial.println(F("Remove a minute"));
-                ProcessBaseVMenu(6);
+                //ProcessBaseVMenu(6);
                 break;
               }
 

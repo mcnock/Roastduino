@@ -68,23 +68,16 @@ int XforAFanMin(double minute) {
   return (FanGraphXStart + (PixelsPerMinFan * minute));
 }
 
-uint16_t XforATime(float time)
-{
+uint16_t XforATime(float time) {
 
-uint16_t result =0;
-if (time <= timeSplitLow)
-{
-     result = time * PixelsPerMinL;
-     return result;
-}
-else
-{
-    result =  (timeSplitLow * PixelsPerMinL) + ((time - timeSplitLow) * PixelsPerMinM);
-     
-
-}
-return result;
-
+  uint16_t result = 0;
+  if (time <= timeSplitLow) {
+    result = time * PixelsPerMinL;
+    return result;
+  } else {
+    result = (timeSplitLow * PixelsPerMinL) + ((time - timeSplitLow) * PixelsPerMinM);
+  }
+  return result;
 }
 
 int YforAFan(int fanpwm) {

@@ -20,7 +20,7 @@ typedef struct graphhistory {
   int SkipLimit;
   int PixelsP;
   int ArraySize;
-  point *Pixels;
+  point* Pixels;
 } graphhistory;
 
 
@@ -54,7 +54,7 @@ typedef struct indexed10strings {
 
 
 typedef struct buttontext {
-  byte key;
+  int key;
   char label[7];
   char tip1[12];
   char tip2[12];
@@ -65,12 +65,12 @@ typedef struct buttontext {
 } buttontext;
 
 typedef struct adjustmentspecs {
-    int VmenuWhenCalled = -1; 
-    int name = -1;
-    int adjustmentvalueset = -1;
-    float moveamount = -1;
-    int spSelected = -1;
-  
+  int VmenuWhenCalled = -1;
+  int name = -1;
+  int adjustmentvalueset = -1;
+  float moveamount = -1;
+  int spSelected = -1;
+
 
 } adjustmentspecs;
 typedef struct buttondef {
@@ -78,8 +78,7 @@ typedef struct buttondef {
   //int w;
   boolean ToolTipShowing = false;
   rect Rect;
-  lableID AlternateLableID;
-  int action;
+  int action = -1;
   int adjustmentvalueset;
 } buttondef;
 
@@ -89,7 +88,7 @@ typedef struct buttonsetdef {
   rect bounding = { 999, 999, -1, -1 };
   buttondef buttondefs[9];
   int menuID = -1;
-  int ButtonCount = 0;
+  int ButtonCount = -1;
   int W = 0;
   int H = 0;
   int colstart = 0;
@@ -97,22 +96,20 @@ typedef struct buttonsetdef {
   boolean vertical;
   boolean visable;
   ClickHandler pClickHandler;
-  int nextMenu;
-  int backMenu;
-  int inputbutton;
-  
-
+  int VmenuParent;
+  bool IsAdjustment = false;
 } buttonsetdef;
 
+
 typedef struct menustatus {
-    int VmenuShowing;
-    int VmenuPrior;
-    int VemnuBack;
-    int VbuttonClicked;
-    buttonsetdef* TouchButtonSet;
-    int ButtonClicked;
-    
-}menustatus;
+  int VmenuShowing = -1;
+  int VmenuPrior = -2;
+  int VbuttonClicked;
+  int VmenubuttonClicked;
+  buttonsetdef* TouchButtonSet;
+  int ButtonClicked;
+  boolean IsVmenu;
+} menustatus;
 
 typedef struct setpoint {
 

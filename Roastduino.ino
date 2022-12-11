@@ -210,15 +210,6 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define ValuesOnly true
 #define All false
 
-#define VmenuBase 0
-#define VmenuSetPointSelect 1
-#define VmenuDebug 3
-#define VmenuOnOff 4
-#define VmenuAdjustValue 5
-#define VmenuFan 7
-#define VmenuEmpty 8
-#define HmenuCTRL 9
-#define HmenuFAN 10
 
 #define VmenuAdj_1_3_5 77
 #define VmenuAjd_01 89
@@ -227,140 +218,137 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 
 
 
-int VerticalMenuShowing ;
-int VerticalMenuPrior;
 
 
 //action that can be assinged to a button
 #define ActionCustom
 #define ActionAdjust
 
+#define Values_01_03_05  0
+#define Values_1_2_5  1
+#define Values_1_3_10  2
+
 float AdustmentValues [][3]= {
 {.01,.03,.05},
 {1,3,5},
-{1,5,10}
+{1,3,10}
 };
 
  adjustmentspecs ActiveAdjustment;
 
 #define ActionProvideValueForAdjustment 1
+#define ActionShowSetpointSelectMenu 2
+#define ActionShowSetpointFanMenu 3
+
 
 #define ActionAdjustments        20
 #define ActionAdjustIntegralTemp 21
 #define ActionAdjustGainTemp 22
 #define ActionAdjustSetpointTemp 23
 #define ActionAdjustFan 24
-
-
+#define ActionAdjustRoastLength 25
+#define ActionAdjustSetpointFan 26
 
 
 char debug = 'a';
 
-#define VmenuCount 9
+#define VmenuCount 7
 #define MaxButtonCount 9
+
+
+#define VmenuBase 0
+#define VmenuSetPointSelect 1
+#define VmenuDebug 2
+#define VmenuOnOff 3
+#define VmenuAdjustValue 4
+#define VmenuFan 5
+#define VmenuEmpty 6
+#define HmenuCTRL 7
+#define HmenuFAN 8
+
+
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   { { 0, "<<", "forward", "to", "next", GREEN },
     { 1, "", "back", "to", "prior", GREEN },
-    { 2, "GainT", "Ajdust", "Temp Gain", "Value", YELLOW },
-    { 3, "IntT", "Ajdust", "Intergal", "Value", YELLOW },
-    { 4, "SPs", "Select", "Setpoints", "to adjust", YELLOW },
-    { 5, "Fan", "Adjust", "fan auto", "decrease", YELLOW },
+    { 2, "GainT", "Ajdust", "Temp Gain", "Value", YELLOW , ActionAdjustGainTemp , Values_1_2_5 },
+    { 3, "IntT", "Ajdust", "Intergal", "Value", YELLOW , ActionAdjustIntegralTemp , Values_01_03_05 },
+    { 4, "SPs", "Select", "Setpoints", "to adjust", YELLOW, ActionShowSetpointSelectMenu },
+    { 5, "Fan", "Adjust", "fan auto", "decrease", YELLOW ,ActionShowSetpointFanMenu } ,
     { 6, "Adv", "Advance", "roast", "by 1 min", YELLOW },
     { 7, "Rtd", "Retard ", "roast", "by 1 min", YELLOW },
     { 8, "cCut", "Adjust", "Hightemp", "Cut out", YELLOW } },
   { { 10, "<<", "back", "to prior", "menu", GREEN },
-    { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW },
-    { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW },
-    { 13, "sp3", "Adjust", "setpoint", "#3", YELLOW },
-    { 14, "sp4", "Adjust", "setpoint", "#4", YELLOW },
-    { 15, "sp5", "Adjust", "setpoint", "#5", YELLOW },
+    { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
+    { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
+    { 13, "sp3", "Adjust", "setpoint", "#3", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05 },
+    { 14, "sp4", "Adjust", "setpoint", "#4", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
+    { 15, "sp5", "Adjust", "setpoint", "#5", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
     { 16, "ls3", "Adjust", "last 3", "setpoint", YELLOW },
     { 17, "T+1", "Increase", "roast len", "by 1 min", YELLOW },
-    { 18, "T-1", "Decrease", "roast len", "by 1 min", YELLOW } },
-  { { 20, "<<", "go back", "to", "prior", GREEN },
-    { 21, "", "go back", "to", "prior", YELLOW },
-    { 22, "+1", "go back", "to", "prior", ORANGE },
-    { 23, "+3", "go back", "to", "prior", ORANGE },
-    { 24, "+5", "go back", "to", "prior", ORANGE },
-    { 25, "-1", "go back", "to", "prior", ORANGE },
-    { 26, "-3", "go back", "to", "prior", ORANGE },
-    { 27, "-5", "go back", "to", "prior", ORANGE },
-    { 28, "SAVE", "go back", "to", "prior", YELLOW } },
-  { { 30, ">>", "foward", "to", "next", GREEN },
-    { 31, "<<", "back", "to", "prior", GREEN },
-    { 32, "DBG", "subject", "of", "menu", YELLOW },
-    { 33, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
-    { 34, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
-    { 35, "", "go back", "to", "prior", YELLOW },
-    { 36, "Fan", "toggle", "fan relay", "on and off", YELLOW },
-    { 37, "Dut", "Manually", "set", "duty", YELLOW },
-    { 38, "Tem", "go back", "to", "prior", YELLOW } },
-  { { 40, "<<", "go to", "prior", "menu", GREEN },
-    { 41, "", "selected", "device", "to debug", GREEN },
-    { 42, "ON", "turn", "device", "on", ORANGE },
-    { 43, "OFF", "turn", "device", "off", ORANGE },
-    { 44, "", "go back", "to", "prior", BLACK },
-    { 45, "", "go back", "to", "prior", BLACK },
-    { 46, "", "go back", "to", "prior", BLACK },
-    { 47, "", "go back", "to", "prior", BLACK },
-    { 48, "", "go back", "to", "prior", BLACK } },
-  { { 50, "<<", "go back", "to", "prior", GREEN },
-    { 51, "", "go back", "to", "prior", GREEN },
-    { 52, "+.01", "go back", "to", "prior", ORANGE },
-    { 53, "+.05", "go back", "to", "prior", ORANGE },
-    { 54, "+.10", "go back", "to", "prior", ORANGE },
-    { 55, "-.01", "go back", "to", "prior", ORANGE },
-    { 56, "-.05", "go back", "to", "prior", ORANGE },
-    { 57, "-.10", "go back", "to", "prior", ORANGE },
-    { 58, "Save", "Save", "and", "close", GREEN } },
-  { { 60, "<<", "go to", "prior", "menu", GREEN },
-    { 61, "", "go back", "to", "prior", GREEN },
-    { 62, "+1", "go back", "to", "prior", ORANGE },
-    { 63, "+5", "go back", "to", "prior", ORANGE },
-    { 64, "+10", "go back", "to", "prior", ORANGE },
-    { 65, "-1", "go back", "to", "prior", ORANGE },
-    { 66, "-5", "go back", "to", "prior", ORANGE },
-    { 67, "-10", "go back", "to", "prior", ORANGE },
-    { 68, "Save", "Save", "and", "close", GREEN } },
-  { { 70, "<<", "go to", "prior", "menu", GREEN },
-    { 71, "", "Gain", "of", "Fan", AQUA },
-    { 72, "", "Int", "of", "Fan", AQUA },
-    { 73, "A PWM", "Adjust", "A", "PWM", AQUA },
-    { 74, "B PWM", "Adjust", "B", "PWM", AQUA },
-    { 75, "C PWM", "Adjust", "C", "PWM", AQUA },
-    { 76, "D PWM", "Adjust", "D", "PWM", AQUA },
-    { 77, "C+1", "Add 1 min", "to C", "period", AQUA },
-    { 78, "C-1", "Rmv 1 min", "to C", "period", AQUA } },
-  { { 80, ">>", "go to", "next", "menu", GREEN },
-    { 81, "", "go back", "to", "prior", AQUA },
-    { 82, "", "go", "to", "prior", AQUA },
-    { 83, "", "go back", "to", "prior", AQUA },
-    { 84, "", "go back", "to", "prior", AQUA },
-    { 85, "", "go back", "to", "prior", GREEN },
-    { 86, "", "go back", "to", "prior", GREEN },
-    { 87, "", "go back", "to", "prior", GREEN },
-    { 88, "", "go back", "to", "prior", GREEN } },
-  { { 90, "Strt", "Start", "Roast", "", GREEN },
-    { 91, "Stop", "End Roast", "or Fan", "", RED },
-    { 92, "Fan", "Start", "Fan", "", AQUA },
-    { 93, "rfs", "Redraw", "screen", "", ORANGE },
-    { 94, "Fan+", "go back", "to", "prior", AQUA },
-    { 95, "Fan-", "go back", "to", "prior", AQUA },
-    { 96, "", "go back", "to", "prior", GREEN },
-    { 97, "", "go back", "to", "prior", GREEN },
-    { 98, "", "go back", "to", "prior", GREEN }
-
-  },
-  { { 100, "-5", "Decrease", "fan 10", "prior", AQUA },
-    { 101, "-1", "Decrease", "fan 3", "prior", AQUA },
-    { 102, "+1", "Increase", "fan 3", "prior", AQUA },
-    { 103, "+5", "Increase", "fan 10", "prior", AQUA },
-    { 104, "", "save as", "start", "prior", AQUA },
-    { 105, "", "go back", "to", "prior", GREEN },
-    { 106, "", "go back", "to", "prior", GREEN },
-    { 107, "", "go back", "to", "prior", GREEN },
-    { 108, "", "go back", "to", "prior", GREEN } 
-    }
+    { 18, "T-1", "Decrease", "roast len", "by 1 min", YELLOW }},
+  { { 20, ">>", "foward", "to", "next", GREEN },
+    { 21, "<<", "back", "to", "prior", GREEN },
+    { 22, "DBG", "subject", "of", "menu", YELLOW },
+    { 23, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
+    { 24, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
+    { 25, "", "go back", "to", "prior", YELLOW },
+    { 26, "Fan", "toggle", "fan relay", "on and off", YELLOW },
+    { 27, "Dut", "Manually", "set", "duty", YELLOW },
+    { 28, "Tem", "go back", "to", "prior", YELLOW  }},
+  { { 30, "<<", "go to", "prior", "menu", GREEN },
+    { 31, "", "selected", "device", "to debug", GREEN },
+    { 32, "ON", "turn", "device", "on", ORANGE },
+    { 33, "OFF", "turn", "device", "off", ORANGE },
+    { 34, "", "go back", "to", "prior", BLACK },
+    { 35, "", "go back", "to", "prior", BLACK },
+    { 36, "", "go back", "to", "prior", BLACK },
+    { 37, "", "go back", "to", "prior", BLACK },
+    { 38, "", "go back", "to", "prior", BLACK  }},
+  { { 40, "<<", "go back", "to", "prior", GREEN },
+    { 41, "", "go back", "to", "prior", GREEN },
+    { 42, "+.01", "go back", "to", "prior", ORANGE },
+    { 43, "+.05", "go back", "to", "prior", ORANGE },
+    { 44, "+.10", "go back", "to", "prior", ORANGE },
+    { 45, "-.01", "go back", "to", "prior", ORANGE },
+    { 46, "-.05", "go back", "to", "prior", ORANGE },
+    { 47, "-.10", "go back", "to", "prior", ORANGE },
+    { 48, "Save", "Save", "and", "close", GREEN }},
+  { { 50, "<<", "go to", "prior", "menu", GREEN },
+    { 51, "A PWM", "Adjust", "A", "PWM", AQUA },
+    { 52, "B PWM", "Adjust", "B", "PWM", AQUA },
+    { 53, "C PWM", "Adjust", "C", "PWM", AQUA },
+    { 54, "D PWM", "Adjust", "D", "PWM", AQUA },
+    { 55, "C+1", "Add 1 min", "to C", "period", AQUA },
+    { 56, "C-1", "Rmv 1 min", "to C", "period", AQUA },
+    { 57, "", "Gain", "of", "Fan", AQUA },
+    { 58, "", "Int", "of", "Fan", AQUA }},  
+  { { 60, "<<", "go to", "next", "menu", GREEN },
+    { -61, "", "go back", "to", "prior", AQUA },
+    { -62, "", "go", "to", "prior", AQUA },
+    { -63, "", "go back", "to", "prior", AQUA },
+    { -64, "", "go back", "to", "prior", AQUA },
+    { -65, "", "go back", "to", "prior", GREEN },
+    { -66, "", "go back", "to", "prior", GREEN },
+    { -67, "", "go back", "to", "prior", GREEN },
+    { -68, "", "go back", "to", "prior", GREEN  }},
+  { { 70, "Strt", "Start", "Roast", "", GREEN },
+    { 71, "Stop", "End Roast", "or Fan", "", RED },
+    { 72, "Fan", "Start", "Fan", "", AQUA },
+    { 73, "rfs", "Redraw", "screen", "", ORANGE },
+    { 74, "Fan+", "go back", "to", "prior", AQUA },
+    { 75, "Fan-", "go back", "to", "prior", AQUA },
+    { 76, "", "go back", "to", "prior", GREEN },
+    { -77, "", "go back", "to", "prior", GREEN },
+    { -78, "", "go back", "to", "prior", GREEN }},
+  { { 80, "-5", "Decrease", "fan 10", "prior", AQUA },
+    { 81, "-1", "Decrease", "fan 3", "prior", AQUA },
+    { 82, "+1", "Increase", "fan 3", "prior", AQUA },
+    { 83, "+5", "Increase", "fan 10", "prior", AQUA },
+    { -84, "", "save as", "start", "prior", AQUA },
+    { -85, "", "go back", "to", "prior", GREEN },
+    { -86, "", "go back", "to", "prior", GREEN },
+    { -87, "", "go back", "to", "prior", GREEN },
+    { -88, "", "go back", "to", "prior", GREEN }} 
 };
 
 buttontext myArrayLocal;
@@ -485,11 +473,11 @@ double CurrentSetPointTemp = 0;
 int LoopsPerSecond;
 
 menustatus MenuStatus;
+buttonsetdef* TouchButtonSet;
+ClickHandler* TouchButtonHandler;
 
 boolean TouchDetected;
 boolean LongPressDetected;
-buttonsetdef* TouchButtonSet;
-ClickHandler* TouchButtonHandler;
 int TouchButton;
 
 Chrono TouchTimer(Chrono::MILLIS);
@@ -699,14 +687,14 @@ void setup() {
 
   FanSpeedPWM = FanSetPoints[0].PWM;
 
-  Serial.println(F("wire i2c for fan begin"));
+  //Serial.println(F("wire i2c for fan begin"));
 
 
   Wire.begin();
 
   StopAndSendFanPWM();
 
-  VerticalMenuShowing = VmenuEmpty;
+  
   graphProfile();
   Serial.println("loop is starting...");
 }

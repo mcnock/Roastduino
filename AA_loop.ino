@@ -149,7 +149,7 @@ void theloop() {
           LongPressDetected = false;
           //Serial.println("Long press release");
         }
-        OutlineMenuButton(TouchButtonSet, TouchButton, BLACK);
+        OutlineClickedButton( BLACK);
         TouchTimer.stop();
       }
       TouchTimer.stop();
