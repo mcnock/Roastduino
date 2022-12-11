@@ -205,9 +205,9 @@ void graphProfile() {
   graphFanProfile();
 
   if (spSelected >= 0) {
-    DrawVMenu(VmenuSetPointSelect, -1);
+    DrawVMenu(VmenuSetPointSelect);
   } else {
-    DrawVMenu(MenuStatus.VmenuShowing , -1);
+    DrawVMenu(MenuStatus.VmenuShowing );
   }
 
   

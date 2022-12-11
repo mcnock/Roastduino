@@ -11,7 +11,7 @@ void TouchClickDetected (){
       MenuStatus.TouchButtonSet->pClickHandler(MenuStatus.ButtonClicked);
   } else{
       //Serial.println("Touch Click calling ProcessVmenuButtonClick_()" );
-      ProcessVmenuButtonClick_();
+      ProcessVmenuButtonClick();
   }
 
 }

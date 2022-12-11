@@ -237,24 +237,27 @@ float AdustmentValues [][3]= {
  adjustmentspecs ActiveAdjustment;
 
 #define ActionProvideValueForAdjustment 1
-#define ActionShowSetpointSelectMenu 2
-#define ActionShowSetpointFanMenu 3
 
 
-#define ActionAdjustments        20
-#define ActionAdjustIntegralTemp 21
-#define ActionAdjustGainTemp 22
-#define ActionAdjustSetpointTemp 23
-#define ActionAdjustFan 24
-#define ActionAdjustRoastLength 25
-#define ActionAdjustSetpointFan 26
+
+#define ActionShowSetpointSelectMenu 30
+#define ActionShowSetpointFanMenu 31
+#define ActionGetLableFromPrior 32
+
+
+#define ActionAdjustments        40
+#define ActionAdjustIntegralTemp 41
+#define ActionAdjustGainTemp 42
+#define ActionAdjustSetpointTemp 43
+#define ActionAdjustFan 44
+#define ActionAdjustRoastLength 45
+#define ActionAdjustSetpointFan 46
 
 
 char debug = 'a';
 
 #define VmenuCount 7
 #define MaxButtonCount 9
-
 
 #define VmenuBase 0
 #define VmenuSetPointSelect 1
@@ -266,9 +269,11 @@ char debug = 'a';
 #define HmenuCTRL 7
 #define HmenuFAN 8
 
+#define VmenuFindPrior 11
+
 
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
-  { { 0, "<<", "forward", "to", "next", GREEN },
+  { { 0, "<<", "forward", "to", "next", GREEN , VmenuEmpty},
     { 1, "", "back", "to", "prior", GREEN },
     { 2, "GainT", "Ajdust", "Temp Gain", "Value", YELLOW , ActionAdjustGainTemp , Values_1_2_5 },
     { 3, "IntT", "Ajdust", "Intergal", "Value", YELLOW , ActionAdjustIntegralTemp , Values_01_03_05 },
@@ -277,7 +282,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 6, "Adv", "Advance", "roast", "by 1 min", YELLOW },
     { 7, "Rtd", "Retard ", "roast", "by 1 min", YELLOW },
     { 8, "cCut", "Adjust", "Hightemp", "Cut out", YELLOW } },
-  { { 10, "<<", "back", "to prior", "menu", GREEN },
+  { { 10, "<<", "back", "to prior", "menu", GREEN, VmenuBase },
     { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
     { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
     { 13, "sp3", "Adjust", "setpoint", "#3", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05 },
@@ -286,8 +291,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 16, "ls3", "Adjust", "last 3", "setpoint", YELLOW },
     { 17, "T+1", "Increase", "roast len", "by 1 min", YELLOW },
     { 18, "T-1", "Decrease", "roast len", "by 1 min", YELLOW }},
-  { { 20, ">>", "foward", "to", "next", GREEN },
-    { 21, "<<", "back", "to", "prior", GREEN },
+  { { 20, "<<", "foward", "to", "next", GREEN , VmenuFindPrior },
+    { 21, "", "back", "to", "prior", GREEN },
     { 22, "DBG", "subject", "of", "menu", YELLOW },
     { 23, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
     { 24, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
@@ -295,7 +300,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 26, "Fan", "toggle", "fan relay", "on and off", YELLOW },
     { 27, "Dut", "Manually", "set", "duty", YELLOW },
     { 28, "Tem", "go back", "to", "prior", YELLOW  }},
-  { { 30, "<<", "go to", "prior", "menu", GREEN },
+  { { 30, "<<", "go to", "prior", "menu", GREEN , VmenuFindPrior},
     { 31, "", "selected", "device", "to debug", GREEN },
     { 32, "ON", "turn", "device", "on", ORANGE },
     { 33, "OFF", "turn", "device", "off", ORANGE },
@@ -304,8 +309,8 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 36, "", "go back", "to", "prior", BLACK },
     { 37, "", "go back", "to", "prior", BLACK },
     { 38, "", "go back", "to", "prior", BLACK  }},
-  { { 40, "<<", "go back", "to", "prior", GREEN },
-    { 41, "", "go back", "to", "prior", GREEN },
+  { { 40, "<<", "go back", "to", "prior", GREEN , VmenuFindPrior },
+    { 41, "", "go back", "to", "prior", GREEN , ActionGetLableFromPrior},
     { 42, "+.01", "go back", "to", "prior", ORANGE },
     { 43, "+.05", "go back", "to", "prior", ORANGE },
     { 44, "+.10", "go back", "to", "prior", ORANGE },
@@ -313,7 +318,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 46, "-.05", "go back", "to", "prior", ORANGE },
     { 47, "-.10", "go back", "to", "prior", ORANGE },
     { 48, "Save", "Save", "and", "close", GREEN }},
-  { { 50, "<<", "go to", "prior", "menu", GREEN },
+  { { 50, "<<", "go to", "prior", "menu", GREEN , VmenuFindPrior},
     { 51, "A PWM", "Adjust", "A", "PWM", AQUA },
     { 52, "B PWM", "Adjust", "B", "PWM", AQUA },
     { 53, "C PWM", "Adjust", "C", "PWM", AQUA },
@@ -322,7 +327,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 56, "C-1", "Rmv 1 min", "to C", "period", AQUA },
     { 57, "", "Gain", "of", "Fan", AQUA },
     { 58, "", "Int", "of", "Fan", AQUA }},  
-  { { 60, "<<", "go to", "next", "menu", GREEN },
+  { { 60, "<<", "go to", "next", "menu", GREEN , VmenuBase},
     { -61, "", "go back", "to", "prior", AQUA },
     { -62, "", "go", "to", "prior", AQUA },
     { -63, "", "go back", "to", "prior", AQUA },
@@ -504,8 +509,8 @@ buttonsetdef myHorControlMenuDef;
 buttonsetdef myHorFanButtonControl;
 buttonsetdef myButtonVertMenus[VmenuCount];
 
-int VmenuShowing = -1;
-int VmenuPrior = -1;
+//int VmenuShowing = -1;
+//int VmenuPrior = -1;
 
 char s7[7];
 char s6[6];
@@ -666,7 +671,7 @@ void setup() {
 
   // -------------------------------------------------------------
   if (HasDisplay == true) {
-    Serial.println("Initializing LCD");
+    //Serial.println("Initializing LCD");
 
     myGLCD.InitLCD();
     pinMode(8, OUTPUT);     //backlight
