@@ -9,6 +9,10 @@ struct PWMSetpoint {
   byte Minutes = 0;
 };
 
+typedef struct adjustmentlabels {
+char label[7];
+} adjustmentlabels;
+
 typedef struct point {
   int x = 0;
   int y = -1;
@@ -22,7 +26,6 @@ typedef struct graphhistory {
   int ArraySize;
   point* Pixels;
 } graphhistory;
-
 
 
 typedef struct labelID {
@@ -52,7 +55,6 @@ typedef struct indexed10strings {
 } indexedstrings;
 
 
-
 typedef struct buttontext {
   int butID ;
   char label[7];
@@ -64,14 +66,16 @@ typedef struct buttontext {
   byte adjustmentvalueset;
 } buttontext;
 
-typedef struct adjustmentspecs {
+typedef struct activeadjustment {
   int VmenuWhenCalled = -1;
+  int ButtonWhenCalled = -1;
   int name = -1;
   int adjustmentvalueset = -1;
   float moveamount = -1;
   int spSelected = -1;
+  bool savemenurequired = false;
 
-} adjustmentspecs;
+} activeadjustment;
 
 typedef struct buttondef {
   //int h;
@@ -101,11 +105,25 @@ typedef struct buttonsetdef {
 
 } buttonsetdef;
 
+typedef struct error_status {
+    int error = -1;
+    int lasterror = -1;
+    bool errorcleared = true;
+    boolean newerrmsg = false;
+    bool lastdrawnwitherror = false;
+   
+} errorstatus;
+
+typedef struct error {
+    byte errorID;
+    char line1[20];
+    char line2[20];
+} error;
 
 typedef struct menustatus {
   int VmenuShowing = -1;
   int VmenuPrior = -1;
-  int VbuttonClicked;
+  //int VbuttonClicked;
   int VmenubuttonClicked;
   buttonsetdef* TouchButtonSet;
   int ButtonClicked;

@@ -1,5 +1,4 @@
 
-
 //-------------------------------------------------  ---------------------------------------------------------------------------------------------------
 // MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS          MENUS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -32,29 +31,35 @@ void intializeMenus() {
   myHorControlMenuDef.ButtonCount = 6;
   myHorControlMenuDef.menuID = HmenuCTRL;
   myHorControlMenuDef.pClickHandler = ProcessHorControlMenu;
+
   myHorControlMenuDef.colstart = (800 - vButWidth - (hButWidth * myHorControlMenuDef.ButtonCount));
+
   SetMenuBoundingRect(myHorControlMenuDef);
 
-  myHorFanButtonControl.H = 40;
-  myHorFanButtonControl.W = 80;
-  myHorFanButtonControl.rowstart = 410;
+  myHorFanButtonControl.H = ButHeight - 10;
+  myHorFanButtonControl.W = hButWidth;
+  myHorFanButtonControl.rowstart = ButHeight;
   myHorFanButtonControl.colstart = 60;
   myHorFanButtonControl.ButtonCount = 4;
   myHorFanButtonControl.vertical = false;
   myHorFanButtonControl.menuID = HmenuFAN;
+  myHorFanButtonControl.colstart = myHorControlMenuDef.colstart;
+
   SetMenuBoundingRect(myHorFanButtonControl);
   myHorFanButtonControl.pClickHandler = ProcessHorFanMenu;
 }
 
 void DrawHorControlMenu() {
-    DrawMenuButtons(myHorControlMenuDef);
+  DrawMenuButtons(myHorControlMenuDef);
 }
 
 void ProcessHorControlMenu(int i) {
   //Serial.print("ProcessConrol");Serial.println (i);
-  if (errmsg == "Must be in Fan Only to start a roast") {
-    errmsg = "";
-    newerrmsg = true;
+  if (ErrorStatus.error == ErrorNeedFanFirst) {
+    ErrorStatus.lasterror = ErrorStatus.error;
+    ErrorStatus.error = NoError;
+
+    ErrorStatus.newerrmsg = true;
   }
   switch (i) {
     case 0:
@@ -64,8 +69,8 @@ void ProcessHorControlMenu(int i) {
         newState = STATEROASTING;
         //Serial.println("ReStart Detected!");
       } else {
-        newerrmsg = true;
-        errmsg = "Must be in Fan Only to start a roast";
+        ErrorStatus.newerrmsg = true;
+        ErrorStatus.error = ErrorNeedFanFirst;
       }
       break;
     case 1:
@@ -101,7 +106,7 @@ void ProcessHorControlMenu(int i) {
 
       } else if (State == STATECOOLING && RoastTime.elapsed() > 61) {
         RoastTime.add(-60);
-        if (RoastTime.elapsed() / 60 < MySetPoints[EndingSetPoint].Minutes) {
+        if (RoastTime.elapsed() / 60 < MySetPoints[SetPointCount - 1].Minutes) {
           //SpDebug("Adding 1 minute roast time when cooling. restartng roast requested");
           RoastRestartNeeded = true;
         } else {
@@ -117,9 +122,8 @@ void ProcessHorControlMenu(int i) {
 }
 
 void DrawHorFanMenu() {
-  
-  DrawMenuButtons(myHorFanButtonControl);
 
+  DrawMenuButtons(myHorFanButtonControl);
 }
 
 void ProcessHorFanMenu(int i) {
@@ -172,58 +176,57 @@ void ProcessHorFanMenu(int i) {
   }
 }
 
-void RedrawCurrentVmenu() {
-}
-
 void DrawVMenu(int iMenu) {
-
+  bool menuchange = true;
   if (iMenu == -1) {
     iMenu = VmenuEmpty;
     MenuStatus.VmenuPrior = VmenuBase;
     MenuStatus.VmenuShowing = VmenuEmpty;
   } else {
     //SpDebug("Setting prior from " + String(MenuStatus.VmenuPrior) + " to :" + String(MenuStatus.VmenuShowing));
-    MenuStatus.VmenuPrior = MenuStatus.VmenuShowing;
-    //SpDebug("Setting showing to :" + String(iMenu));
-    MenuStatus.VmenuShowing = iMenu;
-  }
-  MenuStatus.VmenubuttonClicked = MenuStatus.ButtonClicked;
-  boolean bRedraw = false;
-  if (iMenu == VmenuEmpty) {
-    myGLCD.setColor(BLACK);
-    int xstart = 800 - myButtonVertMenus[Vmenubase].W;
-    //myGLCD.drawRect(xstart,myButtonVertMenus[Vmenubase].H,800,480);
-    myGLCD.fillRect(xstart - 1, myButtonVertMenus[Vmenubase].H, 800, 480);
-    bRedraw = true;
-    myGLCD.setColor(LIGHTGRAY);
-
-    for (int i = 0; i < HorScaleLineYCount; i++) {
-      //SpDebug("menuRedrawYScale:" + String(i)+ " x:"+  String(xstart) + " y:" + String(HorScaleLineY[i]));
-      myGLCD.drawLine(xstart - 2, HorScaleLineY[i], 800, HorScaleLineY[i]);
+    if (MenuStatus.VmenuShowing == iMenu) {
+      menuchange = false;
+    } else {
+      MenuStatus.VmenuPrior = MenuStatus.VmenuShowing;
+      MenuStatus.VmenuShowing = iMenu;
+      MenuStatus.VmenubuttonClicked = MenuStatus.ButtonClicked;
     }
-    myGLCD.setColor(BLACK);
-
-
-  } else if (MenuStatus.VmenuPrior == VmenuEmpty) {
-    //bRedraw = true;
   }
-//  SpDebug("Drawing vMenu :" + String(MenuStatus.VmenuShowing));
+
+  //boolean bRedraw = false;
+  if (iMenu == VmenuEmpty) {
+    if (menuchange == true) {
+      myGLCD.setColor(BLACK);
+      int xstart = 800 - myButtonVertMenus[Vmenubase].W;
+      //myGLCD.drawRect(xstart,myButtonVertMenus[Vmenubase].H,800,480);
+      myGLCD.fillRect(xstart - 1, 0, 800, 480);
+      // bRedraw = true;
+      myGLCD.setColor(LIGHTGRAY);
+      for (int i = 0; i < HorScaleLineYCount; i++) {
+        //SpDebug("menuRedrawYScale:" + String(i)+ " x:"+  String(xstart) + " y:" + String(HorScaleLineY[i]));
+        myGLCD.drawLine(xstart - 2, HorScaleLineY[i], 800, HorScaleLineY[i]);
+      }
+    }
+  }
+
   DrawMenuButtons(myButtonVertMenus[iMenu]);
 
-  if (bRedraw) {
-    UpdateTempDisplayArea(All);
-    graphFanProfile();
-  }
+  //if (bRedraw) {
+  //  UpdateTempDisplayArea(All);
+  //  graphFanProfile();
+  //}
 }
 
 void ProcessVmenuButtonClick() {
+  MenuStatus.VmenubuttonClicked = MenuStatus.ButtonClicked;
+  buttondef mybutton = myButtonVertMenus[MenuStatus.VmenuShowing].buttondefs[MenuStatus.VmenubuttonClicked];
+  SpDebug("ProcessVmenuButtonClick  button id:" + String(mybutton.butID) + " action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
 
-  buttondef mybutton = myButtonVertMenus[MenuStatus.VmenuShowing].buttondefs[MenuStatus.ButtonClicked];
   int i = MenuStatus.ButtonClicked;
   //SpDebug("ProcessVmenuButtonClick_ button id " + String(mybutton.butID) +  " action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
   //SpDebug("ProcessVmenuButtonClick_ buttonclicked " + String(MenuStatus.ButtonClicked));
   if (MenuStatus.ButtonClicked == 0) {
-    
+
     if (MenuStatus.VmenuShowing == VmenuSetPointSelect) {
       for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++) {
         MySetPoints[xSetPoint].TemperatureNew = 0;
@@ -233,26 +236,30 @@ void ProcessVmenuButtonClick() {
     if (mybutton.action == VmenuFindPrior) {
       DrawVMenu(MenuStatus.VmenuPrior);
     } else {
-      
+
       DrawVMenu(mybutton.action);
     }
 
-    
+
     return;
   }
-  //SpDebug("button.action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
   if (mybutton.action > ActionAdjustments) {
+    SpDebug("button.action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
     //set up editing of any value
+    ActiveAdjustment.spSelected = -1;
+    ActiveAdjustment.ButtonWhenCalled = MenuStatus.ButtonClicked;
     ActiveAdjustment.VmenuWhenCalled = MenuStatus.VmenuShowing;
     ActiveAdjustment.name = mybutton.action;
     ActiveAdjustment.adjustmentvalueset = mybutton.adjustmentvalueset;
+
+
     DrawVMenu(VmenuAdjustValue);
     return;
   }
 
   switch (mybutton.action) {
-    case ActionProvideValueForAdjustment:
-      ProcessAdjustment();
+    case ActionSelectAdustmentValue:
+      ProcessAnAdjustment();
       break;
     case ActionShowSetpointSelectMenu:
       DrawVMenu(VmenuSetPointSelect);
@@ -267,17 +274,38 @@ void ProcessVmenuButtonClick() {
   }
 }
 
-void ClearActiveAdjustment() {
+void ProcessAnAdjustment() {
 
-  ActiveAdjustment.moveamount = -1;
-  ActiveAdjustment.spSelected = -1;
-  ActiveAdjustment.name = -1;
-}
+  SpDebug("ProcessAdjustmentMenuClick  VmenuWhenCalled:" + String(ActiveAdjustment.VmenuWhenCalled) + " adjustment name:" + String(ActiveAdjustment.name) + " adjustmentvalueset:" + String(ActiveAdjustment.adjustmentvalueset) + "  button:" + String(MenuStatus.VmenubuttonClicked));
 
-void ProcessAdjustment() {
   if (ActiveAdjustment.VmenuWhenCalled != MenuStatus.VmenuShowing) {
     //possible error
   }
+
+  ActiveAdjustment.moveamount = 0;
+  switch (MenuStatus.VmenubuttonClicked) {
+    case 2:
+      ActiveAdjustment.moveamount = AdustmentValues[ActiveAdjustment.adjustmentvalueset][0];
+      break;
+    case 3:
+      ActiveAdjustment.moveamount = AdustmentValues[ActiveAdjustment.adjustmentvalueset][1];
+      break;
+    case 4:
+      ActiveAdjustment.moveamount = AdustmentValues[ActiveAdjustment.adjustmentvalueset][2];
+      break;
+    case 5:
+      ActiveAdjustment.moveamount = -AdustmentValues[ActiveAdjustment.adjustmentvalueset][2];
+      break;
+    case 6:
+      ActiveAdjustment.moveamount = -AdustmentValues[ActiveAdjustment.adjustmentvalueset][1];
+      break;
+    case 7:
+      ActiveAdjustment.moveamount = -AdustmentValues[ActiveAdjustment.adjustmentvalueset][0];
+      break;
+    default:
+      break;
+  }
+  SpDebug("move amount for button click will be " + String(ActiveAdjustment.moveamount));
   if (ActiveAdjustment.moveamount != 0) {
     switch (ActiveAdjustment.name) {
       case ActionAdjustIntegralTemp:
@@ -286,26 +314,33 @@ void ProcessAdjustment() {
           IntegralTemp = 0.0;
         }
         EEPROM.update(INTEGRALTEMP_EP, (int)(IntegralTemp * 100));
-        UpdateProgessDisplayArea(All);
+        UpdateConfigsDisplayArea(All);
 
 
         break;
       case ActionAdjustGainTemp:
-        GainTemp = GainTemp + moveamount;
+        //SpDebug("here");
+        GainTemp = GainTemp + ActiveAdjustment.moveamount;
         if (GainTemp < 10) {
           GainTemp = 0;
         }
         EEPROM.update(GAINTEMP_EP, GainTemp);
-        UpdateProgessDisplayArea(All);
+        UpdateConfigsDisplayArea(All);
         break;
       case ActionAdjustSetpointTemp:
+        int spSelected;
+        spSelected = ActiveAdjustment.ButtonWhenCalled;
+        SpDebug("set point selected is:" + String(spSelected));
         setpointschanged = true;
-        if ((spSelected >= 0) & (spSelected <= 5)) {
+
+        if ((spSelected >= 0) & (spSelected <= SetPointCount)) {
           MoveAPoint(spSelected);
         }
         if (spSelected == 6) {
-          MoveLast3Point();
+          MoveAPoint(SetPointCount - 1);
+          MoveAPoint(SetPointCount - 2);
         }
+
         break;
       case ActionAdjustFan:
         break;
@@ -372,16 +407,9 @@ void DrawMenuButtons(buttonsetdef& butdefset) {
 }
 
 void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
-
-  //buttondef mybut = butdefset.buttondefs[i];
-  if (butdefset.vertical == true) {
-    //Serial.print("gettting button text for VmenuID:");Serial.print(butdefset.menuID);Serial.print(" button:");Serial.println(i);
-  } else {
-    //Serial.print("gettting button text for HmenuID:");Serial.print(butdefset.menuID);Serial.print(" button:");Serial.println(i);
-  }
-  //SpDebug("drawing menuid " + String(butdefset.menuID) + " button index " + String(i) + " with butID " + String(mybut.butID) ); 
+  //SpDebug("drawing menuid " + String(butdefset.menuID) + " button index " + String(i) + " with butID " + String(mybut.butID) );
   if (butdefset.buttondefs[i].butID == -1) {
-    //SpDebug("looking up details"); 
+    //SpDebug("looking up details");
     memcpy_P(&myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof(buttontext));
     butdefset.buttondefs[i].action = myArrayLocal.action;
     butdefset.buttondefs[i].adjustmentvalueset = myArrayLocal.adjustmentvalueset;
@@ -391,7 +419,6 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
     if (butdefset.buttondefs[i].action == ActionGetLableFromPrior) {
       memcpy_P(&myArrayLocal, &Vmenutext[MenuStatus.VmenuPrior][MenuStatus.VmenubuttonClicked], sizeof(buttontext));
     }
-
   } else {
     if (butdefset.buttondefs[i].action == ActionGetLableFromPrior) {
       memcpy_P(&myArrayLocal, &Vmenutext[MenuStatus.VmenuPrior][MenuStatus.VmenubuttonClicked], sizeof(buttontext));
@@ -399,36 +426,54 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
       memcpy_P(&myArrayLocal, &Vmenutext[butdefset.menuID][i], sizeof(buttontext));
     }
   }
-  if (butdefset.buttondefs[i].butID <= 0)
-  {
-      return;
-
-  }
-  else
-  {
-    //butdefset.ButtonCount = i + 1;
+  if (butdefset.buttondefs[i].butID <= 0) {
+    return;
   }
 
 
+  if (butdefset.buttondefs[i].action == ActionSelectAdustmentValue) {
+    switch (i) {
+      case 2:
+        strcpy(myArrayLocal.label, "+");
+        strcat(myArrayLocal.label, AdustmentValuesLabels[ActiveAdjustment.adjustmentvalueset][0].label);
+        break;
+      case 3:
+        strcpy(myArrayLocal.label, "+");
+        strcat(myArrayLocal.label, AdustmentValuesLabels[ActiveAdjustment.adjustmentvalueset][1].label);
+        break;
+      case 4:
+        strcpy(myArrayLocal.label, "+");
+        strcat(myArrayLocal.label, AdustmentValuesLabels[ActiveAdjustment.adjustmentvalueset][2].label);
+        break;
+      case 5:
+        strcpy(myArrayLocal.label, "-");
+        strcat(myArrayLocal.label, AdustmentValuesLabels[ActiveAdjustment.adjustmentvalueset][2].label);
+        break;
+      case 6:
+        strcpy(myArrayLocal.label, "-");
+        strcat(myArrayLocal.label, AdustmentValuesLabels[ActiveAdjustment.adjustmentvalueset][1].label);
+        break;
+      case 7:
+        strcpy(myArrayLocal.label, "-");
+        strcat(myArrayLocal.label, AdustmentValuesLabels[ActiveAdjustment.adjustmentvalueset][0].label);
+        break;
+      default:
+        break;
+    }
+  }
 
 
-  //Serial.print(" id:");
-  //Serial.print(myArrayLocal.key);
-  //Serial.print(" label:");
-  //Serial.println(myArrayLocal.label);
-
+  //Serial.print(" id:");Serial.print(myArrayLocal.key);Serial.print(" label:");Serial.println(myArrayLocal.label);
   myGLCD.setColor(myArrayLocal.color);
   myGLCD_fillRect(butdefset.buttondefs[i].Rect);
   myGLCD.setColor(BLACK);
   myGLCD_drawRect(butdefset.buttondefs[i].Rect);
-
   myGLCD.setBackColor(myArrayLocal.color);
   myGLCD.setColor(BLACK);
   int xOffset = 0;
   int yOffset = 0;
   int xT = 0;
 
-  //this is normal
   if (toggletooltip == false || butdefset.buttondefs[i].ToolTipShowing == true) {
     //Serial.print("gettting button text for VmenuID:");Serial.print(butdefset.menuID);Serial.print(" button:");Serial.println(i);
 
@@ -442,32 +487,29 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
     yOffset = (butdefset.H - myGLCD.getFontYsize()) / 2;
     myGLCD.print(myArrayLocal.label, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset);
   } else {  //tool tip 2 or 3 line x 12 char
-
     myGLCD.setFont(Retro8x16);
     xOffset = (butdefset.W - (strlen(myArrayLocal.tip1) * myGLCD.getFontXsize())) / 2;
     butdefset.buttondefs[i].ToolTipShowing = true;
-    // if (butdefset.vertical == true) {
-    //   xT = 10;
-    //   yOffset = (butdefset.H / 3 - myGLCD.getFontYsize()) / 2;
-    //   myGLCD.print(myArrayLocal.tip1, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset);
-    //   xOffset = (butdefset.W + xT - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize())) / 2;
-    //   myGLCD.print(myArrayLocal.tip2, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H / 3);
-    //   xOffset = (butdefset.W - (strlen(myArrayLocal.tip3) * myGLCD.getFontXsize())) / 2;
-    //   myGLCD.print(myArrayLocal.tip3, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset + (butdefset.H / 3 * 2));
-
-    // } else {
-    yOffset = (butdefset.H / 2 - myGLCD.getFontYsize()) / 2;
-    myGLCD.print(myArrayLocal.tip1, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset);
-    xOffset = (butdefset.W - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize())) / 2;
-    myGLCD.print(myArrayLocal.tip2, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H / 2);
+    if (butdefset.H >= 50) {
+      xT = 10;
+      yOffset = (butdefset.H / 3 - myGLCD.getFontYsize()) / 2;
+      myGLCD.print(myArrayLocal.tip1, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset);
+      xOffset = (butdefset.W + xT - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize())) / 2;
+      myGLCD.print(myArrayLocal.tip2, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H / 3);
+      xOffset = (butdefset.W - (strlen(myArrayLocal.tip3) * myGLCD.getFontXsize())) / 2;
+      myGLCD.print(myArrayLocal.tip3, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset + (butdefset.H / 3 * 2));
+    } else {
+      yOffset = (butdefset.H / 2 - myGLCD.getFontYsize()) / 2;
+      myGLCD.print(myArrayLocal.tip1, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset);
+      xOffset = (butdefset.W - (strlen(myArrayLocal.tip2) * myGLCD.getFontXsize())) / 2;
+      myGLCD.print(myArrayLocal.tip2, butdefset.buttondefs[i].Rect.x + xOffset, butdefset.buttondefs[i].Rect.y + yOffset + butdefset.H / 2);
+    }
   }
- 
 }
-
-void OutlineClickedButton(uint16_t color) {
-  uint16_t priorcolor = myGLCD.getColor();
-  myGLCD.setColor(color);
-  myGLCD_drawRect(MenuStatus.TouchButtonSet->buttondefs[MenuStatus.ButtonClicked].Rect);
-  //myGLCD_drawRect(butdefset->buttondefs[i].Rect);
-  myGLCD.setColor(priorcolor);
-}
+  void OutlineClickedButton(uint16_t color) {
+    uint16_t priorcolor = myGLCD.getColor();
+    myGLCD.setColor(color);
+    myGLCD_drawRect(MenuStatus.TouchButtonSet->buttondefs[MenuStatus.ButtonClicked].Rect);
+    //myGLCD_drawRect(butdefset->buttondefs[i].Rect);
+    myGLCD.setColor(priorcolor);
+  }

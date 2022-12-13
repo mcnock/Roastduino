@@ -80,6 +80,19 @@ uint16_t XforATime(float time) {
   return result;
 }
 
+int YforADuty(int fanpwm) {
+  //Serial.print("starting YforAFan");Serial.println(fanpwm);
+  if (fanpwm <= FanGraphMinPWM) {
+    //Serial.print("return min:"); Serial.println(FanGraphYBottom);
+    return FanGraphBottom;
+  } else {
+    double ratio = (fanpwm - FanGraphMinPWM) / float(FanGraphMaxPWM - FanGraphMinPWM);
+    //Serial.print("ratio:");Serial.println(ratio);
+    if (ratio > 1) { ratio = 1; }
+    return (FanGraphBottom - (ratio * FanGraphHeight));
+  }
+}
+
 int YforAFan(int fanpwm) {
   //Serial.print("starting YforAFan");Serial.println(fanpwm);
 

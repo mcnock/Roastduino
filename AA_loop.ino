@@ -4,6 +4,7 @@
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
+int CoilTempOffSet;
 
 void theloop() {
   int TBeanAvgThisRun = 0;
@@ -80,7 +81,7 @@ void theloop() {
   switch (State) {
     case STATEROASTING:
       {
-        if (TBeanAvgRoll.mean() > (MySetPoints[EndingSetPoint].Temperature) + 20) {
+        if (TBeanAvgRoll.mean() > (MySetPoints[SetPointCount -1].Temperature) + 20) {
           TempReachedCount++;
           if (TempReachedCount > 20) {
             newState = STATECOOLING;
@@ -89,7 +90,7 @@ void theloop() {
         } else {
           TempReachedCount = 0;
         }
-        if (RoastMinutes > MySetPoints[EndingSetPoint].Minutes) {
+        if (RoastMinutes > MySetPoints[SetPointCount -1].Minutes) {
           newState = STATECOOLING;
           Serial.println(F("Max time reached. Cooling starting"));
         }
@@ -100,7 +101,7 @@ void theloop() {
         if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
           newState = STATESTOPPED;
           Serial.println(F("Auto Cooling Complete "));
-        } else if ((RoastMinutes < MySetPoints[EndingSetPoint].Minutes) & RoastRestartNeeded) {
+        } else if ((RoastMinutes < MySetPoints[SetPointCount -1].Minutes) & RoastRestartNeeded) {
           newState = STATEROASTING;
           RoastRestartNeeded = false;
           Serial.println(F("RestartRoasting request detected"));
@@ -350,9 +351,8 @@ void theloop() {
     if (TCoil > TEMPCOILTOOHOT) {
       if (TEMPCOILTOOHOTCount > 10) {
         bNewSecond = true;  //force display immediately
-
-        newerrmsg = true;
-        errmsg = "HOT COIL CUTOUT";
+        ErrorStatus.newerrmsg = true;
+        ErrorStatus.error = ErrorCoilTooHot;
         //Serial.println("too hot");
       }
       TEMPCOILTOOHOTCount++;
@@ -361,9 +361,10 @@ void theloop() {
     } else {
 
       if (TEMPCOILTOOHOTCount > 0) {
-        if (errmsg == "HOT COIL CUTOUT") {
-          newerrmsg = true;
-          errmsg = "";
+        if (ErrorStatus.error == ErrorCoilTooHot) {
+          ErrorStatus.newerrmsg = true;
+          ErrorStatus.lasterror = ErrorStatus.error ;
+          ErrorStatus.error = NoError;
         }
 
         TEMPCOILTOOHOTCount = 0;
@@ -420,7 +421,9 @@ void theloop() {
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
-      AddPointbyTimeAndTempAndLineID(RoastMinutes, TCoilRoll.mean(), COILLINEID, 2);
+      int coiloffsetted = (TCoilRoll.mean() - CoilTempOffSet);
+      if (coiloffsetted < 0) {coiloffsetted = 0;}
+      AddPointbyTimeAndTempAndLineID(RoastMinutes, coiloffsetted, COILLINEID, 2);
     }
   }
   //what to output to UI each 3 seconds

@@ -20,6 +20,7 @@ extern uint8_t SmallFont[];
 extern uint8_t BigFont[];
 extern uint8_t SevenSegmentFull[];
 extern uint8_t Grotesk24x48[];
+extern uint8_t Grotesk16x32[];
 extern uint8_t Retro8x16[];
 
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
@@ -46,6 +47,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define MCP4725_ADDR 0x60
 
 #define SpDebug Serial.println
+#define spDebug Serial.println
 
 
 //PIN  definitions
@@ -117,10 +119,17 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define SETPOINTFLOW_EP 76
 
 
-
+error_status ErrorStatus;
+char ErrDisplay[6] = "ERROR";
+const int NoError = -1;
+const int ErrorNeedFanFirst = 0;
+const int ErrorCoilTooHot = 1;
+//const error PROGMEM errorlist[] = {
+error errorlist[2] = {
+        { 0, "your must turn fan", "on before you start"},
+        { 1, "coil is to hot ", "increase fan"}  };
 
 #define TEMPCOOLINGDONE 250
-
 #define STATEROASTING 1
 #define STATESTOPPED 2
 #define STATECOOLING 3
@@ -132,6 +141,12 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define DEBUGDUTY 9
 #define DEBUGCOIL 10
 #define STATERESTARTROASTING 11
+
+
+
+
+
+
 
 const char Sname0[] = "";
 const char Sname1[] = "Roasting  ";
@@ -211,10 +226,8 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define All false
 
 
-#define VmenuAdj_1_3_5 77
-#define VmenuAjd_01 89
-#define VMenuAdj_1_5_10_V  90
-#define Vmenubase 0
+
+
 
 
 
@@ -224,35 +237,43 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define ActionCustom
 #define ActionAdjust
 
+
+
+
+
 #define Values_01_03_05  0
-#define Values_1_2_5  1
+#define Values_1_3_5  1
 #define Values_1_3_10  2
 
-float AdustmentValues [][3]= {
-{.01,.03,.05},
-{1,3,5},
-{1,3,10}
+adjustmentlabels AdustmentValuesLabels[][3]  {
+{".05",".03",".01"},
+{"5","3","1"},
+{"10","5","1"}
 };
 
- adjustmentspecs ActiveAdjustment;
+float AdustmentValues [][3]= {
+{.05,.03,.01},
+{5,3,1},
+{10,3,1}
+};
 
-#define ActionProvideValueForAdjustment 1
+ activeadjustment ActiveAdjustment;
 
 
 
 #define ActionShowSetpointSelectMenu 30
-#define ActionShowSetpointFanMenu 31
+#define ActionShowSetpointFanMenu   31
 #define ActionGetLableFromPrior 32
+#define ActionSelectAdustmentValue 33
 
 
 #define ActionAdjustments        40
 #define ActionAdjustIntegralTemp 41
 #define ActionAdjustGainTemp 42
 #define ActionAdjustSetpointTemp 43
-#define ActionAdjustFan 44
+#define ActionAdjustFan     44
 #define ActionAdjustRoastLength 45
 #define ActionAdjustSetpointFan 46
-
 
 char debug = 'a';
 
@@ -260,6 +281,7 @@ char debug = 'a';
 #define MaxButtonCount 9
 
 #define VmenuBase 0
+#define Vmenubase 0
 #define VmenuSetPointSelect 1
 #define VmenuDebug 2
 #define VmenuOnOff 3
@@ -268,29 +290,30 @@ char debug = 'a';
 #define VmenuEmpty 6
 #define HmenuCTRL 7
 #define HmenuFAN 8
+#define VmenuAdjustValuewithSave 9
 
 #define VmenuFindPrior 11
 
 
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   { { 0, "<<", "forward", "to", "next", GREEN , VmenuEmpty},
-    { 1, "", "back", "to", "prior", GREEN },
-    { 2, "GainT", "Ajdust", "Temp Gain", "Value", YELLOW , ActionAdjustGainTemp , Values_1_2_5 },
-    { 3, "IntT", "Ajdust", "Intergal", "Value", YELLOW , ActionAdjustIntegralTemp , Values_01_03_05 },
-    { 4, "SPs", "Select", "Setpoints", "to adjust", YELLOW, ActionShowSetpointSelectMenu },
-    { 5, "Fan", "Adjust", "fan auto", "decrease", YELLOW ,ActionShowSetpointFanMenu } ,
-    { 6, "Adv", "Advance", "roast", "by 1 min", YELLOW },
+    { 1, "SPs", "Adjust", "Set", "prior", YELLOW , ActionShowSetpointSelectMenu},
+    { 2, "GainT", "Temp", "PID", "Gain", YELLOW , ActionAdjustGainTemp , Values_1_3_5 },
+    { 3, "IntT", "Temp", "PID", "Intgal", YELLOW , ActionAdjustIntegralTemp , Values_01_03_05 },
+    { 4, "Fan", "Fan", "Set", "points", YELLOW },
+    { 5, "HCut", "Coil", "Over", "Temp", YELLOW ,ActionShowSetpointFanMenu } ,
+    { 6, "LCut", "Cool", "stop", "Temp", YELLOW },
     { 7, "Rtd", "Retard ", "roast", "by 1 min", YELLOW },
     { 8, "cCut", "Adjust", "Hightemp", "Cut out", YELLOW } },
   { { 10, "<<", "back", "to prior", "menu", GREEN, VmenuBase },
-    { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
-    { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
-    { 13, "sp3", "Adjust", "setpoint", "#3", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05 },
-    { 14, "sp4", "Adjust", "setpoint", "#4", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
-    { 15, "sp5", "Adjust", "setpoint", "#5", YELLOW , ActionAdjustSetpointTemp , Values_01_03_05},
+    { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
+    { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
+    { 13, "sp3", "Adjust", "setpoint", "#3", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
+    { 14, "sp4", "Adjust", "setpoint", "#4", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
+    { 15, "sp5", "Adjust", "setpoint", "#5", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
     { 16, "ls3", "Adjust", "last 3", "setpoint", YELLOW },
-    { 17, "T+1", "Increase", "roast len", "by 1 min", YELLOW },
-    { 18, "T-1", "Decrease", "roast len", "by 1 min", YELLOW }},
+    { 17, "", "Increase", "roast len", "by 1 min", BLACK },
+    { 18, "", "Decrease", "roast len", "by 1 min", BLACK }},
   { { 20, "<<", "foward", "to", "next", GREEN , VmenuFindPrior },
     { 21, "", "back", "to", "prior", GREEN },
     { 22, "DBG", "subject", "of", "menu", YELLOW },
@@ -311,14 +334,14 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 38, "", "go back", "to", "prior", BLACK  }},
   { { 40, "<<", "go back", "to", "prior", GREEN , VmenuFindPrior },
     { 41, "", "go back", "to", "prior", GREEN , ActionGetLableFromPrior},
-    { 42, "+.01", "go back", "to", "prior", ORANGE },
-    { 43, "+.05", "go back", "to", "prior", ORANGE },
-    { 44, "+.10", "go back", "to", "prior", ORANGE },
-    { 45, "-.01", "go back", "to", "prior", ORANGE },
-    { 46, "-.05", "go back", "to", "prior", ORANGE },
-    { 47, "-.10", "go back", "to", "prior", ORANGE },
-    { 48, "Save", "Save", "and", "close", GREEN }},
-  { { 50, "<<", "go to", "prior", "menu", GREEN , VmenuFindPrior},
+    { 42, "x", "go back", "to", "prior", ORANGE , ActionSelectAdustmentValue},
+    { 43, "x", "go back", "to", "prior", ORANGE , ActionSelectAdustmentValue},
+    { 44, "x", "go back", "to", "prior", ORANGE , ActionSelectAdustmentValue},
+    { 45, "x", "go back", "to", "prior", ORANGE , ActionSelectAdustmentValue},
+    { 46, "x", "go back", "to", "prior", ORANGE , ActionSelectAdustmentValue},
+    { 47, "x", "go back", "to", "prior", ORANGE , ActionSelectAdustmentValue},
+    { 48, "",  "Save", "and", "close", BLACK  }}, 
+  { { 50, "<<", "go to", "prior", "menu", GREEN ,  VmenuBase},
     { 51, "A PWM", "Adjust", "A", "PWM", AQUA },
     { 52, "B PWM", "Adjust", "B", "PWM", AQUA },
     { 53, "C PWM", "Adjust", "C", "PWM", AQUA },
@@ -340,32 +363,28 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 71, "Stop", "End Roast", "or Fan", "", RED },
     { 72, "Fan", "Start", "Fan", "", AQUA },
     { 73, "rfs", "Redraw", "screen", "", ORANGE },
-    { 74, "Fan+", "go back", "to", "prior", AQUA },
-    { 75, "Fan-", "go back", "to", "prior", AQUA },
+    { 74, "Adv", "go back", "to", "prior", AQUA },
+    { 75, "Rtd", "go back", "to", "prior", AQUA },
     { 76, "", "go back", "to", "prior", GREEN },
     { -77, "", "go back", "to", "prior", GREEN },
     { -78, "", "go back", "to", "prior", GREEN }},
-  { { 80, "-5", "Decrease", "fan 10", "prior", AQUA },
-    { 81, "-1", "Decrease", "fan 3", "prior", AQUA },
-    { 82, "+1", "Increase", "fan 3", "prior", AQUA },
-    { 83, "+5", "Increase", "fan 10", "prior", AQUA },
-    { -84, "", "save as", "start", "prior", AQUA },
-    { -85, "", "go back", "to", "prior", GREEN },
-    { -86, "", "go back", "to", "prior", GREEN },
+  { { 80, "F-5", "Decrease", "fan 10", "prior", AQUA },
+    { 81, "F-1", "Decrease", "fan 3", "prior", AQUA },
+    { 82, "F+1", "Increase", "fan 3", "prior", AQUA },
+    { 83, "F+5", "Increase", "fan 10", "prior", AQUA },
+    { 84, "", "save as", "start", "prior", AQUA },
+    { 85, "", "go back", "to", "prior", GREEN },
+    { 86, "", "go back", "to", "prior", GREEN },
     { -87, "", "go back", "to", "prior", GREEN },
     { -88, "", "go back", "to", "prior", GREEN }} 
 };
 
 buttontext myArrayLocal;
 
-int State;
+int lastStateUpdated = -1;
 int newState;
-int lastStateUpdated;
-String errmsg;
-String errmsglast;
-boolean newerrmsg;
-int lenlasterrmsg;
-
+int State;
+ 
 int TEMPCOILTOOHOT = 800;
 
 boolean serialOutPutTempsBySecond;
@@ -384,7 +403,7 @@ int iCommandsp1 = 0;
 char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
 
-int spSelected = -1;
+
 
 char _debug = 'a';
 
@@ -414,11 +433,11 @@ graphhistory GraphHistory[] = {
 };
 
 
-const int FanGraphXStart = 410;  //starting col of fan graph - a little past half
-//int FanGraphXWidth = 390;  //uses 1/4 of screen width
-const int FanGraphHeight = 165;  //uses 1/4 of screen width
+const int FanGraphXStart = 0;  //starting col of fan graph - a little past half
+const int FanGraphXWidth = 720;  //uses 1/4 of screen width
+const int FanGraphHeight = 340;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
-const int FanGraphBottom = 455;
+const int FanGraphBottom = 450;
 int FanGraphMinPWM = 100;
 int FanGraphMaxPWM = 254;
 
@@ -456,16 +475,12 @@ long MyMinuteTemperature[30];
 
 
 //read from eprom
-setpoint MySetPoints[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 }, { 16, 450 } };
-const int SetPointCount = 6;  //0,1,2,3,4,t0t5
-int EndingSetPoint = 5;
+setpoint MySetPoints[6] = { { 0, 100 }, { 4, 390 }, { 7, 420 }, { 10, 425 }, { 13, 430 } };
+const int SetPointCount = 5;  //0,1,2,3,4,t0t5
+//EndingSetPoint = 3;
 int TimeScreenLeft = 0;
 
-double TempYMax = 800;
-double TempSplitHigh = 460;
-double TempSplitLow = 390;
-double PixelYSplit2;
-double PixelYSplit;
+
 
 double TempPerPixL = 0;
 double TempPerPixM = 0;
@@ -520,7 +535,6 @@ char spFormat[6] = "%6.2F";
 //used when drawing lines. We support up to 3 lines (see line ID constants)
 point LastforLineID[GRAPHLINECOUNT];
 
-int moveamount = -1;
 
 double RoastMinutes = 0;
 unsigned int RoastAcumHeat = 0;
@@ -686,7 +700,7 @@ void setup() {
 
   State = STATESTOPPED;
   setpointschanged = true;
-  ;
+  
 
 
 
