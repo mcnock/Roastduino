@@ -18,11 +18,13 @@ void theloop() {
     //Serial.println("New second");
     ReadTempFlag = 0;
     bNewSecond = true;
-    LoopsPerSecond = 0;
+    LoopsPerSecond = LoopsPerSecondCalcing;
+    LoopsPerSecondCalcing = 0;
     SecondTimer.restart(0);
   } else {
     bNewSecond = false;
-    LoopsPerSecond++;
+    LoopsPerSecondCalcing++;
+    
   }
 
   //capture a fixed roast time that will not change during execution of the loop
@@ -401,7 +403,7 @@ void theloop() {
     //Serial.println("update after reach new temp");
     UpdateStateDisplayArea(ValuesOnly);
     UpdateTempDisplayArea(ValuesOnly);
-    UpdateFanPWMValuesDisplay();
+    UpdateFanPWMValuesDisplay(ValuesOnly);
     if (serialOutPutTempsBySecond == true) {
       SerialOutputTempsForPlotting();
     }

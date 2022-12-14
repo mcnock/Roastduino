@@ -16,17 +16,29 @@
 #include <Arduino.h>
 #include "src/Bitcraze_PMW3901.h"
 
-extern uint8_t SmallFont[];
-extern uint8_t BigFont[];
-extern uint8_t SevenSegmentFull[];
-extern uint8_t Grotesk24x48[];
-extern uint8_t Grotesk16x32[];
-extern uint8_t Retro8x16[];
+#define Font8x9 mykefont2
+#define Font8x12 SmallFont
+#define Font8x16 Retro8x16
+
+#define Font16x16 BigFont
+#define Font16x32 Grotesk16x32
+#define Font16x48 Grotesk16x48
+
+
+extern uint8_t SmallFont[];  //8 x 12
+extern uint8_t Retro8x16[]; //8 x 16
+
+
+extern uint8_t BigFont[];   //16 x 16
+extern uint8_t arial_normal[];   //16 x 16
+extern uint8_t arial_bold[];    //16 x 16
+extern uint8_t Grotesk16x32[]; //16 x 32
+extern uint8_t Grotesk24x48[]; //24 x 48
 
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
 UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, byte dout, byte irq
 
-// Assign human-readable names to some common 16-bit color values:
+// Assign human-readable names tox12 some common 16-bit color values:
 
 
 #define LGBLUE 0xFE73
@@ -271,9 +283,11 @@ float AdustmentValues [][3]= {
 #define ActionAdjustIntegralTemp 41
 #define ActionAdjustGainTemp 42
 #define ActionAdjustSetpointTemp 43
-#define ActionAdjustFan     44
+#define ActionAdjustSetpointFan  44
 #define ActionAdjustRoastLength 45
-#define ActionAdjustSetpointFan 46
+#define ActionAdjustTempToHot 46
+#define ActionAdjustCoolDownTemp 47
+#define ActionAdjustCoilGraphOffset 48
 
 char debug = 'a';
 
@@ -294,17 +308,18 @@ char debug = 'a';
 
 #define VmenuFindPrior 11
 
+byte DrawLablesRotated[1] = {60};
 
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   { { 0, "<<", "forward", "to", "next", GREEN , VmenuEmpty},
     { 1, "SPs", "Adjust", "Set", "prior", YELLOW , ActionShowSetpointSelectMenu},
     { 2, "GainT", "Temp", "PID", "Gain", YELLOW , ActionAdjustGainTemp , Values_1_3_5 },
     { 3, "IntT", "Temp", "PID", "Intgal", YELLOW , ActionAdjustIntegralTemp , Values_01_03_05 },
-    { 4, "Fan", "Fan", "Set", "points", YELLOW },
-    { 5, "HCut", "Coil", "Over", "Temp", YELLOW ,ActionShowSetpointFanMenu } ,
-    { 6, "LCut", "Cool", "stop", "Temp", YELLOW },
-    { 7, "Rtd", "Retard ", "roast", "by 1 min", YELLOW },
-    { 8, "cCut", "Adjust", "Hightemp", "Cut out", YELLOW } },
+    { 4, "Fan", "Fan", "Set", "points", YELLOW , ActionShowSetpointFanMenu},
+    { 5, "ThT", "To", "Hot", "Temp", YELLOW , ActionAdjustTempToHot, Values_1_3_10 } ,
+    { 6, "CdT", "Cool", "Down", "Temp", YELLOW, ActionAdjustCoolDownTemp, Values_1_3_10},
+    { 7, "Coil", "Coil", "Graph", "Offset", YELLOW ,ActionAdjustCoilGraphOffset, Values_1_3_10 },
+    { 8, "", "Adjust", "Hightemp", "Cut out", YELLOW } },
   { { 10, "<<", "back", "to prior", "menu", GREEN, VmenuBase },
     { 11, "sp1", "Adjust", "setpoint", "#1", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
     { 12, "sp2", "Adjust", "setpoint", "#2", YELLOW , ActionAdjustSetpointTemp , Values_1_3_5},
@@ -350,7 +365,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 56, "C-1", "Rmv 1 min", "to C", "period", AQUA },
     { 57, "", "Gain", "of", "Fan", AQUA },
     { 58, "", "Int", "of", "Fan", AQUA }},  
-  { { 60, "<<", "go to", "next", "menu", GREEN , VmenuBase},
+  { { 60, ">>", "go to", "next", "menu", GREEN , VmenuBase},
     { -61, "", "go back", "to", "prior", AQUA },
     { -62, "", "go", "to", "prior", AQUA },
     { -63, "", "go back", "to", "prior", AQUA },
@@ -368,11 +383,11 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 76, "", "go back", "to", "prior", GREEN },
     { -77, "", "go back", "to", "prior", GREEN },
     { -78, "", "go back", "to", "prior", GREEN }},
-  { { 80, "F-5", "Decrease", "fan 10", "prior", AQUA },
-    { 81, "F-1", "Decrease", "fan 3", "prior", AQUA },
-    { 82, "F+1", "Increase", "fan 3", "prior", AQUA },
-    { 83, "F+5", "Increase", "fan 10", "prior", AQUA },
-    { 84, "", "save as", "start", "prior", AQUA },
+  { { 80, "FAN", "Decrease", "fan 10", "prior", AQUA },
+    { 81, "-5", "Decrease", "fan 3", "prior", AQUA },
+    { 82, "-1", "Increase", "fan 3", "prior", AQUA },
+    { 83, "+1", "Increase", "fan 10", "prior", AQUA },
+    { 84, "+5", "save as", "start", "prior", AQUA },
     { 85, "", "go back", "to", "prior", GREEN },
     { 86, "", "go back", "to", "prior", GREEN },
     { -87, "", "go back", "to", "prior", GREEN },
@@ -491,6 +506,7 @@ int HorScaleLineYCount = 0;
 double CurrentSetPointTemp = 0;
 
 int LoopsPerSecond;
+int LoopsPerSecondCalcing;
 
 menustatus MenuStatus;
 buttonsetdef* TouchButtonSet;

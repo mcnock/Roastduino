@@ -10,7 +10,7 @@ struct PWMSetpoint {
 };
 
 typedef struct adjustmentlabels {
-char label[7];
+  char label[7];
 } adjustmentlabels;
 
 typedef struct point {
@@ -41,6 +41,7 @@ typedef struct rect {
   int ymax;
 } rect;
 
+
 typedef struct indexed10strings {
   char s_0[12];
   char s_1[12];
@@ -56,7 +57,7 @@ typedef struct indexed10strings {
 
 
 typedef struct buttontext {
-  int butID ;
+  int butID;
   char label[7];
   char tip1[12];
   char tip2[12];
@@ -106,18 +107,18 @@ typedef struct buttonsetdef {
 } buttonsetdef;
 
 typedef struct error_status {
-    int error = -1;
-    int lasterror = -1;
-    bool errorcleared = true;
-    boolean newerrmsg = false;
-    bool lastdrawnwitherror = false;
-   
+  int error = -1;
+  int lasterror = -1;
+  bool errorcleared = true;
+  boolean newerrmsg = false;
+  bool lastdrawnwitherror = false;
+
 } errorstatus;
 
 typedef struct error {
-    byte errorID;
-    char line1[20];
-    char line2[20];
+  byte errorID;
+  char line1[20];
+  char line2[20];
 } error;
 
 typedef struct menustatus {
