@@ -150,8 +150,8 @@ const int NoError = -1;
 const int ErrorNeedFanFirst = 0;
 const int ErrorCoilTooHot = 1;
 const error errorlist[2] = {
-        { 0, "your must turn fan", "on before you start"},
-        { 1, "coil is to hot ", "increase fan"}  
+        { 0, "!!Turn on fan before you start!!"},
+        { 1, "!!Coil exceeds Too Hot Temp!!"}  
         };
 
 int     TEMPCOOLINGDONE = 250;

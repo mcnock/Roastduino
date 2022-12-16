@@ -59,6 +59,7 @@ void ProcessHorControlMenu(int i) {
     ErrorStatus.error = NoError;
 
     ErrorStatus.newerrmsg = true;
+    UpdateErrorDisplayArea(ValuesOnly);
   }
   switch (i) {
     case 0:
@@ -70,6 +71,7 @@ void ProcessHorControlMenu(int i) {
       } else {
         ErrorStatus.newerrmsg = true;
         ErrorStatus.error = ErrorNeedFanFirst;
+        UpdateErrorDisplayArea(ValuesOnly);
       }
       break;
     case 1:
@@ -206,7 +208,7 @@ void DrawVMenu(int iMenu) {
   DrawMenuButtons(myButtonVertMenus[iMenu]);
 
   //if (bRedraw) {
-  //  UpdateTempDisplayArea(All);
+  //  UpdateOpDetailsDisplayArea(All);
   //  graphFanProfile();
   //}
 }
@@ -301,7 +303,7 @@ void ProcessAnAdjustment() {
         IntegralTemp = 0.0;
       }
       EEPROM.update(INTEGRALTEMP_EP, (int)(IntegralTemp * 100));
-      UpdateConfigsDisplayArea(All);
+      UpdateConfigsDisplayArea(ValuesOnly);
       break;
     case ActionAdjustGainTemp:
       //SpDebug("here");
@@ -310,7 +312,7 @@ void ProcessAnAdjustment() {
         GainTemp = 0;
       }
       EEPROM.update(GAINTEMP_EP, GainTemp);
-      UpdateConfigsDisplayArea(All);
+      UpdateConfigsDisplayArea(ValuesOnly);
       break;
     case ActionAdjustSetpointTemp:
       setpointschanged = true;
@@ -327,7 +329,7 @@ void ProcessAnAdjustment() {
       break;
     case ActionAdjustTempToHot:
       TEMPCOILTOOHOT = TEMPCOILTOOHOT + ActiveAdjustment.moveamount;
-      //TOOHOTTEMP_EP
+      EEPROM.update(TOOHOTTEMP_EP, GainTemp);
       UpdateConfigsDisplayArea(ValuesOnly);
       break;
     case ActionAdjustCoolDownTemp:
@@ -337,6 +339,7 @@ void ProcessAnAdjustment() {
       break;
     case ActionAdjustFanGraphPixelBottom:
       FanGraphBottom = FanGraphBottom - ActiveAdjustment.moveamount;
+      EEPROM.update(TOOHOTTEMP_EP, FanGraphBottom);
       UpdateConfigsDisplayArea(ValuesOnly);
       //FANGRAPHBOTTOM_EP
       break;

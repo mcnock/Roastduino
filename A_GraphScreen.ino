@@ -10,7 +10,7 @@ int pixelSplitLow = 150;
 uint16_t fancolor = GRAY;
 uint16_t fanback = DARKBLUE;
 
-rect OpProgessDisplay = { 75, 0, 0, 0 };
+rect OpProgessDisplay = { 80, 0, 0, 0 };
 
 rect OpDetailDisplay = { 610, 180, 0, 0 };
 
@@ -163,10 +163,9 @@ void graphProfile() {
     myGLCD.drawLine(0, y, yaxislabelx, y);
     myGLCD.setColor(GRAY);
     myGLCD.printNumI(t, yaxislabelx, y - 5);
-    
   }
   //high range
-  
+
   for (int t = TempSplitHigh; t < TempYMax; t = t + 100) {
     y = YforATemp(t);
     HorScaleLineYCount++;
@@ -176,7 +175,6 @@ void graphProfile() {
     myGLCD.drawLine(0, y, yaxislabelx, y);
     myGLCD.setColor(GRAY);
     myGLCD.printNumI(t, yaxislabelx, y - 5);
- 
   }
   //draw the profile by and setpoint
   StartLinebyTemp(MySetPoints[0].Temperature, PROFILELINEID);
@@ -192,11 +190,11 @@ void graphProfile() {
 
   DrawVMenu(MenuStatus.VmenuShowing);
 
-  UpdateTempDisplayArea(All);
-  UpdateStateDisplayArea(All);
-  setpointschanged = false;
 
-  UpdateProgessDisplayArea(All);
+  UpdateOpDetailsDisplayArea(All);
+  UpdateProgressDisplayArea(All);
+  setpointschanged = false;
+  UpdateProgressDisplayArea(All);
   UpdateConfigsDisplayArea(All);
   DrawLineFromHistoryArray(ROLLAVGLINEID);
 }
@@ -312,11 +310,18 @@ void UpdateConfigsDisplayArea(boolean bValuesOnly) {
   myGLCD.printNumI(FanGraphBottom, col2, row, 6, ' ');
 }
 
-void UpdateProgessDisplayArea(boolean bValuesOnly) {
-  //this is top row
+void UpdateProgressDisplayArea(boolean bValuesOnly) {
+
+  myGLCD.setBackColor(BLACK);
+
+  if (bValuesOnly == All || lastStateUpdated != State) {
+    myGLCD.setFont(Grotesk24x48);
+    myGLCD.setColor(StateColor[State]);
+    myGLCD.print(StateName[State], 2, 2);
+    lastStateUpdated = State;
+  }
 
   myGLCD.setColor(PALEYELLOW);
-  myGLCD.setBackColor(BLACK);
   myGLCD.setFont(arial_normal);
   int rowstart = OpProgessDisplay.x;
   int row = rowstart;
@@ -367,72 +372,35 @@ void UpdateProgessDisplayArea(boolean bValuesOnly) {
   myGLCD.drawRect(col, rowstart - 1, colend, row + rowheight + 1);
 }
 
-void UpdateStateDisplayArea(boolean bValuesOnly) {
+void UpdateErrorDisplayArea(boolean bValuesOnly) {
 
-  int row = 2;  //- myGLCD.getFontYsize();
+  myGLCD.setFont(arial_bold);
+  int rowheight = myGLCD.getFontYsize();
+  int row = myHorControlMenuDef.H + 1;  //- myGLCD.getFontYsize();
   int col = 2;
-  int rowheight = 0;
-  bool drawwitherror = false;
-  bool blankout = false;
-  uint16_t blankoutcolor;
+  uint16_t blankoutcolor = BLACK;
 
-  if (bValuesOnly == true) {
-
-    if (lastStateUpdated == State && ErrorStatus.newerrmsg == false) {
-      //SpDebug("Skipped " + String(State));
-      return;
-    }
+  if (bValuesOnly == true && ErrorStatus.newerrmsg == false) {
+    return;
   }
-  if (ErrorStatus.newerrmsg == false) {
-    drawwitherror = ErrorStatus.lastdrawnwitherror;
-  } else {
-    blankout = true;
+
+  if (ErrorStatus.error == NoError || ErrorStatus.newerrmsg == true) {
+    myGLCD.setColor(BLACK);
+    myGLCD.fillRect(col, row, 650, row + rowheight + 3);
     ErrorStatus.newerrmsg = false;
-    if (ErrorStatus.error == NoError) {
-      blankoutcolor = BLACK;
-      ErrorStatus.errorcleared = true;
-      ErrorStatus.lastdrawnwitherror = false;
-    } else {  //draw status and error
-      blankoutcolor = YELLOW;
-      ErrorStatus.lastdrawnwitherror = true;
-      drawwitherror = true;
-      ErrorStatus.errorcleared = false;
-    }
+    //ErrorStatus.errorcleared = true;
   }
 
 
-  if (blankout == true) {
-    myGLCD.setColor(blankoutcolor);
-    myGLCD.fillRect(0, 0, myHorControlMenuDef.colstart, OpProgessDisplay.x);
-  }
-  if (drawwitherror == false) {
-    myGLCD.setFont(Grotesk24x48);
-  } else {
-    myGLCD.setFont(Grotesk16x32);
-  }
-  //draw status
-  rowheight = myGLCD.getFontYsize();
-  myGLCD.setColor(StateColor[State]);
-  myGLCD.print(StateName[State], col, row);
-  lastStateUpdated = State;
-  //draw error
-  if (drawwitherror == true) {
-    myGLCD.print(ErrDisplay, 150, row);
+  if (ErrorStatus.error != NoError) {
+    // SpDebug("error found. ID is:" + String(errorlist[ErrorStatus.error].errorID) + " " + String(errorlist[ErrorStatus.error].line1) + " " + String(errorlist[ErrorStatus.error].line2));
 
-    myGLCD.setFont(BigFont);
-    row = row + rowheight;
-    rowheight = myGLCD.getFontYsize();
-    //memcpy_P(&myLocalbuttontext, &Vmenutext[butdefset.menuID][i], sizeof(buttontext));
-    SpDebug("error found. ID is:" + String(errorlist[ErrorStatus.error].errorID) + " " + String(errorlist[ErrorStatus.error].line1) + " " + String(errorlist[ErrorStatus.error].line2));
     myGLCD.setColor(YELLOW);
-
-    myGLCD.print(errorlist[ErrorStatus.error].line1, col, row);
-    row = row + rowheight;
-    myGLCD.print(errorlist[ErrorStatus.error].line2, col, row);
+    myGLCD.print(errorlist[ErrorStatus.error].line1, col + 1, row + 3);
   }
 }
 
-void UpdateTempDisplayArea(boolean bValuesOnly) {
+void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
 
   myGLCD.setFont(SmallFont);
   int rowheight = myGLCD.getFontYsize() * 1.1;
@@ -443,9 +411,9 @@ void UpdateTempDisplayArea(boolean bValuesOnly) {
     OpDetailDisplay.xmax = col2 + (myGLCD.getFontXsize() * 6);
     OpDetailDisplay.ymax = row + (rowheight * 10) + 2;
   }
-  
+
   FreeMemory = freeMemory();
-  
+
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bValuesOnly == false) {
@@ -698,7 +666,7 @@ void DrawFanSetPoint(int setpoint, uint16_t color) {
     case 1:
     case 2:
       xOffset = -myGLCD.getFontXsize();
-      xOffset2 = 0;//myGLCD.getFontXsize()/2;
+      xOffset2 = 0;  //myGLCD.getFontXsize()/2;
       break;
     case 3:
       xOffset = -(myGLCD.getFontXsize() * 2);
@@ -708,15 +676,15 @@ void DrawFanSetPoint(int setpoint, uint16_t color) {
 
   myGLCD.setColor(color);
   myGLCD.fillCircle(X + xOffsetCircle, Y, 5);
-  
-  myGLCD.printNumI(FanSetPoints[setpoint].PWM, X + xOffset, Y - myGLCD.getFontYsize() - 5 );
-  myGLCD.printNumI(FanSetPoints[setpoint].Minutes, X + xOffset2, Y + 5 );
+
+  myGLCD.printNumI(FanSetPoints[setpoint].PWM, X + xOffset, Y - myGLCD.getFontYsize() - 5);
+  myGLCD.printNumI(FanSetPoints[setpoint].Minutes, X + xOffset2, Y + 5);
 }
 
 void DrawSetPoint(int setpoint, uint16_t color) {
   int Y = YforATemp(MySetPoints[setpoint].Temperature);
   int X = XforATime(MySetPoints[setpoint].Minutes);
-  
+
   int xOffset = 0;
   int xOffset2 = 0;
   int yOffset = 0;
@@ -725,13 +693,13 @@ void DrawSetPoint(int setpoint, uint16_t color) {
     case 0:
       xOffset = 15;
       xOffset2 = 0;
-      circleoffset = 4;  
+      circleoffset = 4;
     case 1:
-        break;
+      break;
     case 2:
-    break;
+      break;
     case 3:
-    break;
+      break;
     case 4:
       xOffset = -10;
       xOffset2 = -10;
@@ -742,10 +710,9 @@ void DrawSetPoint(int setpoint, uint16_t color) {
   myGLCD.setColor(WHITE);
 
   myGLCD.printNumI(setpoint, X + (myGLCD.getFontXsize() / 2) + xOffset, Y - (myGLCD.getFontYsize() * 2) - 5);
-  myGLCD.print(F("#"), X - (myGLCD.getFontXsize() / 2)  + xOffset, Y - (myGLCD.getFontYsize() * 2) - 5);
-  myGLCD.printNumI(MySetPoints[setpoint].Temperature, X - (myGLCD.getFontXsize() * 1.5)  + xOffset, Y - (myGLCD.getFontYsize()) - 5);
-  myGLCD.printNumI(MySetPoints[setpoint].Minutes, X - (myGLCD.getFontXsize() / 2)  + xOffset, Y + 2 + 5);
-
+  myGLCD.print(F("#"), X - (myGLCD.getFontXsize() / 2) + xOffset, Y - (myGLCD.getFontYsize() * 2) - 5);
+  myGLCD.printNumI(MySetPoints[setpoint].Temperature, X - (myGLCD.getFontXsize() * 1.5) + xOffset, Y - (myGLCD.getFontYsize()) - 5);
+  myGLCD.printNumI(MySetPoints[setpoint].Minutes, X - (myGLCD.getFontXsize() / 2) + xOffset, Y + 2 + 5);
 }
 
 void DrawMovedSetPoint(int setpoint) {

@@ -355,6 +355,7 @@ void theloop() {
         bNewSecond = true;  //force display immediately
         ErrorStatus.newerrmsg = true;
         ErrorStatus.error = ErrorCoilTooHot;
+        UpdateErrorDisplayArea(ValuesOnly);
         //Serial.println("too hot");
       }
       TEMPCOILTOOHOTCount++;
@@ -367,6 +368,7 @@ void theloop() {
           ErrorStatus.newerrmsg = true;
           ErrorStatus.lasterror = ErrorStatus.error ;
           ErrorStatus.error = NoError;
+          UpdateErrorDisplayArea(ValuesOnly);
         }
 
         TEMPCOILTOOHOTCount = 0;
@@ -394,15 +396,15 @@ void theloop() {
 
   //What to output to UI real time
   if (newState > 0) {
-    UpdateStateDisplayArea(ValuesOnly);
+    UpdateProgressDisplayArea(ValuesOnly);
     newState = 0;  //this clears it for next run
   }
 
   //what to output to UI each second
   if (bNewSecond) {
     //Serial.println("update after reach new temp");
-    UpdateStateDisplayArea(ValuesOnly);
-    UpdateTempDisplayArea(ValuesOnly);
+    UpdateProgressDisplayArea(ValuesOnly);
+    UpdateOpDetailsDisplayArea(ValuesOnly);
     UpdateFanPWMValuesDisplay(ValuesOnly);
     if (serialOutPutTempsBySecond == true) {
       SerialOutputTempsForPlotting();
@@ -444,7 +446,7 @@ void theloop() {
       SetAndSendFanPWMForATime(RoastMinutes);
       //SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes);
     }
-    UpdateProgessDisplayArea(ValuesOnly);
+    UpdateProgressDisplayArea(ValuesOnly);
     LcdUdateTime.restart(0);
   }
 

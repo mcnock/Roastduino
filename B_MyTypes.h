@@ -111,14 +111,12 @@ typedef struct error_status {
   int lasterror = -1;
   bool errorcleared = true;
   boolean newerrmsg = false;
-  bool lastdrawnwitherror = false;
-
+  
 } errorstatus;
 
 typedef struct error {
   byte errorID;
-  char line1[20];
-  char line2[20];
+  char line1[50];
 } error;
 
 typedef struct menustatus {
