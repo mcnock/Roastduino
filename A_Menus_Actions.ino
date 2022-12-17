@@ -86,11 +86,7 @@ void ProcessHorControlMenu(int i) {
 
       break;
     case 3:
-      //Serial.println("Redraw graph detected");
-      for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++) {
-        MySetPoints[xSetPoint].TemperatureNew = 0;
-      }
-
+    
 
       graphProfile();
 
@@ -234,7 +230,7 @@ void ProcessVmenuButtonClick() {
     return;
   }
   if (mybutton.action > ActionAdjustments) {
-    SpDebug("button.action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
+    //SpDebug("button.action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
     //set up editing of any value
     ActiveAdjustment.spSelected = -1;
     ActiveAdjustment.ButtonWhenCalled = MenuStatus.ButtonClicked;
@@ -277,7 +273,7 @@ void ProcessVmenuButtonClick() {
 }
 
 void ProcessAnAdjustment() {
-  SpDebug("ProcessAdjustmentMenuClick  VmenuWhenCalled:" + String(ActiveAdjustment.VmenuWhenCalled) + " adjustment name:" + String(ActiveAdjustment.name) + " adjustmentvalueset:" + String(ActiveAdjustment.adjustmentvalueset) + "  button:" + String(MenuStatus.VmenubuttonClicked));
+  //SpDebug("ProcessAdjustmentMenuClick  VmenuWhenCalled:" + String(ActiveAdjustment.VmenuWhenCalled) + " adjustment name:" + String(ActiveAdjustment.name) + " adjustmentvalueset:" + String(ActiveAdjustment.adjustmentvalueset) + "  button:" + String(MenuStatus.VmenubuttonClicked));
   if (ActiveAdjustment.VmenuWhenCalled != MenuStatus.VmenuShowing) {
     //possible error
   }
@@ -304,7 +300,7 @@ void ProcessAnAdjustment() {
     default:
       break;
   }
-  SpDebug("move amount for button click will be " + String(ActiveAdjustment.moveamount));
+  //SpDebug("move amount for button click will be " + String(ActiveAdjustment.moveamount));
   if (ActiveAdjustment.moveamount == 0) {
     return;
   }
@@ -331,7 +327,7 @@ void ProcessAnAdjustment() {
       setpointschanged = true;
 
       if ((ActiveAdjustment.ButtonWhenCalled >= 1) & (ActiveAdjustment.ButtonWhenCalled <= 5)) {
-        SpDebug("set point selected is:" + String(spSelected));
+        //SpDebug("set point selected is:" + String(spSelected));
         spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
         MoveAPoint(spSelected);
       } else if (ActiveAdjustment.ButtonWhenCalled == 6) {
@@ -366,7 +362,7 @@ void ProcessAnAdjustment() {
       break;
     case ActionAdjustSetpointFan:
       if ((ActiveAdjustment.ButtonWhenCalled >= 0) & (ActiveAdjustment.ButtonWhenCalled <= 4)) {
-        spSelected = ActiveAdjustment.ButtonWhenCalled + 1;
+        spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
         MoveAFanPointsPWM(spSelected);
       }
       if ((ActiveAdjustment.ButtonWhenCalled >= 5) & (ActiveAdjustment.ButtonWhenCalled <= 6)) {

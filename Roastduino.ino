@@ -142,7 +142,10 @@ const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory loc
 #define TOOHOTTEMP_EP 86
 #define GAINTEMP_EP 88
 #define GAINFLOW_EP 90
-
+#define OPERDETAILDISPLAY_X_EP 92
+#define OPERDETAILDISPLAY_Y_EP 94
+#define CONFIGURATIONDISPLAY_X_EP 96
+#define CONFIGURATIONDISPLAY_Y_EP 98
 
 error_status ErrorStatus;
 const char ErrDisplay[6] = "ERROR";
@@ -153,7 +156,7 @@ const int ErrorPleaseRestart = 2;
 const error errorlist[] = {
   { 0, "!!Turn on fan before you start!!" },
   { 1, "!!Coil exceeds Too Hot Temp!!" },
-  { 2,"Repower to load defaults.  Click 'Reset' again to cancel"}
+  { 2, "Repower to load defaults.  Click 'Reset' again to cancel" }
 };
 
 byte DisplayMessageToShow = 0;
@@ -253,19 +256,22 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define Values_1_3_5 1
 #define Values_1_3_10 2
 #define Values_1_0_0 3
+#define Values_5_10_20 4
 
 const adjustmentlabels AdustmentValuesLabels[][3]{
   { ".05", ".03", ".01" },
   { "5", "3", "1" },
   { "10", "5", "1" },
   { "1", "1", "1" },
+  { "20", "5", "1" },
 };
 
 const float AdustmentValues[][3] = {
   { .05, .03, .01 },
   { 5, 3, 1 },
   { 10, 5, 1 },
-  { 1, 1, 1 }
+  { 1, 1, 1 },
+  { 20, 5, 1 }
 };
 
 activeadjustment ActiveAdjustment;
@@ -355,7 +361,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 37, "", "go back", "to", "prior", BLACK },
     { 38, "", "go back", "to", "prior", BLACK } },
   { { VmenuAdjustValue0, "<<", "go back", "to", "prior", GREEN, VmenuFindPrior },
-    { 41, "", "go back", "to", "prior", GREEN, ActionGetLableFromPrior },
+    { 41, "", "What's", "being", "edited", GREEN, ActionGetLableFromPrior },
     { 42, "x", "Select", "this", "amount", ORANGE, ActionSelectAdustmentValue },
     { 43, "x", "Select", "this", "amount", ORANGE, ActionSelectAdustmentValue },
     { 44, "x", "Select", "this", "amount", ORANGE, ActionSelectAdustmentValue },
@@ -370,7 +376,7 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 54, "D PWM", "Adjust", "D", "PWM", AQUA, ActionAdjustSetpointFan, Values_1_3_5 },
     { 55, "Btime", "Adjust", "B", "Time", AQUA, ActionAdjustSetpointFan, Values_1_0_0 },
     { 56, "Ctime", "Adjust", "C", "Time", AQUA, ActionAdjustSetpointFan, Values_1_0_0 },
-    { 57, "GrBot", "Raise", "Fan", "Graph", AQUA, ActionAdjustFanGraphPixelBottom, Values_1_3_10 },
+    { 57, "GrBot", "Raise", "Fan", "Graph", AQUA, ActionAdjustFanGraphPixelBottom, Values_5_10_20 },
     { 58, "", "", "", "", BLACK } },
   { { VmenuEmpty0, ">>", "go to", "next", "menu", GREEN, VmenuBase },
     { -61, "", "go back", "to", "prior", AQUA },
@@ -401,8 +407,19 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { -88, "", "go back", "to", "prior", GREEN } }
 };
 
+rect OpProgessDisplay = { 80, 0, 0, 0 };
+rect OpDetailDisplay = { 610, 200, 0, 0 };
+rect ConfigDisplay = { 205, 385, 0, 0 };
+
 
 buttontext myLocalbuttontext;
+
+const byte PressNone = 0;
+const byte PressMenu = 1;
+const byte PressCongurationBox = 2;
+const byte PressOperDetailBox = 3;
+
+touchstatus TouchStatus;
 
 int lastStateUpdated = -1;
 int newState;
@@ -624,7 +641,7 @@ void setup() {
   byte SetDefaults;
   EEPROM.get(SETDEFAULT_EP, SetDefaults);
   if (SetDefaults != 1) {
-    spDebug("Setting defaults with SetDefault value:" + String(SetDefaults));
+    //spDebug("Setting defaults with SetDefault value:" + String(SetDefaults));
     MySetPoints[0].Temperature = 250;
     MySetPoints[1].Temperature = 390;
     MySetPoints[2].Temperature = 410;
@@ -645,8 +662,8 @@ void setup() {
       EEPROM.put(FanSetPoints_EP[i], FanSetPoints[i]);
     }
     EEPROM.put(RoastLength_EP, (int)14);
-    GainTemp= 30;
-    EEPROM.put(GAINTEMP_EP, GainTemp);  
+    GainTemp = 30;
+    EEPROM.put(GAINTEMP_EP, GainTemp);
     IntegralTemp = .03;
     EEPROM.put(INTEGRALTEMP_EP, IntegralTemp);
     IntegralFlow = 0;
@@ -659,12 +676,16 @@ void setup() {
     EEPROM.put(FANGRAPHBOTTOM_EP, FanGraphBottom);
     TEMPCOILTOOHOT = 850;
     EEPROM.put(TOOHOTTEMP_EP, TEMPCOILTOOHOT);
+    EEPROM.put(OPERDETAILDISPLAY_X_EP, OpDetailDisplay.x);
+    EEPROM.put(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
+    EEPROM.put(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
+    EEPROM.put(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
+
     SetDefaults = 1;
     EEPROM.put(SETDEFAULT_EP, SetDefaults);
-    spDebug("Done Setting defaults  SetDefault value to be saved is:" + String(SetDefaults));
-    EEPROM.get(SETDEFAULT_EP, SetDefaults);
-    spDebug("Done Setting defaults  SetDefault value read back is is:" + String(SetDefaults));
-    
+    //spDebug("Done Setting defaults  SetDefault value to be saved is:" + String(SetDefaults));
+
+
   } else {
 
     for (int i = 0; i < 4; i++) {
@@ -677,11 +698,15 @@ void setup() {
     EEPROM.get(SETPOINTFLOW_EP, setpointflow);
     EEPROM.get(FANGRAPHBOTTOM_EP, FanGraphBottom);
     EEPROM.get(TOOHOTTEMP_EP, TEMPCOILTOOHOT);
-    
+    EEPROM.get(OPERDETAILDISPLAY_X_EP, OpDetailDisplay.x);
+    EEPROM.get(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
+    EEPROM.get(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
+    EEPROM.get(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
+
   }
 
 
-  
+
   //if (IntegralTemp > 1) IntegralTemp = 0.00;
   //if (GainTemp > 75) GainTemp = 75;
   //if (GainTemp < 10) GainTemp = 10;
@@ -690,7 +715,7 @@ void setup() {
   //FanGraphBottom = 450;
   //EEPROM.put(FANGRAPHBOTTOM_EP, FanGraphBottom);
 
-  
+
   SecondTimer.restart(0);
 
 

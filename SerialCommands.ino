@@ -100,22 +100,22 @@ void processSerial(Stream &Serial)
           switch (incomingByte2) {
             case 68://D
               { Serial.println(F("Profile Decrease 5 "));
-                ActiveAdjustment.moveamount = -5;          MoveLast3Point();
+                ActiveAdjustment.moveamount = -5;          
+                //MoveLast3Point();
                 saveChangedSetpoints();
                 break;
               }
             case 100:  //d
               { Serial.println(F("Profile Decrease 3 "));
                 ActiveAdjustment.moveamount = -3;
-                MoveLast3Point();
+               // MoveLast3Point();
                 saveChangedSetpoints();
-
                 break;
               }
             case 105:  //i
               { Serial.println(F("Profile Increase 3 "));
                 ActiveAdjustment.moveamount = 3;
-                MoveLast3Point();
+               // MoveLast3Point();
                 saveChangedSetpoints();
 
                 break;
@@ -123,7 +123,7 @@ void processSerial(Stream &Serial)
             case 73: //I
               { Serial.println(F("Profile Increase 5 "));
                 ActiveAdjustment.moveamount = 5;
-                MoveLast3Point();
+               // MoveLast3Point();
                 saveChangedSetpoints();
 
 

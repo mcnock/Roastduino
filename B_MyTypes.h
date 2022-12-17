@@ -138,6 +138,12 @@ typedef struct setpoint {
 
 } roastdef;
 
-
+typedef struct touchstatus{
+   byte objectpress = -1;
+   int Xdown;
+   int Ydown;
+   unsigned int dragx;
+   unsigned int dragy;
+} touchstatus;
 
 #endif

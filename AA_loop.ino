@@ -24,7 +24,6 @@ void theloop() {
   } else {
     bNewSecond = false;
     LoopsPerSecondCalcing++;
-    
   }
 
   //capture a fixed roast time that will not change during execution of the loop
@@ -83,7 +82,7 @@ void theloop() {
   switch (State) {
     case STATEROASTING:
       {
-        if (TBeanAvgRoll.mean() > (MySetPoints[SetPointCount -1].Temperature) + 20) {
+        if (TBeanAvgRoll.mean() > (MySetPoints[SetPointCount - 1].Temperature) + 20) {
           TempReachedCount++;
           if (TempReachedCount > 20) {
             newState = STATECOOLING;
@@ -92,7 +91,7 @@ void theloop() {
         } else {
           TempReachedCount = 0;
         }
-        if (RoastMinutes > MySetPoints[SetPointCount -1].Minutes) {
+        if (RoastMinutes > MySetPoints[SetPointCount - 1].Minutes) {
           newState = STATECOOLING;
           Serial.println(F("Max time reached. Cooling starting"));
         }
@@ -103,7 +102,7 @@ void theloop() {
         if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
           newState = STATESTOPPED;
           Serial.println(F("Auto Cooling Complete "));
-        } else if ((RoastMinutes < MySetPoints[SetPointCount -1].Minutes) & RoastRestartNeeded) {
+        } else if ((RoastMinutes < MySetPoints[SetPointCount - 1].Minutes) & RoastRestartNeeded) {
           newState = STATEROASTING;
           RoastRestartNeeded = false;
           Serial.println(F("RestartRoasting request detected"));
@@ -114,7 +113,6 @@ void theloop() {
   //determin action based on input from touch or serial
   if (HasDisplay) {
     if (myTouch.dataAvailable()) {
-      //Serial.println("touch");
       if (TouchDetected == false) {
         if (DetectTouch()) {
           //Serial.println("PRESS");
@@ -122,41 +120,81 @@ void theloop() {
           TouchTimer.restart(0);
         }
       } else {
-        //Serial.println("B");
-
-        if (TouchTimer.elapsed() > 1500) {
-          if (LongPressDetected == false) {
-            LongPressDetected = true;
-            //Serial.println("LONGPRESS");
-
-            TouchLongPressDetected();
+        if (TouchStatus.objectpress == PressMenu) {
+          if (TouchTimer.elapsed() > 1500) {
+            if (LongPressDetected == false) {
+              LongPressDetected = true;
+              //Serial.println("LONGPRESS");
+              MenuTouchLongPressDetected();
+            }
           }
+        } else {
+          DetectTouch();
         }
       }
-    }
-
-    else {
+    } else {
+      //Serial.println("UnPress")
       if (TouchDetected == true) {
         TouchDetected = false;
+        if (TouchStatus.objectpress == PressMenu) {
+          if (LongPressDetected == false) {
+            if (TouchTimer.elapsed() > 100) {
+              MenuTouchClickDetected();
+              TouchStatus.objectpress = 0;
+            }
 
-        if (LongPressDetected == false) {
-
-
-          if (TouchTimer.elapsed() > 100) {
-            //Serial.println("CLICK!");
-
-            TouchClickDetected();
+          } else {
+            LongPressDetected = false;
           }
-
-        } else {
-          LongPressDetected = false;
-          //Serial.println("Long press release");
         }
-        OutlineClickedButton( BLACK);
+        if (TouchStatus.objectpress == PressMenu) {
+          spDebug("ClearingC menu press");
+          OutlineClickedButton(BLACK);
+          TouchStatus.objectpress = 0;
+        }
+        if (TouchStatus.objectpress == PressOperDetailBox) {
+          spDebug("ClearingD menu press");
+          myGLCD.setColor(BLACK);
+          myGLCD_fillRect(OpDetailDisplay);
+          myGLCD.setColor(PALEYELLOW);
+          OpDetailDisplay.x = OpDetailDisplay.x - TouchStatus.dragx;
+          OpDetailDisplay.y = OpDetailDisplay.y - TouchStatus.dragy;
+          OpDetailDisplay.xmax = OpDetailDisplay.xmax - TouchStatus.dragx;
+          OpDetailDisplay.ymax = OpDetailDisplay.ymax - TouchStatus.dragy;
+          UpdateOpDetailsDisplayArea(All);
+          TouchStatus.objectpress = 0;
+          EEPROM.put(OPERDETAILDISPLAY_X_EP, OpDetailDisplay.x);
+          EEPROM.put(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
+        }
+        if (TouchStatus.objectpress == PressCongurationBox) {
+          spDebug("ClearingD menu press");
+          myGLCD.setColor(BLACK);
+          myGLCD_fillRect(ConfigDisplay);
+          myGLCD.setColor(PALEYELLOW);
+          ConfigDisplay.x = ConfigDisplay.x - TouchStatus.dragx;
+          ConfigDisplay.y = ConfigDisplay.y - TouchStatus.dragy;
+          ConfigDisplay.xmax = ConfigDisplay.xmax - TouchStatus.dragx;
+          ConfigDisplay.ymax = ConfigDisplay.ymax - TouchStatus.dragy;
+          UpdateConfigsDisplayArea(All);
+          TouchStatus.objectpress = 0;
+          EEPROM.put(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
+          EEPROM.put(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
+        }
+
         TouchTimer.stop();
       }
+
+
       TouchTimer.stop();
     }
+    //else {
+    //  spDebug("No touch data available");
+    //  if (TouchStatus.objectpress == PressMenu) {
+    //    spDebug("ClearingC menu press");
+    //    OutlineClickedButton(BLACK);
+    //    TouchStatus.objectpress = 0;
+    //  }
+    // }
   }
   if (Serial.available() > 0) {
     processSerial(Serial);
@@ -366,7 +404,7 @@ void theloop() {
       if (TEMPCOILTOOHOTCount > 0) {
         if (ErrorStatus.error == ErrorCoilTooHot) {
           ErrorStatus.newerrmsg = true;
-          ErrorStatus.lasterror = ErrorStatus.error ;
+          ErrorStatus.lasterror = ErrorStatus.error;
           ErrorStatus.error = NoError;
           UpdateErrorDisplayArea(ValuesOnly);
         }
@@ -426,7 +464,7 @@ void theloop() {
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
       AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
       int coiloffsetted = (TCoilRoll.mean() - CoilTempOffSet);
-      if (coiloffsetted < 0) {coiloffsetted = 0;}
+      if (coiloffsetted < 0) { coiloffsetted = 0; }
       AddPointbyTimeAndTempAndLineID(RoastMinutes, coiloffsetted, COILLINEID, 2);
     }
   }
