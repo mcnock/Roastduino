@@ -57,7 +57,6 @@ void ProcessHorControlMenu(int i) {
   if (ErrorStatus.error == ErrorNeedFanFirst) {
     ErrorStatus.lasterror = ErrorStatus.error;
     ErrorStatus.error = NoError;
-
     ErrorStatus.newerrmsg = true;
     UpdateErrorDisplayArea(ValuesOnly);
   }
@@ -217,7 +216,6 @@ void ProcessVmenuButtonClick() {
   MenuStatus.VmenubuttonClicked = MenuStatus.ButtonClicked;
   buttondef mybutton = myButtonVertMenus[MenuStatus.VmenuShowing].buttondefs[MenuStatus.VmenubuttonClicked];
   //SpDebug("ProcessVmenuButtonClick  button id:" + String(mybutton.butID) + " action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
-
   int i = MenuStatus.ButtonClicked;
   //SpDebug("ProcessVmenuButtonClick_ button id " + String(mybutton.butID) +  " action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
   //SpDebug("ProcessVmenuButtonClick_ buttonclicked " + String(MenuStatus.ButtonClicked));
@@ -255,6 +253,21 @@ void ProcessVmenuButtonClick() {
       break;
     case ActionShowSetpointFanMenu:
       DrawVMenu(VmenuFan);
+      break;
+    case ActionResetToDefaultOnNextStart:
+      if (ErrorStatus.error == ErrorPleaseRestart) {
+        EEPROM.update(SETDEFAULT_EP, (byte)1);
+        ErrorStatus.newerrmsg = true;
+        ErrorStatus.error = NoError;
+        UpdateErrorDisplayArea(ValuesOnly);
+
+      } else {
+        EEPROM.put(SETDEFAULT_EP, 0);
+        ErrorStatus.newerrmsg = true;
+        ErrorStatus.error = ErrorPleaseRestart;
+        UpdateErrorDisplayArea(ValuesOnly);
+      }
+
       break;
 
 
@@ -302,7 +315,7 @@ void ProcessAnAdjustment() {
       if (IntegralTemp < 0.0) {
         IntegralTemp = 0.0;
       }
-      EEPROM.update(INTEGRALTEMP_EP, (int)(IntegralTemp * 100));
+      EEPROM.put(INTEGRALTEMP_EP, IntegralTemp);
       UpdateConfigsDisplayArea(ValuesOnly);
       break;
     case ActionAdjustGainTemp:
@@ -311,35 +324,43 @@ void ProcessAnAdjustment() {
       if (GainTemp < 10) {
         GainTemp = 0;
       }
-      EEPROM.update(GAINTEMP_EP, GainTemp);
+      EEPROM.put(GAINTEMP_EP, GainTemp);
       UpdateConfigsDisplayArea(ValuesOnly);
       break;
     case ActionAdjustSetpointTemp:
       setpointschanged = true;
-      if ((ActiveAdjustment.ButtonWhenCalled >= 1) & (ActiveAdjustment.ButtonWhenCalled <= 6)) {
+
+      if ((ActiveAdjustment.ButtonWhenCalled >= 1) & (ActiveAdjustment.ButtonWhenCalled <= 5)) {
         SpDebug("set point selected is:" + String(spSelected));
         spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
         MoveAPoint(spSelected);
-      }
-      if (ActiveAdjustment.ButtonWhenCalled == 7) {
+      } else if (ActiveAdjustment.ButtonWhenCalled == 6) {
         MoveAPoint(SetPointCount - 1);
         MoveAPoint(SetPointCount - 2);
+        setpointschanged = true;
+
+      } else if (ActiveAdjustment.ButtonWhenCalled == 7) {
+        MoveAPoint(SetPointCount - 1);
+        MoveAPoint(SetPointCount - 2);
+        MoveAPoint(SetPointCount - 3);
+       
         setpointschanged = true;
       }
       break;
     case ActionAdjustTempToHot:
       TEMPCOILTOOHOT = TEMPCOILTOOHOT + ActiveAdjustment.moveamount;
-      EEPROM.update(TOOHOTTEMP_EP, GainTemp);
+      EEPROM.put(TOOHOTTEMP_EP, TEMPCOILTOOHOT);
       UpdateConfigsDisplayArea(ValuesOnly);
       break;
     case ActionAdjustCoolDownTemp:
       TEMPCOOLINGDONE = TEMPCOOLINGDONE + ActiveAdjustment.moveamount;
+      EEPROM.put(COOLDOWNTEMP_EP, TEMPCOOLINGDONE);
       UpdateConfigsDisplayArea(ValuesOnly);
       //#define COOLDOWNTEMP_EP 64
       break;
     case ActionAdjustFanGraphPixelBottom:
       FanGraphBottom = FanGraphBottom - ActiveAdjustment.moveamount;
-      EEPROM.update(TOOHOTTEMP_EP, FanGraphBottom);
+      EEPROM.put(FANGRAPHBOTTOM_EP, FanGraphBottom);
       UpdateConfigsDisplayArea(ValuesOnly);
       //FANGRAPHBOTTOM_EP
       break;
@@ -358,7 +379,6 @@ void ProcessAnAdjustment() {
       break;
   }
 }
-//#define ActionAdjustFanGraphPixelBottom 48
 
 void SetMenuBoundingRect(struct buttonsetdef& butdefset) {
   for (int i = 0; i < butdefset.ButtonCount; i++) {
@@ -421,11 +441,11 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
     butdefset.buttondefs[i].butID = myLocalbuttontext.butID;
     //SpDebug(" found action " + String(butdefset.buttondefs[i].action) + " and butID " + String(butdefset.buttondefs[i].butID) );
     //SpDebug("A is adjustment:" + String(butdefset.IsAdjustment) + " button id" + String(i));
-    if (butdefset.buttondefs[i].action == ActionGetLableFromPrior) {
+    if (butdefset.buttondefs[i].action == ActionGetLableFromPrior && butdefset.buttondefs[i].ToolTipShowing == toggletooltip) {
       memcpy_P(&myLocalbuttontext, &Vmenutext[MenuStatus.VmenuPrior][MenuStatus.VmenubuttonClicked], sizeof(buttontext));
     }
   } else {
-    if (butdefset.buttondefs[i].action == ActionGetLableFromPrior) {
+    if (butdefset.buttondefs[i].action == ActionGetLableFromPrior && butdefset.buttondefs[i].ToolTipShowing == toggletooltip) {
       memcpy_P(&myLocalbuttontext, &Vmenutext[MenuStatus.VmenuPrior][MenuStatus.VmenubuttonClicked], sizeof(buttontext));
     } else {
       memcpy_P(&myLocalbuttontext, &Vmenutext[butdefset.menuID][i], sizeof(buttontext));
@@ -434,7 +454,6 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
   if (butdefset.buttondefs[i].butID < 0) {
     return;
   }
-
 
   if (butdefset.buttondefs[i].action == ActionSelectAdustmentValue) {
     switch (i) {
@@ -490,7 +509,7 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
     xOffset = (butdefset.W - (strlen(myLocalbuttontext.label) * myGLCD.getFontXsize())) / 2;
     yOffset = (butdefset.H - myGLCD.getFontYsize()) / 2;
 
-    if (myLocalbuttontext.butID == 60) {
+    if (myLocalbuttontext.butID == DrawLablesRotated) {
       //spDebug("myGLCD.getFontXsize:" + String(myGLCD.getFontXsize()) + " myGLCD.getFontYsize:" + String(myGLCD.getFontYsize()) + " strlen:" +  String(strlen(myLocalbuttontext.label)));
       int xOffsetrotated = butdefset.W / 2 + (myGLCD.getFontXsize() / 2);
       int yOffsetrotated = butdefset.H / 2 - (myGLCD.getFontYsize() * .7);
@@ -500,7 +519,6 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
     }
   } else {  //tool tip 2 or 3 line x 12 char
     myGLCD.setFont(Retro8x16);
-
     xOffset = (butdefset.W - (strlen(myLocalbuttontext.tip1) * myGLCD.getFontXsize())) / 2;
     butdefset.buttondefs[i].ToolTipShowing = true;
     if (butdefset.H >= 50) {

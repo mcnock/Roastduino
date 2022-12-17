@@ -1,20 +1,17 @@
-double TempYMax = 600;
-double TempSplitHigh = 460;
-double TempSplitLow = 390;
-double PixelYSplit2;
-double PixelYSplit;
-byte timeSplitLow = 6;
+const double TempYMax = 600;
+double TempSplitHigh ;
+double TempSplitLow ;
+const double PixelY_SplitHigh = 430;
+const double PixelYSplitLow = 100;
 float PixelsPerMinL;
 float PixelsPerMinM;
-int pixelSplitLow = 150;
-uint16_t fancolor = GRAY;
-uint16_t fanback = DARKBLUE;
-
+const byte timeSplitLow = 6;
+const int pixelXSplitLow = 150;
+const uint16_t fancolor = GRAY;
+const uint16_t fanback = DARKBLUE;
 rect OpProgessDisplay = { 80, 0, 0, 0 };
-
-rect OpDetailDisplay = { 610, 180, 0, 0 };
-
-rect ConfigDisplay = { 450, 190, 0, 0 };
+rect OpDetailDisplay = { 610, 200, 0, 0 };
+rect ConfigDisplay = { 450, 290, 0, 0 };
 
 
 void graphProfile() {
@@ -29,88 +26,83 @@ void graphProfile() {
     byte m;
     EEPROM.get(RoastLength_EP, m);
     MySetPoints[SetPointCount - 1].Minutes = m;
-    //Serial.println ("Loading new setpoints:");
+    spDebug("Loading " + String(SetPointCount) + " new setpoints with length " + String(MySetPoints[SetPointCount - 1].Minutes));
     if (MySetPoints[SetPointCount - 1].Minutes < 10 or MySetPoints[SetPointCount - 1].Minutes > 20) {
       MySetPoints[SetPointCount - 1].Minutes = 14;
     }
     //Serial.println ("XX");
     MySetPoints[0].Minutes = 0;
-    if (SetPointCount == 3) {
+    if (SetPointCount == 4) {
       if (MySetPoints[SetPointCount - 1].Minutes >= 14) {
         MySetPoints[1].Minutes = 6;
         MySetPoints[2].Minutes = 10;
       } else if (MySetPoints[SetPointCount - 1].Minutes >= 12) {
-        MySetPoints[2].Minutes = 8;
-        MySetPoints[3].Minutes = 9;
+        MySetPoints[1].Minutes = 8;
+        MySetPoints[2].Minutes = 9;
       } else {
-        MySetPoints[2].Minutes = 5;
-        MySetPoints[3].Minutes = 7;
+        MySetPoints[1].Minutes = 5;
+        MySetPoints[2].Minutes = 7;
       }
     }
-    if (SetPointCount == 4) {
+    if (SetPointCount == 5) {
       if (MySetPoints[SetPointCount - 1].Minutes >= 14) {
-        MySetPoints[1].Minutes = 5;
-        MySetPoints[2].Minutes = 8;
-        MySetPoints[3].Minutes = 10;
+        MySetPoints[1].Minutes = 6;
+        MySetPoints[2].Minutes = 9;
+        MySetPoints[3].Minutes = 12;
 
       } else if (MySetPoints[SetPointCount - 1].Minutes >= 12) {
-        MySetPoints[2].Minutes = 4;
-        MySetPoints[3].Minutes = 7;
-        MySetPoints[2].Minutes = 10;
+        MySetPoints[1].Minutes = 4;
+        MySetPoints[2].Minutes = 7;
+        MySetPoints[3].Minutes = 10;
 
       } else {
-        MySetPoints[2].Minutes = 4;
-        MySetPoints[3].Minutes = 6;
-        MySetPoints[2].Minutes = 9;
+        MySetPoints[1].Minutes = 4;
+        MySetPoints[2].Minutes = 6;
+        MySetPoints[3].Minutes = 10;
       }
     }
-
 
     for (int xSetPoint = 0; xSetPoint < SetPointCount; xSetPoint++) {
       if (xSetPoint == 0) {
-        //EEPROM.get(SETPOINTTEMP_EP[X],MySetPoints[X].Temperature);
-
-        MySetPoints[0].Temperature = 200;
+        EEPROM.get(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
         MySetPoints[0].SpanMinutes = 0;
         MySetPoints[0].Minutes = 0;
         MyMinuteTemperature[0] = MySetPoints[0].Temperature;
       } else {
         EEPROM.get(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
-        //Serial.println(MySetPoints[xSetPoint].Temperature);
         MySetPoints[xSetPoint].SpanMinutes = MySetPoints[xSetPoint].Minutes - MySetPoints[xSetPoint - 1].Minutes;
         accumulatedbySetPoint = accumulatedbySetPoint + MySetPoints[xSetPoint].SpanMinutes;
         MySetPoints[xSetPoint].Minutes = accumulatedbySetPoint;
-
         //now calc the minute setpoint for the span leading to this setpoint
         double TempPerMinuteinSpan = ((double)(MySetPoints[xSetPoint].Temperature - MySetPoints[xSetPoint - 1].Temperature)) / MySetPoints[xSetPoint].SpanMinutes;
         for (int xSpanMinute = 1; xSpanMinute <= MySetPoints[xSetPoint].SpanMinutes; xSpanMinute++) {
           accumulatedMinutes = accumulatedMinutes + 1;
           MyMinuteTemperature[accumulatedMinutes] = MySetPoints[xSetPoint - 1].Temperature + (TempPerMinuteinSpan * xSpanMinute);
         }
+        spDebug("setpoint : " + String(xSetPoint) + " minutes " + String(MySetPoints[xSetPoint].Minutes) + " span_minutes:" + String(MySetPoints[xSetPoint].SpanMinutes) + " temp" + String(MySetPoints[xSetPoint].Temperature));
       }
     }
     //perform some necesary calculations to size our scales to the display
     //yscale is done in 3 ranges
     //TimeScreenLeft = MySetPoints[SetPointCount - 1].Minutes + 2;
-    TempYMax = 800;
-    TempSplitHigh = 440;
-    TempSplitHigh = MySetPoints[SetPointCount - 1].Temperature;
-    PixelYSplit2 = 390;  //180;
+   
+    TempSplitHigh = MySetPoints[SetPointCount - 1].Temperature + 10;
+    //PixelY_SplitHigh = 440;  //180;
     //  TempSplitLow = (MySetPoints[2].Temperature - Gain) ;
     TempSplitLow = (MySetPoints[1].Temperature);
-    PixelYSplit = 190;  //90;
-    TempPerPixL = TempSplitLow / PixelYSplit;
-    TempPerPixM = (TempSplitHigh - TempSplitLow) / (PixelYSplit2 - PixelYSplit);
-    TempPerPixH = (TempYMax - TempSplitHigh) / (480 - PixelYSplit2);
+    //PixelYSplitLow = 190;  //90;
+    TempPerPixL = TempSplitLow / PixelYSplitLow;;
+    TempPerPixM = (TempSplitHigh - TempSplitLow) / (PixelY_SplitHigh - PixelYSplitLow);
+    TempPerPixH = (TempYMax - TempSplitHigh) / (480 - PixelY_SplitHigh);
     //PixelsPerMin =  (int)(800 / TimeScreenLeft);
-    PixelsPerMinL = (float)(pixelSplitLow / (float)timeSplitLow);
+    PixelsPerMinL = (float)(pixelXSplitLow / (float)timeSplitLow);
   }
   if (State == STATECOOLING) {
     TimeScreenLeft = MySetPoints[SetPointCount - 1].Minutes + 4;
   } else {
     TimeScreenLeft = MySetPoints[SetPointCount - 1].Minutes + 1;
   }
-  PixelsPerMinM = (float)(800 - pixelSplitLow) / float((TimeScreenLeft - timeSplitLow));
+  PixelsPerMinM = (float)(800 - pixelXSplitLow) / float((TimeScreenLeft - timeSplitLow));
   myGLCD.setColor(BLACK);
   myGLCD.setBackColor(BLACK);
   myGLCD.fillRect(0, 0, 800, 480);
@@ -141,7 +133,7 @@ void graphProfile() {
   HorScaleLineYCount = -1;
   int yaxislabelx = myGLCD.getDisplayXSize() - 30;
   int y = 0;
-  for (int t = 50; t < (TempSplitLow - 10); t = t + 50) {
+  for (int t = 50; t < (TempSplitLow - 5); t = t + 50) {
     y = YforATemp(t);
     HorScaleLineYCount++;
     HorScaleLineY[HorScaleLineYCount] = y;
@@ -154,7 +146,7 @@ void graphProfile() {
   }
   //med range
   //  myGLCD.setColor(WHITE);
-  for (int t = TempSplitLow; t < (TempSplitHigh - 4); t = t + 5) {
+  for (int t = TempSplitLow; t <= (TempSplitHigh); t = t + 5) {
     y = YforATemp(t);
     HorScaleLineYCount++;
     HorScaleLineY[HorScaleLineYCount] = y;
@@ -166,7 +158,7 @@ void graphProfile() {
   }
   //high range
 
-  for (int t = TempSplitHigh; t < TempYMax; t = t + 100) {
+  for (int t = TempSplitHigh + 5; t < TempYMax; t = t + 100) {
     y = YforATemp(t);
     HorScaleLineYCount++;
     HorScaleLineY[HorScaleLineYCount] = y;
@@ -179,10 +171,11 @@ void graphProfile() {
   //draw the profile by and setpoint
   StartLinebyTemp(MySetPoints[0].Temperature, PROFILELINEID);
   for (unsigned int Minutes = 1; Minutes <= MySetPoints[SetPointCount - 1].Minutes; Minutes++) {
+
     AddLinebyTimeAndTemp(Minutes, MyMinuteTemperature[Minutes], PROFILELINEID);
   }
   for (int xSetPoint = 0; xSetPoint < SetPointCount; xSetPoint++) {
-    DrawSetPoint(xSetPoint, LineColorforLineID[PROFILELINEID]);
+    DrawSetPoint(xSetPoint, LineColorforLineID[PROFILELINEID], Regular);
   }
   DrawHorControlMenu();
   DrawHorFanMenu();
@@ -190,7 +183,7 @@ void graphProfile() {
 
   DrawVMenu(MenuStatus.VmenuShowing);
 
-
+  UpdateErrorDisplayArea(All);
   UpdateOpDetailsDisplayArea(All);
   UpdateProgressDisplayArea(All);
   setpointschanged = false;
@@ -394,9 +387,30 @@ void UpdateErrorDisplayArea(boolean bValuesOnly) {
 
   if (ErrorStatus.error != NoError) {
     // SpDebug("error found. ID is:" + String(errorlist[ErrorStatus.error].errorID) + " " + String(errorlist[ErrorStatus.error].line1) + " " + String(errorlist[ErrorStatus.error].line2));
-
+    int widewidth = (strlen(errorlist[ErrorStatus.error].line1) + 1) * myGLCD.getFontYsize();
+    if (widewidth > 650) {
+      myGLCD.setFont(Retro8x16);
+    } else {
+      myGLCD.setFont(arial_bold);
+    }
     myGLCD.setColor(YELLOW);
     myGLCD.print(errorlist[ErrorStatus.error].line1, col + 1, row + 3);
+  } else {
+
+    myGLCD.setFont(Retro8x16);
+    myGLCD.setBackColor(BLACK);
+    myGLCD.setColor(GRAY);
+    switch (DisplayMessageToShow) {
+      case DisplayDefault:
+        myGLCD.print(F("Press 3 seconds on button for more info..."), col + 1, row + 3);
+        break;
+      case DisplayMsgAdvanced:
+        myGLCD.print(F("Roast has been shortened..."), col + 1, row + 3);
+        break;
+      case DisplayMsgRetarded:
+        myGLCD.print(F("Roast has been extended..."), col + 1, row + 3);
+        break;
+    }
   }
 }
 
@@ -681,38 +695,61 @@ void DrawFanSetPoint(int setpoint, uint16_t color) {
   myGLCD.printNumI(FanSetPoints[setpoint].Minutes, X + xOffset2, Y + 5);
 }
 
-void DrawSetPoint(int setpoint, uint16_t color) {
+void DrawSetPoint(int setpoint, uint16_t color, boolean beingmoved) {
   int Y = YforATemp(MySetPoints[setpoint].Temperature);
   int X = XforATime(MySetPoints[setpoint].Minutes);
-
+  myGLCD.setFont(SmallFont);
+ 
   int xOffset = 0;
-  int xOffset2 = 0;
+  int xOffsetmoved = 0;
   int yOffset = 0;
   int circleoffset = 0;
   switch (setpoint) {
     case 0:
-      xOffset = 15;
-      xOffset2 = 0;
-      circleoffset = 4;
+      xOffset = myGLCD.getFontXsize() * 0;
+      circleoffset = 5;
+      xOffsetmoved = myGLCD.getFontXsize() * 4;
+      break;
     case 1:
-      break;
     case 2:
-      break;
     case 3:
+        xOffset = -myGLCD.getFontXsize() * 1.5;
+        xOffsetmoved = myGLCD.getFontXsize() * 4;
       break;
     case 4:
-      xOffset = -10;
-      xOffset2 = -10;
+      xOffset = -myGLCD.getFontXsize() * 2;
+      xOffsetmoved = - myGLCD.getFontXsize() * 4;
       break;
+  }
+  if (beingmoved == true){
+        xOffset = xOffset + xOffsetmoved;
+        circleoffset = circleoffset + xOffsetmoved;
+  }
+  int row1 = Y - (myGLCD.getFontYsize() * 2) - 5;
+  int row2 = Y - (myGLCD.getFontYsize()) - 5;
+  int row3= Y + 2 + 5;
+  int col1 = X +  xOffset;
+  int col2 = X +  xOffset + myGLCD.getFontXsize()/2;
+  if (beingmoved == true){
+        myGLCD.setColor(GRAY);
+        myGLCD.fillRect(col1 - 3, row1 - myGLCD.getFontXsize(), (col1 + myGLCD.getFontXsize() * 3) + 2, (row3 + (myGLCD.getFontXsize() * 2)));
+        myGLCD.setColor(BLACK);
+        myGLCD.drawRect(col1 - 3, row1 - myGLCD.getFontXsize(), (col1 + myGLCD.getFontXsize() * 3) + 2, (row3 + (myGLCD.getFontXsize() * 2)));
+  
   }
   myGLCD.setColor(YELLOW);
   myGLCD.fillCircle(X + circleoffset, Y, 5);
   myGLCD.setColor(WHITE);
+  myGLCD.print(F("#"), col2, row1) ; myGLCD.printNumI(setpoint, (col2 + myGLCD.getFontXsize()), row1);
 
-  myGLCD.printNumI(setpoint, X + (myGLCD.getFontXsize() / 2) + xOffset, Y - (myGLCD.getFontYsize() * 2) - 5);
-  myGLCD.print(F("#"), X - (myGLCD.getFontXsize() / 2) + xOffset, Y - (myGLCD.getFontYsize() * 2) - 5);
-  myGLCD.printNumI(MySetPoints[setpoint].Temperature, X - (myGLCD.getFontXsize() * 1.5) + xOffset, Y - (myGLCD.getFontYsize()) - 5);
-  myGLCD.printNumI(MySetPoints[setpoint].Minutes, X - (myGLCD.getFontXsize() / 2) + xOffset, Y + 2 + 5);
+  myGLCD.printNumI(MySetPoints[setpoint].Temperature, col1, row2);
+
+  if (MySetPoints[setpoint].Minutes < 10){
+      myGLCD.printNumI(MySetPoints[setpoint].Minutes,  col2,row3); myGLCD.print(F("m"), col2 + (myGLCD.getFontXsize() *1) , row3);
+  }
+  else {
+      myGLCD.printNumI(MySetPoints[setpoint].Minutes,  col1,row3); myGLCD.print(F("m"), col1 + (myGLCD.getFontXsize()*2) , row3);
+  }
 }
 
 void DrawMovedSetPoint(int setpoint) {
@@ -806,15 +843,15 @@ void MoveAFanPointsTime(int SetPoint) {
     DrawFanSetPoint(SetPoint, AQUA);
   }
 }
+
 void MoveAPoint(int SetPoint) {
   //Serial.print("MoveAPoint Setpoint:"); Serial.print(SetPoint); Serial.print("ActiveAdjustment.moveamount:"); Serial.println(ActiveAdjustment.moveamount);
   if (SetPoint > -1) {
     MySetPoints[SetPoint].Temperature = MySetPoints[SetPoint].Temperature + ActiveAdjustment.moveamount;
-
     EEPROM.put(SETPOINTTEMP_EP[SetPoint], MySetPoints[SetPoint].Temperature);
     delay(100);
     myGLCD.setFont(SmallFont);
-    DrawSetPoint(SetPoint, YELLOW);
+    DrawSetPoint(SetPoint, YELLOW, BeingMoved);
     // DrawMovedSetPoint(SetPoint);
   }
 }

@@ -116,7 +116,7 @@ typedef struct error_status {
 
 typedef struct error {
   byte errorID;
-  char line1[50];
+  char line1[75];
 } error;
 
 typedef struct menustatus {
@@ -132,7 +132,6 @@ typedef struct menustatus {
 typedef struct setpoint {
 
   unsigned int Minutes;
-  int TemperatureDefault;
   int Temperature;
   int SpanMinutes;
   int TemperatureNew;

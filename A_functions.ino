@@ -195,10 +195,10 @@ uint16_t YforATemp(double temp) {
     //Serial.print("low t:");
   } else if (temp <= TempSplitHigh) {
     //Serial.print("mid t:");
-    result = double(myGLCD.getDisplayYSize() - PixelYSplit) - ((double)(temp - TempSplitLow) / (double)TempPerPixM);
+    result = double(myGLCD.getDisplayYSize() - PixelYSplitLow) - ((double)(temp - TempSplitLow) / (double)TempPerPixM);
   } else {
     //Serial.print("high t:");
-    result = double(myGLCD.getDisplayYSize() - PixelYSplit2) + ((double)(TempSplitHigh - temp) / (double)TempPerPixH);
+    result = double(myGLCD.getDisplayYSize() - PixelY_SplitHigh) + ((double)(TempSplitHigh - temp) / (double)TempPerPixH);
   }
   //Serial.print (temp);
   //Serial.print ( "y:");
