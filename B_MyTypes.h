@@ -33,14 +33,12 @@ typedef struct labelID {
   int ButtonID = -1;
 } lableID;
 
-
 typedef struct rect {
   int x;
   int y;
   int xmax;
   int ymax;
 } rect;
-
 
 typedef struct indexed10strings {
   char s_0[12];
@@ -54,7 +52,6 @@ typedef struct indexed10strings {
   char s_8[12];
   char s_9[12];
 } indexedstrings;
-
 
 typedef struct buttontext {
   int butID;
@@ -145,5 +142,9 @@ typedef struct touchstatus{
    unsigned int dragx;
    unsigned int dragy;
 } touchstatus;
+
+typedef struct ssrstatus{
+  char status[5];
+} ssrstatus;
 
 #endif

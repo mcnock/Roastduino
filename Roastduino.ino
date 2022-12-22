@@ -1,11 +1,11 @@
-
+#include <SPI.h>
 #include <EEPROM.h>
-#include <UTouchCD.h>
+//#include <UTouchCD.h>
 #include <Chrono.h>
 #include <Time.h>
 #include <TimeLib.h>
 #include <max6675.h>
-#include "Average.h"
+#include "src/Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include "B_MyTypes.h"
@@ -14,7 +14,7 @@
 #include <stdio.h>  // for function sprintf
 #include <stdarg.h>
 #include <Arduino.h>
-#include "src/Bitcraze_PMW3901.h"
+#include "Bitcraze_PMW3901.h"
 
 #ifdef __arm__
 // should use uinstd.h to define sbrk but Due causes a conflict
@@ -74,8 +74,8 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
-//#define available 4
-//#define available 5
+#define AMP_SPI_SSp_4 4
+#define BEAN_OPTICAL_FLOW_SPI_SSp5 5
 #define SSR2_p6 6
 #define SSR1_p7 7
 //#define available 10
@@ -122,6 +122,15 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define TCoilID 0
 #define TBean1ID 1
 #define TBean2ID 2
+
+#define SSRFULL 1
+#define SSRPWM 2
+#define SSROFF 3
+byte SSR1Status = 0;
+byte SSR2Status = 0;
+
+const ssrstatus SSRStatus[4] = {" NA"," ON","PWM","OFF"};
+
 
 //EPROM MEMORORY
 
@@ -228,7 +237,7 @@ const char* StateName[] = {
 
 
 Bitcraze_PMW3901 beanflow(10);
-int16_t deltaXflow, deltaYflow, setpointflow;
+int16_t deltaYflow, setpointflow;
 
 #define PROFILELINEID 0
 #define ROLLAVGLINEID 1
@@ -252,11 +261,12 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define Regular false
 
 
-#define Values_01_03_05 0
+#define Values_d01_d03_d05 0
 #define Values_1_3_5 1
 #define Values_1_3_10 2
 #define Values_1_0_0 3
 #define Values_5_10_20 4
+#define Values_d5_d1_d01 5
 
 const adjustmentlabels AdustmentValuesLabels[][3]{
   { ".05", ".03", ".01" },
@@ -264,6 +274,8 @@ const adjustmentlabels AdustmentValuesLabels[][3]{
   { "10", "5", "1" },
   { "1", "1", "1" },
   { "20", "5", "1" },
+  { ".5", ".1", ".01" },
+
 };
 
 const float AdustmentValues[][3] = {
@@ -271,7 +283,8 @@ const float AdustmentValues[][3] = {
   { 5, 3, 1 },
   { 10, 5, 1 },
   { 1, 1, 1 },
-  { 20, 5, 1 }
+  { 20, 5, 1 },
+  { .5, .1, .01}
 };
 
 activeadjustment ActiveAdjustment;
@@ -293,6 +306,7 @@ activeadjustment ActiveAdjustment;
 #define ActionAdjustCoolDownTemp 47
 #define ActionAdjustCoilGraphTempOffset 48
 #define ActionAdjustFanGraphPixelBottom 48
+#define ActionAdjustTempDuty 50
 
 
 
@@ -324,10 +338,10 @@ activeadjustment ActiveAdjustment;
 byte DrawLablesRotated = 60;
 
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
-  { { VmenuBase0, "<<", "Show", "vert", "menu", GREEN, VmenuEmpty },
+  { { VmenuBase0, ">>", "Show", "debug", "menu", GREEN, VmenuDebug },
     { 1, "SPs", "Show", "Temp", "menu", YELLOW, ActionShowSetpointSelectMenu },
     { 2, "GainT", "Adjust", "T PID", "Gain", YELLOW, ActionAdjustGainTemp, Values_1_3_5 },
-    { 3, "IntT", "Adjust", "T PID", "Interg", YELLOW, ActionAdjustIntegralTemp, Values_01_03_05 },
+    { 3, "IntT", "Adjust", "T PID", "Interg", YELLOW, ActionAdjustIntegralTemp, Values_d01_d03_d05 },
     { 4, "Fan", "Show", "Fan", "menu", YELLOW, ActionShowSetpointFanMenu },
     { 5, "ThT", "Adjust", "TooHot", "Temp", YELLOW, ActionAdjustTempToHot, Values_1_3_10 },
     { 6, "CdT", "Adjust", "CoolDwn", "Temp", YELLOW, ActionAdjustCoolDownTemp, Values_1_3_10 },
@@ -342,14 +356,14 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 16, "Last 2", "Adjust", "last 2", "points", YELLOW, ActionAdjustSetpointTemp, Values_1_3_5 },
     { 17, "Last 3", "Adjust", "last 3", "points", YELLOW, ActionAdjustSetpointTemp, Values_1_3_5 },
     { 18, "", "", "", "", BLACK } },
-  { { VmenuDebug0, "<<", "foward", "to", "next", GREEN, VmenuFindPrior },
-    { 21, "", "back", "to", "prior", GREEN },
-    { 22, "DBG", "subject", "of", "menu", YELLOW },
+  { { VmenuDebug0, ">>", "show", "empty", "menu", GREEN, VmenuEmpty },
+    { 21, "SetDut", "Set", "Duty", "Manua", GREEN , ActionAdjustTempDuty ,Values_d5_d1_d01},
+    { 22, "", "subject", "of", "menu", YELLOW },
     { 23, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
     { 24, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
     { 25, "", "go back", "to", "prior", YELLOW },
     { 26, "Fan", "toggle", "fan relay", "on and off", YELLOW },
-    { 27, "Dut", "Manually", "set", "duty", YELLOW },
+    { 27, "", "Manually", "set", "duty", YELLOW  },
     { 28, "Tem", "go back", "to", "prior", YELLOW } },
   { { VmenuOnOff0, "<<", "go to", "prior", "menu", GREEN, VmenuFindPrior },
     { 31, "", "selected", "device", "to debug", GREEN },
@@ -424,6 +438,8 @@ touchstatus TouchStatus;
 int lastStateUpdated = -1;
 int newState;
 int State;
+int StateDebug;
+
 
 int TEMPCOILTOOHOT = 800;
 
@@ -481,6 +497,7 @@ unsigned long PIDWindowStartTimeTemp;
 boolean PIDNewWindowTemp;
 float ErrITemp = 0;
 float ErrTemp = 0;
+double DutyDebug = 0.0;
 double DutyTemp;
 unsigned int PIDIntegralUdateTimeValueTemp;
 unsigned int PIDWindowSizeTemp;
@@ -577,6 +594,17 @@ int TCoil;
 int TBean1;
 int TBean2;
 
+bool ReadAmpsFlag = false;
+bool ReadBeanOpticalFlowRateFlag = false;
+
+Bitcraze_PMW3901 BeanOpticalFlowSensor(BEAN_OPTICAL_FLOW_SPI_SSp5);
+
+byte CoilAmps = 0;
+
+boolean ReadBeanFlowRate = false;
+
+Average<int16_t> BeanOpticalFlowValue(80);
+
 double MaxVoltage, MaxVread;
 
 
@@ -591,10 +619,8 @@ void setup() {
   //Serial1.begin(9600);
   Serial.begin(9600);
   Serial.println("setup starting");
-  Serial1.begin(9600);
-  Serial1.println("setup starting");
-
-
+ 
+  
   // Pin Conffaiguration
   pinMode(FANRELAYVCCp_3, OUTPUT);
   pinMode(FANRELAYp_2, OUTPUT);
@@ -629,8 +655,12 @@ void setup() {
 
   pinMode(TC_SCK_A9, OUTPUT);
 
+  pinMode(AMP_SPI_SSp_4,OUTPUT);
+  digitalWrite(AMP_SPI_SSp_4, HIGH);
+  pinMode(BEAN_OPTICAL_FLOW_SPI_SSp5,OUTPUT);
 
-
+  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp5, HIGH);
+  
   //set fan and vibrator relays to high - cause that means off
   digitalWrite(FANRELAYp_2, RELAYOFF);
   //digitalWrite(VIBRELAYp, RELAYOFF);

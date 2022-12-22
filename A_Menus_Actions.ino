@@ -181,6 +181,8 @@ void DrawVMenu(int iMenu) {
   //boolean bRedraw = false;
   if (iMenu == VmenuEmpty) {
     if (menuchange == true) {
+      myGLCD.setBackColor(BLACK);
+      
       myGLCD.setColor(BLACK);
       int xstart = 800 - myButtonVertMenus[VmenuBase].W;
       //myGLCD.drawRect(xstart,myButtonVertMenus[Vmenubase].H,800,480);
@@ -217,10 +219,12 @@ void ProcessVmenuButtonClick() {
   //SpDebug("ProcessVmenuButtonClick_ buttonclicked " + String(MenuStatus.ButtonClicked));
   if (MenuStatus.ButtonClicked == 0) {
     if (MenuStatus.VmenuShowing == VmenuSetPointSelect) {
-      for (int xSetPoint = 1; xSetPoint < SetPointCount; xSetPoint++) {
-        MySetPoints[xSetPoint].TemperatureNew = 0;
-      }
       ActiveAdjustment.spSelected = -1;
+    }
+    if (MenuStatus.VmenuShowing == VmenuDebug) {
+      StateDebug = 0;
+      
+
     }
     if (mybutton.action == VmenuFindPrior) {
       DrawVMenu(MenuStatus.VmenuPrior);
@@ -370,6 +374,15 @@ void ProcessAnAdjustment() {
         MoveAFanPointsTime(spSelected);
       }
 
+      break;
+    case ActionAdjustTempDuty:
+      spDebug("Here");
+      if (State == STATESTOPPED)
+      {
+            StateDebug = DEBUGDUTY;
+            DutyTemp = RangeAdouble(DutyTemp + ActiveAdjustment.moveamount,0.0,1.0);
+            spDebug("DutyTemp:" + String(DutyTemp));
+      }
       break;
     default:
       break;

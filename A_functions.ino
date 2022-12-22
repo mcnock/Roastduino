@@ -115,7 +115,7 @@ void SetFanFromOpticalSensor() {
 
 
   //get tick rate error from setpoint
-  beanflow.readMotionCount(&deltaXflow, &deltaYflow);
+  //beanflow.readMotionCount(&deltaXflow, &deltaYflow);
 
   //calculated fan voltage error based on a gain
   //calc an integral-add to error corretiion
@@ -150,7 +150,6 @@ void SetFanFromOpticalSensor() {
     IntegralSumFlow = 0.0;
   }
 }
-
 
 void SetAndSendFanPWMForATime(double minutes) {
   //Serial.println("Call From SetFan");
@@ -291,6 +290,35 @@ double SetpointforATime(double roastminutes) {
     return 0;
   }
 }
+
+int RangeAint(int Value, int H, int L) {
+  if (Value > H) {
+      return H;
+  } 
+  else if (Value < L) {
+    return L;
+  }
+  else
+  {
+
+    return Value;
+  }
+
+}
+double RangeAdouble(double Value, double L, double H) {
+  if (Value > H) {
+      return H;
+  } 
+  else if (Value < L) {
+    return L;
+  }
+  else
+  {
+    return Value;
+  }
+
+}
+
 
 int freeMemory() {
   char top;

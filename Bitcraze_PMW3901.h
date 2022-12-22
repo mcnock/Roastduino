@@ -29,13 +29,15 @@
 
 class Bitcraze_PMW3901 {
 public:
+  boolean Initialized;
+  
   Bitcraze_PMW3901(uint8_t cspin);
 
-  boolean begin(void);
+  boolean Initialize(void);
 
   void readMotionCount(int16_t *deltaX, int16_t *deltaY);
-  void enableFrameBuffer();
-  void readFrameBuffer(char *FBuffer);
+  
+  void readMotionCountY(int16_t *deltaY);
 
   void setLed(bool ledOn);
 

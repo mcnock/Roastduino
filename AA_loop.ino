@@ -31,6 +31,36 @@ void theloop() {
     RoastMinutes = ((double)RoastTime.elapsed()) / 60;
   }
 
+  if (ReadAmpsFlag == true) {
+    SPI.begin();
+    CoilAmps = 0;
+    digitalWrite(AMP_SPI_SSp_4, LOW);
+    CoilAmps = SPI.transfer(0);
+    digitalWrite(AMP_SPI_SSp_4, HIGH);
+    SPI.end();
+  };
+
+  if (ReadBeanOpticalFlowRateFlag == true) {
+    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp5, LOW);
+    SPI.begin();
+    if (BeanOpticalFlowSensor.Initialized == false) {
+      Serial.println("Initializing");
+      if (!BeanOpticalFlowSensor.Initialize()) {
+        Serial.println("Inituialization of the flow sensor failed");
+      }
+    }
+
+    BeanOpticalFlowSensor.readMotionCountY(&deltaYflow);
+
+    if (deltaYflow <= 50) {
+      BeanOpticalFlowValue.push(deltaYflow);
+    }
+    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp5, HIGH);
+    SPI.end();
+  }
+
+
+
   //update temps
   if (ReadTempFlag > -1) {
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
@@ -148,7 +178,7 @@ void theloop() {
           }
         }
         if (TouchStatus.objectpress == PressMenu) {
-          spDebug("ClearingC menu press");
+          //spDebug("ClearingC menu press");
           OutlineClickedButton(BLACK);
           TouchStatus.objectpress = 0;
         }
@@ -318,7 +348,7 @@ void theloop() {
     SetAndSendFanPWMForATime(0);
   }
 
-  //calculate new PID for coils
+  //calculate new Duty for coils
   if (State == STATEROASTING) {
     CurrentSetPointTemp = SetpointforATime(RoastMinutes);
     ErrTemp = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint. Positive it temp is under setupt
@@ -343,21 +373,19 @@ void theloop() {
 
     } else {  //clear out the integral before set point 1.
       DutyTemp = 1.0;
-      //  ErrI = 0;
-      //  IntegralSum= 0;
-      //  PIDIntegralUdateTime.restart(0);
-      //   IntegralLastTime = 0;
     }
   } else {
     ErrITemp = 0.0;
     IntegralSumTemp = 0.0;
   }
 
-  //set SSR of coils
-  if (State == STATEROASTING || State == DEBUGDUTY) {
+
+  //set SSR's based on duty
+  if (State == STATEROASTING || StateDebug == DEBUGDUTY) {
     int SSR1 = LOW;
+    SSR1Status = SSROFF;
     int SSR2 = LOW;
-    //APPLY THE ERROR WITH THE PID WINDOW
+    SSR2Status = SSROFF;
     PIDWindowSizeTemp = 1000;
     unsigned long now = millis();
     boolean ExceedsWholePidWindow = (PIDWindowStartTimeTemp == 0) || (now - PIDWindowStartTimeTemp > PIDWindowSizeTemp);
@@ -365,29 +393,34 @@ void theloop() {
       PIDWindowStartTimeTemp = now;
       if (DutyTemp > 0.0) {
         SSR1 = HIGH;
+        SSR1Status = SSRPWM;
       }
       if (DutyTemp > 0.5) {
         SSR2 = HIGH;
+        SSR2Status = SSRFULL;
       }
     } else {
+
+      SSR1Status = SSRPWM;
+
       if (DutyTemp <= 0.5 && ((now - PIDWindowStartTimeTemp) <= (DutyTemp * 2 * PIDWindowSizeTemp))) {
         SSR1 = HIGH;
-        //Serial.println("SSR1 is high");
       }
       if (DutyTemp >= 1.0) {
         SSR1 = HIGH;
-        //Serial.println("SSR1 is high");
-
+        SSR1Status = SSRFULL;
         SSR2 = HIGH;
+        SSR2Status = SSRFULL;
       }
       if (DutyTemp > 0.5) {
         SSR1 = HIGH;
+        SSR1Status = SSRFULL;
+        SSR2Status = SSRPWM;
         if ((now - PIDWindowStartTimeTemp) <= ((DutyTemp - .5) * 2 * PIDWindowSizeTemp)) {
           SSR2 = HIGH;
         }
       }
     }
-
     if (TCoil > TEMPCOILTOOHOT) {
       if (TEMPCOILTOOHOTCount > 10) {
         bNewSecond = true;  //force display immediately
@@ -400,7 +433,6 @@ void theloop() {
       SSR1 = LOW;
       SSR2 = LOW;
     } else {
-
       if (TEMPCOILTOOHOTCount > 0) {
         if (ErrorStatus.error == ErrorCoilTooHot) {
           ErrorStatus.newerrmsg = true;
@@ -417,14 +449,12 @@ void theloop() {
     digitalWrite(SSR2_p6, SSR2);
   }
 
-  //make sure to turn stuff off as default
-  if (not(State == STATEROASTING || State == DEBUGDUTY || State == DEBUGTOGGLE || State == DEBUGCOIL)) {
-
-    //Serial.println("not roastine is off");
-    //Serial.println("B:LOW");
-
+  //make sure to turn SSD's and other off if not running
+  if (not(State == STATEROASTING || StateDebug == DEBUGDUTY || StateDebug == DEBUGCOIL)) {
     digitalWrite(SSR1_p7, LOW);
     digitalWrite(SSR2_p6, LOW);
+    SSR1Status = SSROFF;
+    SSR2Status = SSROFF;
     DutyTemp = 0;
     ErrTemp = 0;
     CurrentSetPointTemp = 0;

@@ -420,7 +420,7 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
   int col2 = col + (myGLCD.getFontXsize() * 9);  //number
   if (OpDetailDisplay.xmax == 0) {
     OpDetailDisplay.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    OpDetailDisplay.ymax = row + (rowheight * 10) + 2;
+    OpDetailDisplay.ymax = row + (rowheight * 11) + 2;
   }
 
   FreeMemory = freeMemory();
@@ -432,7 +432,6 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     myGLCD_fillRect(OpDetailDisplay);
     myGLCD.setColor(PALEYELLOW);
     myGLCD_drawRect(OpDetailDisplay);
-
     myGLCD.print(F("Oper Detail"), col, row);
     row = row + rowheight;
     myGLCD.print(F("Tavg:"), col, row);
@@ -466,6 +465,11 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     row = row + rowheight;
     myGLCD.print(F("Mem:"), col, row);
     myGLCD.printNumI(FreeMemory, col2, row, 5, ' ');
+    row = row + rowheight;
+    myGLCD.print(F("SSRs"), col, row);
+    myGLCD.print(SSRStatus[SSR1Status].status,col2 - (myGLCD.getFontXsize() * 2),row);
+    myGLCD.print(SSRStatus[SSR2Status].status,col2 + (myGLCD.getFontXsize() * 2 ),row);
+   
   } else {  //this is copy of above with myLCD commented out
     //myGLCD.print(F("Tavg:"), col, row);
     // myGLCD.print(F("Oper Detail"), col, row);
@@ -496,6 +500,12 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     row = row + rowheight;
     //myGLCD.print(F("MemK:"), col, row);
     myGLCD.printNumI(FreeMemory, col2, row, 5, ' ');
+    row = row + rowheight;
+    myGLCD.print(F("SSRs"), col, row);
+    myGLCD.print(SSRStatus[SSR1Status].status,(col2 - (myGLCD.getFontXsize() * 2)),row);
+    myGLCD.print(SSRStatus[SSR2Status].status,(col2 + (myGLCD.getFontXsize() * 2 )),row);
+   
+
   }
 }
 
