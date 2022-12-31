@@ -86,7 +86,7 @@ void ProcessHorControlMenu(int i) {
 
       break;
     case 3:
-    
+
 
       graphProfile();
 
@@ -182,7 +182,7 @@ void DrawVMenu(int iMenu) {
   if (iMenu == VmenuEmpty) {
     if (menuchange == true) {
       myGLCD.setBackColor(BLACK);
-      
+
       myGLCD.setColor(BLACK);
       int xstart = 800 - myButtonVertMenus[VmenuBase].W;
       //myGLCD.drawRect(xstart,myButtonVertMenus[Vmenubase].H,800,480);
@@ -223,8 +223,6 @@ void ProcessVmenuButtonClick() {
     }
     if (MenuStatus.VmenuShowing == VmenuDebug) {
       StateDebug = 0;
-      
-
     }
     if (mybutton.action == VmenuFindPrior) {
       DrawVMenu(MenuStatus.VmenuPrior);
@@ -327,6 +325,7 @@ void ProcessAnAdjustment() {
       EEPROM.put(GAINTEMP_EP, GainTemp);
       UpdateConfigsDisplayArea(ValuesOnly);
       break;
+
     case ActionAdjustSetpointTemp:
       setpointschanged = true;
 
@@ -343,7 +342,7 @@ void ProcessAnAdjustment() {
         MoveAPoint(SetPointCount - 1);
         MoveAPoint(SetPointCount - 2);
         MoveAPoint(SetPointCount - 3);
-       
+
         setpointschanged = true;
       }
       break;
@@ -376,19 +375,42 @@ void ProcessAnAdjustment() {
 
       break;
     case ActionAdjustTempDuty:
-      spDebug("Here");
-      if (State == STATESTOPPED)
-      {
-            StateDebug = DEBUGDUTY;
-            DutyTemp = RangeAdouble(DutyTemp + ActiveAdjustment.moveamount,0.0,1.0);
-            spDebug("DutyTemp:" + String(DutyTemp));
+      if (State == STATESTOPPED) {
+        StateDebug = DEBUGDUTY;
+        DutyTemp = RangeAdouble(DutyTemp + ActiveAdjustment.moveamount, 0.0, 1.0);
+        spDebug("DutyTemp:" + String(DutyTemp));
       }
       break;
+    case ActionAdjustIntegralFlow:
+      IntegralFlow = IntegralFlow + ActiveAdjustment.moveamount;
+      if (IntegralFlow < 0.0) {
+        IntegralFlow = 0.0;
+      }
+      EEPROM.put(INTEGRALFLOW_EP, IntegralFlow);
+      UpdateConfigsDisplayArea(ValuesOnly);
+      break;
+    case ActionAdjustGainFlow:
+      //SpDebug("here");
+      GainFlow = GainFlow + ActiveAdjustment.moveamount;
+      if (GainFlow < 1) {
+        GainFlow = 0;
+      }
+      EEPROM.put(GAINFLOW_EP, GainFlow);
+      UpdateConfigsDisplayArea(ValuesOnly);
+      break;
+
+    case ActionAdjustSetpointFlow:
+      //SpDebug("here");
+      setpointflow = setpointflow + ActiveAdjustment.moveamount;
+      EEPROM.put(SETPOINTFLOW_EP, setpointflow);
+      UpdateConfigsDisplayArea(ValuesOnly);
+      break;
+
     default:
       break;
   }
 }
-
+//ActionAdjustGainFlow
 void SetMenuBoundingRect(struct buttonsetdef& butdefset) {
   for (int i = 0; i < butdefset.ButtonCount; i++) {
     if (butdefset.vertical == true) {
@@ -442,8 +464,7 @@ void DrawMenuButtons(buttonsetdef& butdefset) {
 
 void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
   //SpDebug("drawing menuid " + String(butdefset.menuID) + " button index " + String(i) + " with butID " + String(mybut.butID) );
-  if (butdefset.buttondefs[i].butID == -1) {
-    //SpDebug("looking up details");
+  if (butdefset.buttondefs[i].action == -1) { //this means it has never been expanded
     memcpy_P(&myLocalbuttontext, &Vmenutext[butdefset.menuID][i], sizeof(buttontext));
     butdefset.buttondefs[i].action = myLocalbuttontext.action;
     butdefset.buttondefs[i].adjustmentvalueset = myLocalbuttontext.adjustmentvalueset;

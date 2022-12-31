@@ -41,6 +41,7 @@ boolean Bitcraze_PMW3901::Initialize(void) {
   uint8_t dIpihc = registerRead(0x5F);
 
   if (chipId != CHIP_ID || dIpihc != CHIP_ID_INVERSE) {
+    Serial.println("here12");
     return false;
   }
 

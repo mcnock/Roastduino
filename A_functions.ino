@@ -4,6 +4,9 @@
 // FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS          FUNCTIONS
 //----------------------------------------------------------------------------------------------------------------------------------------------------
 
+
+float DutyFanLast = 0;
+
 int GetHistoryIDfromLineID(int lineID) {
   for (int i = 0; i < 2; i++) {
     if (GraphHistory[i].LineID == lineID) {
@@ -17,7 +20,7 @@ int round5(int n) {
   return ((n + 4) / 5) * 5;
 }
 
-int CalcFanPWMForATime(double minutes) {
+int CalcFan254PWMForATime(double minutes) {
   //SpDebug("Starting CalcFanPWM");
   int calcedFanSpeed;
   int newFanSpeed;
@@ -107,81 +110,128 @@ int YforAFan(int fanpwm) {
   }
 }
 
-
-void SetFanFromOpticalSensor() {
-  //Serial.println("Call From SetFan");
-  //Serial.println(minutes);
-  //read x y ticks and divide by time
-
-
-  //get tick rate error from setpoint
-  //beanflow.readMotionCount(&deltaXflow, &deltaYflow);
-
-  //calculated fan voltage error based on a gain
-  //calc an integral-add to error corretiion
-  //add to current voltage
-  if (State == STATEROASTING) {
-
-    ErrFlow = setpointflow - deltaYflow;  //negative if temp is over setpoint. Positive it temp is under setupt
-    PIDIntegralUdateTimeValueFlow = 5000;
-    if (abs(ErrFlow) < GainFlow) {
-      if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every 5 seconds we add the err to be a sum of err
-        if (ErrIFlow < GainFlow) {
-          IntegralSumFlow = IntegralSumFlow + ErrFlow;
-          if (IntegralSumFlow < 0) {
-            IntegralSumFlow = 0;
-          }
-          ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
-          //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);
-          PIDIntegralUdateTimeFlow.restart(0);
-        }
+void SetFanFromOpticalSensorPID() {
+  
+  float value;
+  
+  switch(flowAveraging)
+  {
+      case 20:
+      {
+          value = deltaYflow_avg20.mean();
+          break;
       }
-      DutyFlow = ((ErrFlow + ErrIFlow) / (double)GainFlow);
-
-      if (DutyFlow > 1.0) {
-        DutyFlow = 1.0;
+      case 50:
+      {
+          value = deltaYflow_avg50.mean();
+          break;
+      }
+      case 100:
+      {
+          value = deltaYflow_avg100.mean();
+          break;
+      }
+      case 200:
+      {
+          value = deltaYflow_avg200.mean();
+          break;
+      }
+ 
+      default:
+      {
+          value = deltaYflow_avg20.mean();
+          break;
       }
 
-    } else {  //clear out the integral before set point 1.
-      DutyFlow = 1.0;
+  }
+  ErrFlow = setpointflow - value;                           //negative if temp is over setpoint. Positive it temp is under setupt
+                                                                             //spDebug("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
+                                                                             //if (abs(ErrFlow) < GainFlow) {
+  if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every 5 seconds we add the err to be a sum of err
+                                                                             //if (ErrIFlow < GainFlow) {
+    IntegralSumFlow = IntegralSumFlow + ErrFlow;
+    if (IntegralSumFlow < 0) {
+      IntegralSumFlow = 0;
+    }
+
+    ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
+    //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);
+    PIDIntegralUdateTimeFlow.restart(0);
+    //}
+    //IntegralSumFlow = 0;
+  }
+  float DutyFanTemp = ((ErrFlow + ErrIFlow) / (double)GainFlow);
+
+  float PercentChange = 0;
+  if (DutyFanLast > 0) {
+    PercentChange = (DutyFanTemp - DutyFanLast) / DutyFanLast;
+  }
+  if (abs(PercentChange) > .01) {
+
+    if (DutyFanTemp > DutyFanLast) {
+      DutyFan = (DutyFanLast * 1.01);
+    } else {
+      DutyFan = (DutyFanLast * .99);
     }
   } else {
-    ErrIFlow = 0.0;
-    IntegralSumFlow = 0.0;
+    DutyFan = DutyFanTemp;
   }
+
+  if (DutyFan > 1.0) {
+    DutyFan = 1.0;
+  }
+
+  DutyFanLast = DutyFan;
+  //} else {  //clear out the integral before set point 1.
+  //DutyFan = 1.0;
+  //}
+
+  spDebug("Avg" + String(flowAveraging) + ":" + String(value) + ",Err:" + String(ErrFlow) +  ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
+
+  sendFan_D_Wire();
 }
 
 void SetAndSendFanPWMForATime(double minutes) {
   //Serial.println("Call From SetFan");
   //Serial.println(minutes);
-
-  FanSpeedPWM = CalcFanPWMForATime(minutes);
-  sendFanPWM_Wire();
+  FanSpeed254PWM = CalcFan254PWMForATime(minutes);
+  sendFan_Wire();
 }
 
 void StopAndSendFanPWM() {
-  FanSpeedPWM = 0;
-  sendFanPWM_Wire();
+  FanSpeed254PWM = 0;
+  DutyFan = 0;
+  sendFan_Wire();
 }
 
-void sendFanPWM_Wire() {
+void sendFan_Wire() {
+  float DACMax = 4092;
+  int valuefordac;
+  float x = FanSpeed254PWM / 254;
+  valuefordac = DACMax * x;
 
-  float q = 4092;
-  float x = FanSpeedPWM;
-  float j = q * x;
-  int i = j / 254;
-
-  //Serial.print("Setting Fan pwm:");Serial.println(FanSpeedPWM);
-  //Serial.println(MCP4725_ADDR);
-  //Serial.print("Setting Fan 10 bit :");Serial.println(i);
-  //interrupts();
+  double start = millis();
   Wire.beginTransmission(MCP4725_ADDR);
-  Wire.write(64);             // cmd to update the DAC
-  Wire.write(i >> 4);         // the 8 most significant bits...
-  Wire.write((i & 15) << 4);  // the 4 least significant bits...
+  Wire.write(64);                       // cmd to update the DAC
+  Wire.write(valuefordac >> 4);         // the 8 most significant bits...
+  Wire.write((valuefordac & 15) << 4);  // the 4 least significant bits...
   Wire.endTransmission();
-  // dac.setVoltage(i, false,100000);
-  //Serial.print("Setting Fan pwm B:");Serial.println(FanSpeedPWM);
+
+  spDebug("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
+}
+
+void sendFan_D_Wire() {
+
+  float DACMax = 4092;
+  int valuefordac = DutyFan * DACMax;
+  double start = millis();
+  Wire.beginTransmission(MCP4725_ADDR);
+  Wire.write(64);                       // cmd to update the DAC
+  Wire.write(valuefordac >> 4);         // the 8 most significant bits...
+  Wire.write((valuefordac & 15) << 4);  // the 4 least significant bits...
+  Wire.endTransmission();
+
+  //spDebug("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
 }
 
 uint16_t YforATemp(double temp) {
@@ -293,32 +343,23 @@ double SetpointforATime(double roastminutes) {
 
 int RangeAint(int Value, int H, int L) {
   if (Value > H) {
-      return H;
-  } 
-  else if (Value < L) {
+    return H;
+  } else if (Value < L) {
     return L;
-  }
-  else
-  {
+  } else {
 
     return Value;
   }
-
 }
 double RangeAdouble(double Value, double L, double H) {
   if (Value > H) {
-      return H;
-  } 
-  else if (Value < L) {
+    return H;
+  } else if (Value < L) {
     return L;
-  }
-  else
-  {
+  } else {
     return Value;
   }
-
 }
-
 
 int freeMemory() {
   char top;
@@ -326,7 +367,7 @@ int freeMemory() {
   return &top - reinterpret_cast<char*>(sbrk(0));
 #elif defined(CORE_TEENSY) || (ARDUINO > 103 && ARDUINO != 151)
   return &top - __brkval;
-#else  // __arm__
+#else   // __arm__
   return __brkval ? &top - __brkval : &top - __malloc_heap_start;
 #endif  // __arm__
 }

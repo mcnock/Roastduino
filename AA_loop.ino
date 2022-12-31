@@ -11,9 +11,16 @@ void theloop() {
   boolean bNewSecond = false;
   boolean bNewTempsAvailable = false;
   newState = 0;
-
-  //pre work for  loop
-
+  boolean bUpdateFan = false;
+  if (RoastTime.isRunning()) {
+    RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+  }
+  if (millis() >= TimeSubSecondNext) {
+    ReadBeanOpticalFlowRateFlag = true;
+    TimeSubSecondNext = millis() + TimeSubSecondDuration;
+  } else {
+    ReadBeanOpticalFlowRateFlag = false;
+  }
   if (SecondTimer.elapsed() > 1000) {
     //Serial.println("New second");
     ReadTempFlag = 0;
@@ -25,44 +32,65 @@ void theloop() {
     bNewSecond = false;
     LoopsPerSecondCalcing++;
   }
-
-  //capture a fixed roast time that will not change during execution of the loop
-  if (RoastTime.isRunning()) {
-    RoastMinutes = ((double)RoastTime.elapsed()) / 60;
-  }
-
-  if (ReadAmpsFlag == true) {
+  if (ReadCoilCurrentFlag == true) {
     SPI.begin();
     CoilAmps = 0;
-    digitalWrite(AMP_SPI_SSp_4, LOW);
+    digitalWrite(COILCURRENT_SPI_SSp53, LOW);
     CoilAmps = SPI.transfer(0);
-    digitalWrite(AMP_SPI_SSp_4, HIGH);
+    digitalWrite(COILCURRENT_SPI_SSp53, HIGH);
     SPI.end();
+    ReadCoilCurrentFlag = false;
   };
-
   if (ReadBeanOpticalFlowRateFlag == true) {
-    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp5, LOW);
+    //double start = millis();
+    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
     SPI.begin();
     if (BeanOpticalFlowSensor.Initialized == false) {
       Serial.println("Initializing");
       if (!BeanOpticalFlowSensor.Initialize()) {
-        Serial.println("Inituialization of the flow sensor failed");
+        Serial.println("Initialization of the flow sensor failed");
       }
     }
-
     BeanOpticalFlowSensor.readMotionCountY(&deltaYflow);
-
-    if (deltaYflow <= 50) {
-      BeanOpticalFlowValue.push(deltaYflow);
+    if (deltaYflow < 100) {
+      if (deltaYflow > -1) {
+        switch (flowAveraging) {
+          case 20:
+            {
+              deltaYflow_avg20.push(deltaYflow);
+              break;
+            }
+          case 50:
+            {
+              deltaYflow_avg50.push(deltaYflow);
+              break;
+            }
+          case 100:
+            {
+              deltaYflow_avg100.push(deltaYflow);
+              break;
+            }
+          case 200:
+            {
+              deltaYflow_avg200.push(deltaYflow);
+              break;
+            }
+  
+        default:
+            {
+              deltaYflow_avg20.push(deltaYflow);
+              break;
+            }
+        }
+      }
+    } else {
+      spDebug("High bean flow value:" + String(deltaYflow));
     }
-    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp5, HIGH);
+    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
     SPI.end();
+    //spDebug("time to read flow:" + String(millis() - start));
   }
-
-
-
-  //update temps
-  if (ReadTempFlag > -1) {
+  if (ReadTempFlag > -1) {  //read thermocouples, 1 per loop
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
     switch (ReadTempFlag) {
       case 0:  //coil
@@ -107,9 +135,7 @@ void theloop() {
         break;
     }
   }
-
-  //DETERIM NEW STATE BASE ON STATE TEMPERATURE or TIME
-  switch (State) {
+  switch (State) {  //check if a newstate is needed based on temp or time
     case STATEROASTING:
       {
         if (TBeanAvgRoll.mean() > (MySetPoints[SetPointCount - 1].Temperature) + 20) {
@@ -140,8 +166,7 @@ void theloop() {
         break;
       }
   }
-  //determin action based on input from touch or serial
-  if (HasDisplay) {
+  if (HasDisplay) {  //look for a new state because of touch inputs
     if (myTouch.dataAvailable()) {
       if (TouchDetected == false) {
         if (DetectTouch()) {
@@ -226,133 +251,119 @@ void theloop() {
     //  }
     // }
   }
-  if (Serial.available() > 0) {
+  if (Serial.available() > 0) {  //look for a new state because of serial inputs
     processSerial(Serial);
   }
-  if (Serial2.available() > 0) {
-    processSerial(Serial2);
-  }
-
-  //Action is state is changing
-  if (newState != 0) {
+  if (newState != 0) {  //rules on how to switch state
     Serial.print("Moving  to new state:");
     Serial.println(StateName[newState]);
-  }
-  switch (newState) {
-    case STATESTOPPED:  //newstate
-      {
-        //Serial.print("D:");Serial.println(LOW);
-
-        digitalWrite(SSR1_p7, LOW);
-        digitalWrite(SSR2_p6, LOW);
-        if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
-          State = STATESTOPPED;
-          //Serial.print("E:");Serial.println(LOW);
+    switch (newState) {
+      case STATESTOPPED:  //newstate
+        {
+          //Serial.print("D:");Serial.println(LOW);
 
           digitalWrite(SSR1_p7, LOW);
           digitalWrite(SSR2_p6, LOW);
-          digitalWrite(FANRELAYp_2, RELAYOFF);
-          //digitalWrite(VIBRELAYp, RELAYOFF);
-          RoastTime.stop();
-          //  FanSpeedPWMAutoMode = false;
-          FanSpeedPWM = 0;
-        } else {
-          newState = STATECOOLING;
-          State = STATECOOLING;
+          if (TBeanAvgRoll.mean() < TEMPCOOLINGDONE) {
+            State = STATESTOPPED;
+            digitalWrite(SSR1_p7, LOW);
+            digitalWrite(SSR2_p6, LOW);
+            digitalWrite(FANRELAYp_2, RELAYOFF);
+            //digitalWrite(VIBRELAYp, RELAYOFF);
+            RoastTime.stop();
+            FanSpeed254PWM = 0;
+            DutyFan = 0;
+          } else {
+            newState = STATECOOLING;
+            State = STATECOOLING;
+          }
+          break;
         }
-        break;
-      }
-    case STATERESTARTROASTING:
-      {
-        State = STATEROASTING;
-        break;
-      }
-
-    case STATEROASTING:  //newstate
-      {
-        digitalWrite(FANRELAYp_2, RELAYON);
-        //digitalWrite(VIBRELAYp, RELAYON);
-
-
-        if (State == STATESTOPPED || State == STATEFANONLY) {
-          SetAndSendFanPWMForATime(0);
-          TCoilRoll.clear();
-          TBeanAvgRoll.clear();
-          TempReadingskipped[TCoilID] = 0;
-          TempReadingskipped[TBean1ID] = 0;
-          TempReadingskipped[TBean2ID] = 0;
-          StartLinebyTemp(0, ROLLMAXLINEID);
-          StartLinebyTemp(0, ROLLMINLINEID);
-          StartLinebyTemp(0, ROLLAVGLINEID);
-          StartLinebyTemp(0, COILLINEID);
-          StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeedPWM), FANSPEEDLINEID);
-          graphProfile();
-          RoastTime.restart(0);
-          RoastMinutes = 0;
-          RoastRestartNeeded = false;
-        } else if (State == STATECOOLING) {
-          //nothing is needed
+      case STATERESTARTROASTING:
+        {
+          State = STATEROASTING;
+          break;
         }
-        State = STATEROASTING;
-        break;
-      }
 
-    case STATECOOLING:  //newstate
-      {
-        State = newState;
-        SetAndSendFanPWMForATime(RoastMinutes);
-        //FanSpeedPWMAutoMode = false;
-        //Serial.print("F:");Serial.println(LOW);
+      case STATEROASTING:  //newstate
+        {
+          digitalWrite(FANRELAYp_2, RELAYON);
+          if (State == STATESTOPPED || State == STATEFANONLY) {
+            SetAndSendFanPWMForATime(0);
+            TCoilRoll.clear();
+            TBeanAvgRoll.clear();
+            TempReadingskipped[TCoilID] = 0;
+            TempReadingskipped[TBean1ID] = 0;
+            TempReadingskipped[TBean2ID] = 0;
+            StartLinebyTemp(0, ROLLMAXLINEID);
+            StartLinebyTemp(0, ROLLMINLINEID);
+            StartLinebyTemp(0, ROLLAVGLINEID);
+            StartLinebyTemp(0, COILLINEID);
+            StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeed254PWM), FANSPEEDLINEID);
+            graphProfile();
+            RoastTime.restart(0);
+            RoastMinutes = 0;
+            RoastRestartNeeded = false;
+          } else if (State == STATECOOLING) {
+            //nothing is needed
+          }
+          State = STATEROASTING;
+          break;
+        }
+      case STATECOOLING:  //newstate
+        {
+          State = newState;
+          SetAndSendFanPWMForATime(RoastMinutes);
+          //FanSpeed254PWMAutoMode = false;
+          //Serial.print("F:");Serial.println(LOW);
 
-        digitalWrite(SSR1_p7, LOW);
-        digitalWrite(SSR2_p6, LOW);
-        delay(1000);
-        break;
-      }
-    case STATEFANONLY:  //newstate
-      {
+          digitalWrite(SSR1_p7, LOW);
+          digitalWrite(SSR2_p6, LOW);
+          delay(1000);
+          break;
+        }
+      case STATEFANONLY:  //newstate
+        {
+          State = newState;
+          //reset fan pid values
+          ErrIFlow = 0.0;
+          IntegralSumFlow = 0.0;
+          //DutyFlow = .7;
+          SetFanFromOpticalSensorPID();
+          // FanSpeed254PWM = FanSetPoints[0].PWM;
+          //SetAndSendFanPWMForATime(0);
+          digitalWrite(FANRELAYp_2, RELAYON);
+          break;
+        }
+      case STATEOVERHEATED:  //newstate
+        {
+          State = newState;
+          digitalWrite(SSR1_p7, LOW);
+          digitalWrite(SSR2_p6, LOW);
+          delay(1000);
+          break;
+        }
+      case STATENOFANCURRENT:  //newstate
+        {
+          State = newState;
+          digitalWrite(SSR1_p7, LOW);
+          digitalWrite(SSR2_p6, LOW);
+          break;
+        }
+      case DEBUGCOIL:  //newstate
         State = newState;
-        FanSpeedPWM = FanSetPoints[0].PWM;
-        SetAndSendFanPWMForATime(0);
-        digitalWrite(FANRELAYp_2, RELAYON);
-        break;
-      }
-    case STATEOVERHEATED:  //newstate
-      {
+      case DEBUGTOGGLE:  //newstate
         State = newState;
-        digitalWrite(SSR1_p7, LOW);
-        digitalWrite(SSR2_p6, LOW);
-        delay(1000);
         break;
-      }
-    case STATENOFANCURRENT:  //newstate
-      {
+      case DEBUGDUTY:  //newstate
         State = newState;
-        digitalWrite(SSR1_p7, LOW);
-        digitalWrite(SSR2_p6, LOW);
         break;
-      }
-    case DEBUGCOIL:  //newstate
-      State = newState;
-    case DEBUGTOGGLE:  //newstate
-      State = newState;
-      break;
-    case DEBUGDUTY:  //newstate
-      State = newState;
-      break;
+    }
   }
-
-  //Action base on state
-
-  if (State == DEBUGTOGGLE || State == DEBUGCOIL) {
-    SetAndSendFanPWMForATime(0);
-  }
-
-  //calculate new Duty for coils
-  if (State == STATEROASTING) {
+  if (State == STATEROASTING) {  //calc error and duty for temperature PID
     CurrentSetPointTemp = SetpointforATime(RoastMinutes);
     ErrTemp = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint. Positive it temp is under setupt
-    PIDIntegralUdateTimeValueTemp = 5000;
+
     if (abs(ErrTemp) < GainTemp) {
       if (PIDIntegralUdateTimeTemp.elapsed() > PIDIntegralUdateTimeValueTemp) {  //every 5 seconds we add the err to be a sum of err
         if (ErrITemp < GainTemp) {
@@ -378,17 +389,14 @@ void theloop() {
     ErrITemp = 0.0;
     IntegralSumTemp = 0.0;
   }
-
-
-  //set SSR's based on duty
-  if (State == STATEROASTING || StateDebug == DEBUGDUTY) {
+  if (State == STATEROASTING || StateDebug == DEBUGDUTY) {  //calc duty window and set SSR's based on duty
     int SSR1 = LOW;
     SSR1Status = SSROFF;
     int SSR2 = LOW;
     SSR2Status = SSROFF;
-    PIDWindowSizeTemp = 1000;
+    PIDDutyWindowSizeTemp = 1000;
     unsigned long now = millis();
-    boolean ExceedsWholePidWindow = (PIDWindowStartTimeTemp == 0) || (now - PIDWindowStartTimeTemp > PIDWindowSizeTemp);
+    boolean ExceedsWholePidWindow = (PIDWindowStartTimeTemp == 0) || (now - PIDWindowStartTimeTemp > PIDDutyWindowSizeTemp);
     if (ExceedsWholePidWindow) {  //keep checking if we need to start a new PID window
       PIDWindowStartTimeTemp = now;
       if (DutyTemp > 0.0) {
@@ -403,7 +411,7 @@ void theloop() {
 
       SSR1Status = SSRPWM;
 
-      if (DutyTemp <= 0.5 && ((now - PIDWindowStartTimeTemp) <= (DutyTemp * 2 * PIDWindowSizeTemp))) {
+      if (DutyTemp <= 0.5 && ((now - PIDWindowStartTimeTemp) <= (DutyTemp * 2 * PIDDutyWindowSizeTemp))) {
         SSR1 = HIGH;
       }
       if (DutyTemp >= 1.0) {
@@ -416,7 +424,7 @@ void theloop() {
         SSR1 = HIGH;
         SSR1Status = SSRFULL;
         SSR2Status = SSRPWM;
-        if ((now - PIDWindowStartTimeTemp) <= ((DutyTemp - .5) * 2 * PIDWindowSizeTemp)) {
+        if ((now - PIDWindowStartTimeTemp) <= ((DutyTemp - .5) * 2 * PIDDutyWindowSizeTemp)) {
           SSR2 = HIGH;
         }
       }
@@ -448,9 +456,7 @@ void theloop() {
     digitalWrite(SSR1_p7, SSR1);
     digitalWrite(SSR2_p6, SSR2);
   }
-
-  //make sure to turn SSD's and other off if not running
-  if (not(State == STATEROASTING || StateDebug == DEBUGDUTY || StateDebug == DEBUGCOIL)) {
+  if (not(State == STATEROASTING || StateDebug == DEBUGDUTY || StateDebug == DEBUGCOIL)) {  //make sure to turn SSD's and other off if not running
     digitalWrite(SSR1_p7, LOW);
     digitalWrite(SSR2_p6, LOW);
     SSR1Status = SSROFF;
@@ -461,15 +467,11 @@ void theloop() {
     IntegralSumTemp = 0;
     IntegralLastTimeTemp = 0;
   }
-
-  //What to output to UI real time
-  if (newState > 0) {
+  if (newState > 0) {  //update gui on state change
     UpdateProgressDisplayArea(ValuesOnly);
     newState = 0;  //this clears it for next run
   }
-
-  //what to output to UI each second
-  if (bNewSecond) {
+  if (bNewSecond) {  //what to output to UI each second
     //Serial.println("update after reach new temp");
     UpdateProgressDisplayArea(ValuesOnly);
     UpdateOpDetailsDisplayArea(ValuesOnly);
@@ -482,11 +484,14 @@ void theloop() {
       SerialOutputStatus();
     }
     if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
+      SetAndSendFanPWMForATime(RoastMinutes);
       AddLinebyTimeAndFan(RoastMinutes);
     }
+    if (State == STATEFANONLY) {  //fot testing fan flow pid
+      SetFanFromOpticalSensorPID();
+    }
   }
-
-  if (bNewTempsAvailable) {
+  if (bNewTempsAvailable) {  //add a line to graph UI if we have new temp data
     if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
       //SpDebug("Adding maxium of:\t" + String(TBeanAvgRoll.maximum()));
       RoastAcumHeat + TBeanAvgRoll.mean();
@@ -498,8 +503,7 @@ void theloop() {
       AddPointbyTimeAndTempAndLineID(RoastMinutes, coiloffsetted, COILLINEID, 2);
     }
   }
-  //what to output to UI each 3 seconds
-  if (LcdUdateTime.elapsed() > 3000) {
+  if (ThreeSecondTimer.elapsed() > 3000) {  //what to output to UI each 3 seconds
     if (serialOutPutTempsBy3Seconds == true) {
       SerialOutputTempsForPlotting();
     }
@@ -511,11 +515,11 @@ void theloop() {
     }
     if (State == STATEROASTING) {
       //Serial.println('b');
-      SetAndSendFanPWMForATime(RoastMinutes);
+
       //SetAndSendFanPWMForATime(FanSpeedPWNDecreaseByMinutes);
     }
     UpdateProgressDisplayArea(ValuesOnly);
-    LcdUdateTime.restart(0);
+    ThreeSecondTimer.restart(0);
   }
 
 }  //end of loop

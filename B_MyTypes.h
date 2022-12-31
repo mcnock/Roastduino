@@ -13,6 +13,11 @@ typedef struct adjustmentlabels {
   char label[7];
 } adjustmentlabels;
 
+typedef struct point_byte {
+  byte x = 0;
+  byte y = -1;
+} point_byte;
+
 typedef struct point {
   int x = 0;
   int y = -1;
@@ -20,11 +25,13 @@ typedef struct point {
 
 typedef struct graphhistory {
   int LineID;
-  int SkipCount;
-  int SkipLimit;
+  //int SkipCount;
+  //int SkipLimit;
+  int pixelperlogging;
+  //int LastUnMappedXPixelLogged;
   int PixelsP;
   int ArraySize;
-  point* Pixels;
+  point_byte* Pixels;
 } graphhistory;
 
 
@@ -75,6 +82,17 @@ typedef struct activeadjustment {
 
 } activeadjustment;
 
+typedef struct buttonconfig {
+  //int h;
+  //int w;
+//  int butID = -1;
+//  boolean ToolTipShowing = false;
+//  rect Rect;
+  int action = -1;
+  int adjustmentvalueset;
+} buttonconfig;
+
+
 typedef struct buttondef {
   //int h;
   //int w;
@@ -98,6 +116,7 @@ typedef struct buttonsetdef {
   int rowstart = 0;
   boolean vertical;
   boolean visable;
+
   ClickHandler pClickHandler;
 
 

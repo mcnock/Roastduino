@@ -320,7 +320,7 @@ void UpdateProgressDisplayArea(boolean bValuesOnly) {
   int col2 = col + (5 * myGLCD.getFontXsize());
   int colend = col2 + (5 * myGLCD.getFontXsize());
   int DutyPercent = DutyTemp * 100;
-  double FanPercent = (FanSpeedPWM / float(255)) * 100;
+  double FanPercent = (FanSpeed254PWM / float(255)) * 100;
   if (bValuesOnly == false) {
     myGLCD.print(F("Time:"), col, row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
@@ -523,7 +523,7 @@ void UpdateFanPWMValuesDisplay(boolean bValuesOnly) {
   myGLCD.setBackColor(BLACK);
 
   myGLCD.setColor(AQUA);
-  myGLCD.printNumI(FanSpeedPWM, col, row, 3, ' ');
+  myGLCD.printNumI(FanSpeed254PWM, col, row, 3, ' ');
   if (bValuesOnly == false) {
     myGLCD.print(F("Dev:"), col1, row);
   }
@@ -551,12 +551,13 @@ void StartLinebyXAndY(uint16_t X, uint16_t Y, int lineID) {
   if (HistoryID > -1) {
     //SpDebug("Reseting history for lineID:" + String(lineID));
     for (int i = 0; i < GraphHistory[HistoryID].ArraySize; i++) {
-      GraphHistory[HistoryID].Pixels[i].y = -1;
+      GraphHistory[HistoryID].Pixels[i].y = 0;
     }
-    GraphHistory[HistoryID].Pixels[0].x = X;
-    GraphHistory[HistoryID].Pixels[0].y = Y;
+    GraphHistory[HistoryID].Pixels[0].x = map(X, 0, 800, 0, 255);
+    GraphHistory[HistoryID].Pixels[0].y = map(Y, 0, 480, 0, 255);
     GraphHistory[HistoryID].PixelsP = 0;
-    GraphHistory[HistoryID].SkipCount = 0;
+    //GraphHistory[HistoryID].SkipCount = 0;
+    //GraphHistory[HistoryID].LastUnMappedXPixelLogged = 0;
   } else {
     //Serial.print(F("No history to reset starting lineID"));Serial.println(lineID);
   }
@@ -571,27 +572,27 @@ void AddLinebyXY(uint16_t& newX, uint16_t& newY, int lineID) {
   //SpDebug("Adding to lineid:\t" + String(lineID) + "\t from x:" + String(LastforLineID[lineID].x) + "\ty:" + String((int)LastforLineID[lineID].y) + "\t to x:" + String(newX) + "\t y:" + String(newY));
 
   myGLCD.drawLine((int)LastforLineID[lineID].x, (int)LastforLineID[lineID].y, (int)newX, (int)newY);
-  if (LineBoldforLineID[lineID]) {
-    BoldLine(LastforLineID[lineID].x, LastforLineID[lineID].y, newX, newY);
-  }
+  //if (LineBoldforLineID[lineID]) {
+  //  BoldLine(LastforLineID[lineID].x, LastforLineID[lineID].y, newX, newY);
+  //}
   LastforLineID[lineID].x = newX;
   LastforLineID[lineID].y = newY;
   int HistoryID = GetHistoryIDfromLineID(lineID);
   if (HistoryID > -1) {
-    if (GraphHistory[HistoryID].SkipCount >= GraphHistory[HistoryID].SkipLimit) {
-      GraphHistory[HistoryID].SkipCount = 0;
+    int minX = GraphHistory[HistoryID].pixelperlogging * GraphHistory[HistoryID].PixelsP;
+    if (newX >= minX) {
       if (GraphHistory[HistoryID].PixelsP < (GraphHistory[HistoryID].ArraySize - 1)) {
         GraphHistory[HistoryID].PixelsP++;
         //SpDebug("Adding to lineid:\t" + String(lineID) + "\tx:" + String(newX) + "\ty:" + String(newY));
-        GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].x = newX;
-        GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].y = newY;
+        GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].x = map(newX, 0, 800, 0, 255);
+        GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].y = map(newY, 0, 480, 0, 255);    
       } else {
         Serial.print(F("ERROR:LastTemp array size exceeded for LineID:"));
         Serial.println(lineID);
       }
     } else {
       //SpDebug("Skipping Adding to lineid:\t" + String(lineID) + " \tskipcount:" + String(GraphHistory[HistoryID].SkipCount));
-      GraphHistory[HistoryID].SkipCount++;
+      //GraphHistory[HistoryID].SkipCount++;
     }
   } else {
     //Serial.print(F("Add to history  not available for lineID"));Serial.println(lineID);
@@ -606,16 +607,16 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
 }
 
 void AddLinebyTimeAndDuty(double timemins) {
-  //Serial.print("FanSpeedPWM:");Serial.print(FanSpeedPWM);Serial.print(" Time:");Serial.println(timemins);
-  uint16_t newY = (uint16_t)YforAFan(FanSpeedPWM);
+  //Serial.print("FanSpeed254PWM:");Serial.print(FanSpeed254PWM);Serial.print(" Time:");Serial.println(timemins);
+  uint16_t newY = (uint16_t)YforAFan(FanSpeed254PWM);
   uint16_t newX = (uint16_t)(FanGraphXStart + (PixelsPerMinFan * timemins));
 
   AddLinebyXY(newX, newY, FANSPEEDLINEID);
 }
 
 void AddLinebyTimeAndFan(double timemins) {
-  //Serial.print("FanSpeedPWM:");Serial.print(FanSpeedPWM);Serial.print(" Time:");Serial.println(timemins);
-  uint16_t newY = (uint16_t)YforAFan(FanSpeedPWM);
+  //Serial.print("FanSpeed254PWM:");Serial.print(FanSpeed254PWM);Serial.print(" Time:");Serial.println(timemins);
+  uint16_t newY = (uint16_t)YforAFan(FanSpeed254PWM);
   uint16_t newX = (uint16_t)(FanGraphXStart + (PixelsPerMinFan * timemins));
 
   AddLinebyXY(newX, newY, FANSPEEDLINEID);
@@ -638,31 +639,25 @@ void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double time
 
 void DrawLineFromHistoryArray(int LineID) {
   int HistoryID = GetHistoryIDfromLineID(LineID);
-
-
   if (HistoryID > -1) {
     //SpDebug("Redrawing lineid:\t" + String(LineID));
     myGLCD.setColor(LineColorforLineID[LineID]);
-    LastforLineID[LineID].x = GraphHistory[HistoryID].Pixels[0].x;
-    LastforLineID[LineID].y = GraphHistory[HistoryID].Pixels[0].y;
-    for (int i = 1; i < GraphHistory[HistoryID].ArraySize; i++) {
-      if (GraphHistory[HistoryID].Pixels[i].y > -1) {
-        //SpDebug("Redraw i:\t" + String(i) +
-        //     " \tx:" + String(LastforLineID[LineID].x) +
-        //     " \ty:" + String(LastforLineID[LineID].y) +
-        //     " \txmax:" + String(GraphHistory[HistoryID].Pixels[i].x) +
-        //     " \tymax:" + String(GraphHistory[HistoryID].Pixels[i].y)
-        //     );
-        myGLCD.drawLine((int)LastforLineID[LineID].x, (int)LastforLineID[LineID].y, (int)GraphHistory[HistoryID].Pixels[i].x, (int)GraphHistory[HistoryID].Pixels[i].y);
+    LastforLineID[LineID].x = map(GraphHistory[HistoryID].Pixels[0].x,0,255,0,800);
+    LastforLineID[LineID].y = map(GraphHistory[HistoryID].Pixels[0].y,0,255,0,480);
+    for (int i = 1; i < GraphHistory[HistoryID].PixelsP; i++) {
+      //if (GraphHistory[HistoryID].Pixels[i].y > 0) {
+        int xMapped =map(GraphHistory[HistoryID].Pixels[i].x,0,255,0,800);    
+        int yMapped = map(GraphHistory[HistoryID].Pixels[i].y,0,255,0,480);
+        myGLCD.drawLine((int)LastforLineID[LineID].x, (int)LastforLineID[LineID].y, xMapped, yMapped );
         if (LineBoldforLineID[LineID]) {
           BoldLine(LastforLineID[LineID].x, LastforLineID[LineID].y, GraphHistory[HistoryID].Pixels[i].x, GraphHistory[HistoryID].Pixels[i].y);
         }
-        LastforLineID[LineID].x = GraphHistory[HistoryID].Pixels[i].x;
-        LastforLineID[LineID].y = GraphHistory[HistoryID].Pixels[i].y;
-      } else {
+        LastforLineID[LineID].x = xMapped;
+        LastforLineID[LineID].y = yMapped;
+      //} else {
         //SpDebug("Exit ReDraw lineid:" + String(LineID) +  " at:" + String(i));
-        break;
-      }
+        //break;
+      //}
     }
     return;
   } else {

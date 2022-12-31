@@ -74,8 +74,6 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
-#define AMP_SPI_SSp_4 4
-#define BEAN_OPTICAL_FLOW_SPI_SSp5 5
 #define SSR2_p6 6
 #define SSR1_p7 7
 //#define available 10
@@ -89,6 +87,10 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 //#define available 32
 //#define available 33
 //#define available 34
+
+#define COILCURRENT_SPI_SSp53 53 
+#define BEAN_OPTICAL_FLOW_SPI_SSp48 48
+#define BEAN_OPTICAL_FLOW2_SPI_SSp49 49
 
 
 //#define available A0
@@ -138,8 +140,8 @@ const ssrstatus SSRStatus[4] = {" NA"," ON","PWM","OFF"};
 #define SETDEFAULT_EP 4
 const int SETPOINTTEMP_EP[] = { 5, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
 #define RoastLength_EP 36
-#define FanGraphMinPWM_EP 37
-#define FanGraphMaxPWM_EP 38
+//#define FanGraphMinPWM_EP 37
+//#define FanGraphMaxPWM_EP 38
 
 const int FanSetPoints_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory locations - not data
 #define INTEGRALFLOW_EP 70
@@ -254,7 +256,6 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 
 #define RELAYON LOW
 #define RELAYOFF HIGH
-
 #define ValuesOnly true
 #define All false
 #define BeingMoved true
@@ -307,8 +308,9 @@ activeadjustment ActiveAdjustment;
 #define ActionAdjustCoilGraphTempOffset 48
 #define ActionAdjustFanGraphPixelBottom 48
 #define ActionAdjustTempDuty 50
-
-
+#define ActionAdjustIntegralFlow 51
+#define ActionAdjustGainFlow 52
+#define ActionAdjustSetpointFlow 53
 
 #define VmenuCount 7
 #define MaxButtonCount 9
@@ -361,9 +363,9 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { 22, "", "subject", "of", "menu", YELLOW },
     { 23, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
     { 24, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
-    { 25, "", "go back", "to", "prior", YELLOW },
-    { 26, "Fan", "toggle", "fan relay", "on and off", YELLOW },
-    { 27, "", "Manually", "set", "duty", YELLOW  },
+    { 25, "FanG", "Adjust", "F PID", "Gain", AQUA, ActionAdjustGainFlow, Values_1_3_5},
+    { 26, "FanI" , "Adjust", "F PID", "Interg", AQUA , ActionAdjustIntegralFlow , Values_d01_d03_d05},
+    { 27, "FanSP", "Adjust", "F", "Setpnt", AQUA , ActionAdjustSetpointFlow, Values_1_3_5 },
     { 28, "Tem", "go back", "to", "prior", YELLOW } },
   { { VmenuOnOff0, "<<", "go to", "prior", "menu", GREEN, VmenuFindPrior },
     { 31, "", "selected", "device", "to debug", GREEN },
@@ -420,12 +422,9 @@ const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
     { -87, "", "go back", "to", "prior", GREEN },
     { -88, "", "go back", "to", "prior", GREEN } }
 };
-
 rect OpProgessDisplay = { 80, 0, 0, 0 };
 rect OpDetailDisplay = { 610, 200, 0, 0 };
 rect ConfigDisplay = { 205, 385, 0, 0 };
-
-
 buttontext myLocalbuttontext;
 
 const byte PressNone = 0;
@@ -458,33 +457,24 @@ char Commandsp1[7] = "xxxxx ";
 int iCommandsp1 = 0;
 char Commandsp[7] = "xxxxx ";
 int iCommandsp = 0;
-
-
-
-char _debug = 'a';
-
-
 PWMSetpoint FanSetPoints[4];
-int FanSpeedPWM = 0;
-
-point TempPixelHistory[160];
-point FanPixelHistory[160];
-point CoilPixelHistory[160];
-
-
+int FanSpeed254PWM = -1;
+point_byte TempPixelHistory[160];
+point_byte FanPixelHistory[160];
+point_byte CoilPixelHistory[160];
+//800/160 = 5
 graphhistory GraphHistory[] = {
-  { ROLLAVGLINEID, 0, 5, 0, 160, TempPixelHistory },
-  { FANSPEEDLINEID, 0, 5, 0, 160, FanPixelHistory },
-  { COILLINEID, 0, 5, 0, 160, CoilPixelHistory }
+  { ROLLAVGLINEID, 5,0,160, TempPixelHistory },
+  { FANSPEEDLINEID, 5, 0,160, FanPixelHistory },
+  { COILLINEID, 5, 0,160, CoilPixelHistory }
 };
-
 
 const int FanGraphXStart = 0;    //starting col of fan graph - a little past half
 const int FanGraphXWidth = 720;  //uses 1/4 of screen width
 const int FanGraphHeight = 340;  //uses 1/4 of screen width
 const int FanGraphHorGridSpacingPWM = 15;
 int FanGraphBottom = 450;
-
+const int DisplayWidth = 800;
 int FanGraphMinPWM = 100;
 int FanGraphMaxPWM = 254;
 float PixelsPerMinFan;
@@ -493,14 +483,14 @@ int GainTemp = 0;           //read from eeprom
 double IntegralTemp = 0.1;  //read from eeprom
 long unsigned IntegralLastTimeTemp = 0;
 float IntegralSumTemp = 0;
-unsigned long PIDWindowStartTimeTemp;
+unsigned long PIDWindowStartTimeTemp = 1000;
 boolean PIDNewWindowTemp;
 float ErrITemp = 0;
 float ErrTemp = 0;
 double DutyDebug = 0.0;
 double DutyTemp;
-unsigned int PIDIntegralUdateTimeValueTemp;
-unsigned int PIDWindowSizeTemp;
+unsigned int PIDIntegralUdateTimeValueTemp = 5000;
+unsigned int PIDDutyWindowSizeTemp = 1000;
 
 int GainFlow = 0;           //read from eeprom
 double IntegralFlow = 0.1;  //read from eeprom
@@ -510,22 +500,16 @@ unsigned long PIDWindowStartTimeFlow;
 boolean PIDNewWindowFlow;
 float ErrIFlow = 0;
 float ErrFlow = 0;
-double DutyFlow;
-unsigned int PIDIntegralUdateTimeValueFlow;
+double DutyFan = - 99;
+unsigned int PIDIntegralUdateTimeValueFlow = 1000;
 unsigned int PIDWindowSizeFlow;
 
 boolean setpointschanged = true;
 int MyMinuteTemperature[30];
-
-
-//read from eprom
 setpoint MySetPoints[6];
-const int SetPointCount = 5;  //0,1,2,3,4,t0t5
+ int SetPointCount = 5;  //0,1,2,3,4,t0t5
 //EndingSetPoint = 3;
 int TimeScreenLeft = 0;
-
-
-
 double TempPerPixL = 0;
 double TempPerPixM = 0;
 double TempPerPixH = 0;
@@ -545,20 +529,24 @@ ClickHandler* TouchButtonHandler;
 boolean TouchDetected;
 boolean LongPressDetected;
 int TouchButton;
-
+char _debug;
 Chrono TouchTimer(Chrono::MILLIS);
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
+double TimeSubSecondNext = 0;
+double TimeSubSecondDuration = 50;
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
-Chrono LcdUdateTime(Chrono::MILLIS);
+Chrono ThreeSecondTimer(Chrono::MILLIS);
 Chrono PIDIntegralUdateTimeTemp(Chrono::MILLIS);
 Chrono PIDIntegralUdateTimeFlow(Chrono::MILLIS);
 Chrono MeasureTempTimer(Chrono::MILLIS);
 
+
 //temps are read once per second
 Average<double> TBeanAvgRoll(3);
 Average<double> TCoilRoll(3);  //this is minute avg
+
 
 //int OVERHEATFANCount;
 int TEMPCOILTOOHOTCount;
@@ -594,16 +582,23 @@ int TCoil;
 int TBean1;
 int TBean2;
 
-bool ReadAmpsFlag = false;
+bool ReadCoilCurrentFlag = false;
 bool ReadBeanOpticalFlowRateFlag = false;
 
-Bitcraze_PMW3901 BeanOpticalFlowSensor(BEAN_OPTICAL_FLOW_SPI_SSp5);
+Bitcraze_PMW3901 BeanOpticalFlowSensor(BEAN_OPTICAL_FLOW_SPI_SSp48);
+
+char debugflag = ' ';
 
 byte CoilAmps = 0;
 
 boolean ReadBeanFlowRate = false;
+byte flowAveraging = 20;
+Average<int16_t> deltaYflow_avg200(200);
+Average<int16_t> deltaYflow_avg100(100);
+Average<int16_t> deltaYflow_avg50(50);
+Average<int16_t> deltaYflow_avg20(20);
 
-Average<int16_t> BeanOpticalFlowValue(80);
+int fastloopmillseconds = 50;
 
 double MaxVoltage, MaxVread;
 
@@ -619,47 +614,36 @@ void setup() {
   //Serial1.begin(9600);
   Serial.begin(9600);
   Serial.println("setup starting");
- 
-  
   // Pin Conffaiguration
   pinMode(FANRELAYVCCp_3, OUTPUT);
   pinMode(FANRELAYp_2, OUTPUT);
   digitalWrite(FANRELAYVCCp_3, HIGH);  //5V
-
-
   pinMode(SSRgr_14, OUTPUT);
   digitalWrite(SSRgr_14, LOW);
   pinMode(SSR1_p7, OUTPUT);
   pinMode(SSR2_p6, OUTPUT);
-
-
   pinMode(FanOutVcc_A3, OUTPUT);
   pinMode(FanOutG_A4, OUTPUT);
   digitalWrite(FanOutVcc_A3, LOW);  //0V
   digitalWrite(FanOutG_A4, HIGH);   //5V
-
-
   pinMode(TC_SD1_A10, INPUT_PULLUP);
   pinMode(TC_SD2_A12, INPUT_PULLUP);
   pinMode(TC_SD3_A14, INPUT_PULLUP);
-
   pinMode(TC_CS1_A11, OUTPUT);
   pinMode(TC_CS2_A13, OUTPUT);
   pinMode(TC_CS3_A15, OUTPUT);
-
   pinMode(TC_G_A7, OUTPUT);
   digitalWrite(TC_G_A7, LOW);  //0V
-
   pinMode(TC_5v_A8, OUTPUT);
   digitalWrite(TC_5v_A8, HIGH);  //5V
 
   pinMode(TC_SCK_A9, OUTPUT);
 
-  pinMode(AMP_SPI_SSp_4,OUTPUT);
-  digitalWrite(AMP_SPI_SSp_4, HIGH);
-  pinMode(BEAN_OPTICAL_FLOW_SPI_SSp5,OUTPUT);
+  pinMode(COILCURRENT_SPI_SSp53,OUTPUT);
+  digitalWrite(COILCURRENT_SPI_SSp53, HIGH);
 
-  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp5, HIGH);
+  pinMode(BEAN_OPTICAL_FLOW_SPI_SSp48,OUTPUT);
+  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
   
   //set fan and vibrator relays to high - cause that means off
   digitalWrite(FANRELAYp_2, RELAYOFF);
@@ -714,10 +698,7 @@ void setup() {
     SetDefaults = 1;
     EEPROM.put(SETDEFAULT_EP, SetDefaults);
     //spDebug("Done Setting defaults  SetDefault value to be saved is:" + String(SetDefaults));
-
-
   } else {
-
     for (int i = 0; i < 4; i++) {
       EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
     }
@@ -732,7 +713,6 @@ void setup() {
     EEPROM.get(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
     EEPROM.get(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
     EEPROM.get(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
-
   }
 
 
@@ -771,7 +751,7 @@ void setup() {
 
 
 
-  FanSpeedPWM = FanSetPoints[0].PWM;
+  FanSpeed254PWM = FanSetPoints[0].PWM;
 
   //Serial.println(F("wire i2c for fan begin"));
 
