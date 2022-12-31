@@ -6,22 +6,17 @@ void processASerial(Stream &Serial) {
 
 void processSerial(Stream &Serial) {
   if (Serial.available() > 0) {
-    // read the incoming byte:
-    int incomingByte = Serial.read();
+    // read the 1st incoming byte:
+    int incomingByte1 = Serial.read();
     int incomingByte2 = 0;
     //int incomingByte3 = 0;
     delay(100);
     if (Serial.available() > 0) {
       incomingByte2 = Serial.read();
     }
-    delay(100);
 
-    if (Serial.available() > 0) {
-      //int incomingByte3 = Serial.read();
-      //Serial.read();
-    }
     // say what you got:
-    switch (incomingByte) {
+    switch (incomingByte1) {
       case 63:  //?
         {
           //Serial.println(F("E:End  s:GetStatus c:GetConfiguration t:temperatures  t[1,2,o]:1secondtemps,3secondtemps,off"));
@@ -33,18 +28,26 @@ void processSerial(Stream &Serial) {
       case 83:  //S
         {
           if (incomingByte2 == 63) {
-            Serial.print(F("Saxxx TimeSubSecondDuration:"));
+            Serial.print(F("Saxxx TimeSubSecondDuration:"));  //a
             Serial.println(TimeSubSecondDuration);
-            Serial.print(F("Sbxxx PIDIntegralUdateTimeValueTemp:"));
+            Serial.print(F("Sbxxx PIDIntegralUdateTimeValueTemp:")); //b
             Serial.println(PIDIntegralUdateTimeValueTemp);
-            Serial.print(F("Scxxx PIDIntegralUdateTimeValueFlow:"));
+            Serial.print(F("Scxxx PIDIntegralUdateTimeValueFlow:"));  //c
             Serial.println(PIDIntegralUdateTimeValueFlow);
-            Serial.print(F("Sdxxx PIDDutyWindowSizeTemp:"));
+            Serial.print(F("Sdxxx PIDDutyWindowSizeTemp:"));  //d
             Serial.println(PIDDutyWindowSizeTemp);
-            Serial.print(F("Sexxx flowAveraging:"));
-            Serial.println(flowAveraging);
-
+            Serial.print(F("Sexxx deltaYflow_avg.getSize():"));  //e
+            Serial.println(deltaYflow_avg.getSize());
+            Serial.print(F("Sfxxx TimeReadThermoDuration:")); //f
+            Serial.println(TimeReadThermoDuration); 
+            Serial.print(F("Sgxxx PercentChangeFlow:")); //g
+            Serial.println(PercentChangeFlow);
+            Serial.print(F("Shxxx TBeanAvgRoll.getSize():")); //h
+            Serial.println(TBeanAvgRoll.getSize());
+            Serial.print(F("ihxxx _debugbyte:"));  //i
+            Serial.println(_debugbyte);
           } else {
+            delay(100);
             if (Serial.available() > 0) {
               float n = Serial.parseFloat();
               switch (incomingByte2) {
@@ -75,7 +78,7 @@ void processSerial(Stream &Serial) {
                     Serial.println(PIDIntegralUdateTimeValueFlow);  //Serial.println();
                     break;
                   }
-        
+
                 case 100:  //d PIDDutyWindowSizeTemp
                   {
                     Serial.print(F("Set PIDDutyWindowSizeTemp from"));
@@ -85,24 +88,61 @@ void processSerial(Stream &Serial) {
                     Serial.println(PIDDutyWindowSizeTemp);  //Serial.println();
                     break;
                   }
-             case 101:  //e flowAveraging
+                case 101:  //e flowAveraging
                   {
                     Serial.print(F("Set flowAveraging from"));
-                    Serial.print(flowAveraging);  //Serial.println();
-                    flowAveraging = n;
+                    Serial.print(deltaYflow_avg.getSize());  //Serial.println();
+                    deltaYflow_avg.setSize(n);
                     Serial.print(F("to:"));
-                    Serial.println(flowAveraging);  //Serial.println();
+                    Serial.println(deltaYflow_avg.getSize());  //Serial.println();
                     break;
                   }
-             
+                case 102:  //f TimeReadThermoDuration
+                  {
+                    Serial.print(F("Set TimeReadThermoDuration from"));
+                    Serial.print(TimeReadThermoDuration);  //Serial.println();
+                    TimeReadThermoDuration = n;
+                    Serial.print(F("to:"));
+                    Serial.println(TimeReadThermoDuration);  //Serial.println();
+                    break;
+                  }
+                case 103:  //g PercentChangeFlow
+                  {
+                    Serial.print(F("Set PercentChangeFlow from"));
+                    Serial.print(PercentChangeFlow);  //Serial.println();
+                    PercentChangeFlow = n;
+                    Serial.print(F("to:"));
+                    Serial.println(PercentChangeFlow);  //Serial.println();
+                    break;
+                  }
+                case 104:  //h TBeanAvgRoll.getSize()
+                  {
+                    Serial.print(F("Set TBeanAvgRoll from"));
+                    Serial.print(TBeanAvgRoll.getSize());  //Serial.println();
+                    TBeanAvgRoll.setSize(n);
+                    Serial.print(F("to:"));
+                    Serial.println(TBeanAvgRoll.getSize());  //Serial.println();
+                    break;
+                  }
+                case 105:  //i _debugbyte
+                  {
+                    Serial.print(F("Set _debugbyte from"));
+                    Serial.print(_debugbyte);  //Serial.println();
+                    _debugbyte = n;
+                    Serial.print(F("to:"));
+                    Serial.println(_debugbyte);  //Serial.println();
+                    break;
+                  }
+
+                  
               }
             } else {
-              Serial.println("No value found in string you typed");
+              Serial.println("No value found following the Sx string you typed");
             }
           }
           break;
         }
-      case 70:  //F
+      case 1070:  //F
         {
           int v = 0;
           int b = FanSpeed254PWM;
@@ -154,7 +194,7 @@ void processSerial(Stream &Serial) {
           }
           break;
         }
-      case 80:  //P
+      case 1080:  //P
         {
           Serial.print(F("Profile before:"));
           for (int x = 0; x < SetPointCount; x++) {
@@ -217,7 +257,7 @@ void processSerial(Stream &Serial) {
 
           break;
         }
-      case 82:  //R
+      case 1082:  //R
         {
           switch (incomingByte2) {
             case 83:  //S
@@ -241,20 +281,20 @@ void processSerial(Stream &Serial) {
           }
           break;
         }
-      case 100:  //d
+      case 10100:  //d
         {
           _debug = incomingByte2;
           Serial.print("debug char recieved:");
           Serial.println(_debug);
           break;
         }
-      case 69:  //E
+      case 1069:  //E
         {
           Serial.println(F("End Roast"));
           ProcessHorControlMenu(1);
           break;
         }
-      case 115:  //s
+      case 10115:  //s
         {
           switch (incomingByte2) {
             case 49:  //1
@@ -290,7 +330,7 @@ void processSerial(Stream &Serial) {
           }
           break;
         }
-      case 99:  //c
+      case 1099:  //c
         {
 
           Serial.print(F("Profile"));
@@ -315,7 +355,7 @@ void processSerial(Stream &Serial) {
 
           break;
         }
-      case 116:  //t
+      case 10116:  //t
         {
           switch (incomingByte2) {
             case 49:  //1
@@ -372,10 +412,10 @@ void processSerial(Stream &Serial) {
             {
 
               Serial.print(F("I received : "));
-              Serial.println(incomingByte, DEC);
+              Serial.println(incomingByte1, DEC);
             }
         }
-        incomingByte = 0;
+        incomingByte1 = 0;
     }
   }
 }

@@ -5,7 +5,7 @@
 #include <Time.h>
 #include <TimeLib.h>
 #include <max6675.h>
-#include "src/Average.h"
+#include "Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
 #include "B_MyTypes.h"
@@ -67,7 +67,13 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 
 #define SpDebug Serial.println
 #define spDebug Serial.println
+#define spDebugxClose }
+#define spDebug1 if(_debugbyte==1){Serial.println
+#define spDebug2 if(_debugbyte==2){Serial.println
+#define spDebug3 if(_debugbyte==3){Serial.println
+#define spDebug4 if(_debugbyte==4){Serial.println
 
+byte _debugbyte = 0;
 
 //PIN  definitions
 //note: the 5 TFT inch display shield has pins inserted, but does not actuall use digital pins 30-34, 10 , 12,  13 or i2c pins 20,21
@@ -338,6 +344,8 @@ activeadjustment ActiveAdjustment;
 #define VmenuFindPrior 11
 
 byte DrawLablesRotated = 60;
+byte GetLablesFromPrior = 41;
+
 
 const buttontext PROGMEM Vmenutext[][MaxButtonCount] = {
   { { VmenuBase0, ">>", "Show", "debug", "menu", GREEN, VmenuDebug },
@@ -451,6 +459,10 @@ boolean serialOutPutStatusBySecond;
 MAX6675 thermocouple1(TC_SCK_A9, TC_CS1_A11, TC_SD1_A10);
 MAX6675 thermocouple2(TC_SCK_A9, TC_CS2_A13, TC_SD2_A12);
 MAX6675 thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
+const int ThermoCoil = 0;
+const int ThermoBean1 = 1;
+const int ThermoBean2 = 2;
+MAX6675 thermocouples[] = {thermocouple1,thermocouple2,thermocouple3};
 
 //for python serial  commands
 char Commandsp1[7] = "xxxxx ";
@@ -494,6 +506,7 @@ unsigned int PIDDutyWindowSizeTemp = 1000;
 
 int GainFlow = 0;           //read from eeprom
 double IntegralFlow = 0.1;  //read from eeprom
+double PercentChangeFlow = .01;
 long unsigned IntegralLastTimeFlow = 0;
 float IntegralSumFlow = 0;
 unsigned long PIDWindowStartTimeFlow;
@@ -535,6 +548,8 @@ Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
 double TimeSubSecondNext = 0;
 double TimeSubSecondDuration = 50;
+double TimeReadThermoNext = 0;
+double TimeReadThermoDuration = 100;
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 Chrono ThreeSecondTimer(Chrono::MILLIS);
@@ -544,8 +559,8 @@ Chrono MeasureTempTimer(Chrono::MILLIS);
 
 
 //temps are read once per second
-Average<double> TBeanAvgRoll(3);
-Average<double> TCoilRoll(3);  //this is minute avg
+Average<int> TBeanAvgRoll(50,10);
+Average<int> TCoilRoll(50,10);  //this is minute avg
 
 
 //int OVERHEATFANCount;
@@ -577,7 +592,7 @@ unsigned int RoastAcumHeat = 0;
 int FanDeviation = 0;
 
 boolean bNewTempsAvailable = false;
-int ReadTempFlag = -1;
+int ReadSensorInSequenceFlag = -1;
 int TCoil;
 int TBean1;
 int TBean2;
@@ -592,11 +607,8 @@ char debugflag = ' ';
 byte CoilAmps = 0;
 
 boolean ReadBeanFlowRate = false;
-byte flowAveraging = 20;
-Average<int16_t> deltaYflow_avg200(200);
-Average<int16_t> deltaYflow_avg100(100);
-Average<int16_t> deltaYflow_avg50(50);
-Average<int16_t> deltaYflow_avg20(20);
+
+Average<int16_t> deltaYflow_avg(100,20);
 
 int fastloopmillseconds = 50;
 

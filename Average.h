@@ -53,10 +53,12 @@ private:
   uint32_t _position;  // _position variable for circular buffer
   uint32_t _count;
   uint32_t _size;
+  uint32_t _sizemax;
 
 public:
   // Public functions and variables.  These can be accessed from
   // outside the class.
+  Average(uint32_t maxsize, uint32_t size);
   Average(uint32_t size);
   ~Average();
   float rolling(T entry);
@@ -71,18 +73,39 @@ public:
   T get(uint32_t);
   void leastSquares(float &m, float &b, float &r);
   int getCount();
+  int getSize();
+  int getSizeMax();  
+  int setSize(int x);
   T predict(int x);
-  T sum();
+
+ T sum();
   void clear();
   Average<T> &operator=(Average<T> &a);
 };
-
 template<class T> int Average<T>::getCount() {
   return _count;
+}
+template<class T> int Average<T>::getSize() {
+  return _size;
+}
+template<class T> int Average<T>::getSizeMax() {
+  return _sizemax;
+}
+template<class T> int Average<T>::setSize(int newsize) {
+
+  if (newsize <= _sizemax){
+      _size = newsize;
+  }
+  else
+  {
+    _size = _sizemax;
+  }
+  return _size;
 }
 
 template<class T> Average<T>::Average(uint32_t size) {
   _size = size;
+  _sizemax = size;
   _count = 0;
   _store = (T *)malloc(sizeof(T) * size);
   _position = 0;  // track position for circular storage
@@ -91,11 +114,20 @@ template<class T> Average<T>::Average(uint32_t size) {
     _store[i] = 0;
   }
 }
-
+template<class T> Average<T>::Average(uint32_t maxsize, uint32_t size) {
+  _size = size;
+  _sizemax = maxsize;
+  _count = 0;
+  _store = (T *)malloc(sizeof(T) * maxsize);
+  _position = 0;  // track position for circular storage
+  _sum = 0;       // track sum for fast mean calculation
+  for (uint32_t i = 0; i < maxsize; i++) {
+    _store[i] = 0;
+  }
+}
 template<class T> Average<T>::~Average() {
   free(_store);
 }
-
 template<class T> void Average<T>::push(T entry) {
   if (_count < _size) {               // adding new values to array
     _count++;                         // count number of values in array
@@ -107,20 +139,16 @@ template<class T> void Average<T>::push(T entry) {
   _position += 1;                         // increment the position counter
   if (_position >= _size) _position = 0;  // loop the position counter
 }
-
-
 template<class T> float Average<T>::rolling(T entry) {
   push(entry);
   return mean();
 }
-
 template<class T> float Average<T>::mean() {
   if (_count == 0) {
     return 0;
   }
   return ((float)_sum / (float)_count);  // mean calculation based on _sum
 }
-
 template<class T> T Average<T>::mode() {
   uint32_t pos;
   uint32_t inner;
@@ -157,11 +185,9 @@ template<class T> T Average<T>::mode() {
   }
   return most;
 }
-
 template<class T> T Average<T>::minimum() {
   return minimum(NULL);
 }
-
 template<class T> T Average<T>::minimum(int *index) {
   T minval;
 
@@ -185,11 +211,9 @@ template<class T> T Average<T>::minimum(int *index) {
   }
   return minval;
 }
-
 template<class T> T Average<T>::maximum() {
   return maximum(NULL);
 }
-
 template<class T> T Average<T>::maximum(int *index) {
   T maxval;
 
@@ -213,7 +237,6 @@ template<class T> T Average<T>::maximum(int *index) {
   }
   return maxval;
 }
-
 template<class T> float Average<T>::stddev() {
   float square;
   float sum;
@@ -235,7 +258,6 @@ template<class T> float Average<T>::stddev() {
   }
   return sqrt(sum / (float)_count);
 }
-
 template<class T> T Average<T>::get(uint32_t index) {
   if (index >= _count) {
     return -1;
@@ -247,7 +269,6 @@ template<class T> T Average<T>::get(uint32_t index) {
   if (cindex >= (int32_t)_size) cindex -= _size;
   return _store[cindex];
 }
-
 template<class T> void Average<T>::leastSquares(float &m, float &c, float &r) {
   float sumx = 0.0;  /* sum of x                      */
   float sumx2 = 0.0; /* sum of x**2                   */
@@ -276,7 +297,6 @@ template<class T> void Average<T>::leastSquares(float &m, float &c, float &r) {
   c = (sumy * sumx2 - sumx * sumxy) / denom;
   r = (sumxy - sumx * sumy / _count) / sqrt((sumx2 - sqr(sumx) / _count) * (sumy2 - sqr(sumy) / _count));
 }
-
 template<class T> T Average<T>::predict(int x) {
   float m, c, r;
   leastSquares(m, c, r);  // y = mx + c;
@@ -284,18 +304,15 @@ template<class T> T Average<T>::predict(int x) {
   T y = m * x + c;
   return y;
 }
-
 // Return the sum of all the array items
 template<class T> T Average<T>::sum() {
   return _sum;
 }
-
 template<class T> void Average<T>::clear() {
   _count = 0;
   _sum = 0;
   _position = 0;
 }
-
 template<class T> Average<T> &Average<T>::operator=(Average<T> &a) {
   clear();
   for (int i = 0; i < _size; i++) {
@@ -303,5 +320,4 @@ template<class T> Average<T> &Average<T>::operator=(Average<T> &a) {
   }
   return *this;
 }
-
 #endif

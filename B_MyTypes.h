@@ -23,6 +23,17 @@ typedef struct point {
   int y = -1;
 } point;
 
+typedef struct thermocouple {
+  MAX6675 sensor;
+  int Readingskipped;
+} thermocouple;
+
+typedef struct opticalsensor {
+  //Bitcraze_PMW3901 sensor;
+  int Readingskipped;
+} opticalsensor;
+
+
 typedef struct graphhistory {
   int LineID;
   //int SkipCount;
@@ -63,9 +74,9 @@ typedef struct indexed10strings {
 typedef struct buttontext {
   int butID;
   char label[7];
-  char tip1[12];
-  char tip2[12];
-  char tip3[12];
+  char tip1[7];
+  char tip2[7];
+  char tip3[7];
   uint16_t color;
   byte action;
   byte adjustmentvalueset;
@@ -79,18 +90,7 @@ typedef struct activeadjustment {
   float moveamount = -1;
   int spSelected = -1;
   bool savemenurequired = false;
-
 } activeadjustment;
-
-typedef struct buttonconfig {
-  //int h;
-  //int w;
-//  int butID = -1;
-//  boolean ToolTipShowing = false;
-//  rect Rect;
-  int action = -1;
-  int adjustmentvalueset;
-} buttonconfig;
 
 
 typedef struct buttondef {

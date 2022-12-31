@@ -18,12 +18,14 @@ void theloop() {
   if (millis() >= TimeSubSecondNext) {
     ReadBeanOpticalFlowRateFlag = true;
     TimeSubSecondNext = millis() + TimeSubSecondDuration;
-  } else {
-    ReadBeanOpticalFlowRateFlag = false;
   }
+
+  if (millis() >= TimeReadThermoNext) {
+    ReadSensorInSequenceFlag = 0;
+    TimeReadThermoNext = millis() + TimeReadThermoDuration;
+  }
+
   if (SecondTimer.elapsed() > 1000) {
-    //Serial.println("New second");
-    ReadTempFlag = 0;
     bNewSecond = true;
     LoopsPerSecond = LoopsPerSecondCalcing;
     LoopsPerSecondCalcing = 0;
@@ -32,15 +34,7 @@ void theloop() {
     bNewSecond = false;
     LoopsPerSecondCalcing++;
   }
-  if (ReadCoilCurrentFlag == true) {
-    SPI.begin();
-    CoilAmps = 0;
-    digitalWrite(COILCURRENT_SPI_SSp53, LOW);
-    CoilAmps = SPI.transfer(0);
-    digitalWrite(COILCURRENT_SPI_SSp53, HIGH);
-    SPI.end();
-    ReadCoilCurrentFlag = false;
-  };
+
   if (ReadBeanOpticalFlowRateFlag == true) {
     //double start = millis();
     digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
@@ -54,83 +48,39 @@ void theloop() {
     BeanOpticalFlowSensor.readMotionCountY(&deltaYflow);
     if (deltaYflow < 100) {
       if (deltaYflow > -1) {
-        switch (flowAveraging) {
-          case 20:
-            {
-              deltaYflow_avg20.push(deltaYflow);
-              break;
-            }
-          case 50:
-            {
-              deltaYflow_avg50.push(deltaYflow);
-              break;
-            }
-          case 100:
-            {
-              deltaYflow_avg100.push(deltaYflow);
-              break;
-            }
-          case 200:
-            {
-              deltaYflow_avg200.push(deltaYflow);
-              break;
-            }
-  
-        default:
-            {
-              deltaYflow_avg20.push(deltaYflow);
-              break;
-            }
-        }
+        deltaYflow_avg.push(deltaYflow);
       }
     } else {
-      spDebug("High bean flow value:" + String(deltaYflow));
+      spDebug1("High bean flow value:" + String(deltaYflow));
+      spDebugxClose
     }
     digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
     SPI.end();
     //spDebug("time to read flow:" + String(millis() - start));
   }
-  if (ReadTempFlag > -1) {  //read thermocouples, 1 per loop
+  if (ReadSensorInSequenceFlag > -1) {  //read thermocouples, 1 per loop
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
-    switch (ReadTempFlag) {
-      case 0:  //coil
+    switch (ReadSensorInSequenceFlag) {
+      case 0:  //coil temp
         MeasureTempTimer.restart();
-        TCoil = getCleanTemp(thermocouple3.readFahrenheit(), 0);
-        //Serial.print("New Coil temp:");Serial.println(TCoil);
+        TCoil = getCleanTemp(ThermoCoil);
         if (TCoil > -1) {
           TCoilRoll.push(TCoil);
         }
-        ReadTempFlag++;
-
-
-        //Serial.print("New Coil temp time:");Serial.println(t);
-
+        ReadSensorInSequenceFlag++;
         break;
-      case 1:
-        TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
-        //SpDebug("New bean 1 temp:" + String(TBean1));
-        if (TBean1 == -1) {
-          TBean1 = getCleanTemp(thermocouple1.readFahrenheit(), 1);
-        }
-        ReadTempFlag++;
+      case 1:  //bean temp 1
+        TBean1 = getCleanTemp(ThermoBean1);
+        ReadSensorInSequenceFlag++;
         break;
-      case 2:
-        TBean2 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
-        //SpDebug("New bean 2 temp" + String(TBean2));
-        if (TBean2 == -1) {
-          TBean2 = getCleanTemp(thermocouple2.readFahrenheit(), 2);
-        }
+      case 2:  //beam temp 2
+        TBean2 = getCleanTemp(ThermoBean2);
         TBeanAvgThisRun = getBeanAvgTemp(TBean1, TBean2);
         if (TBeanAvgThisRun > -1) {
           TBeanAvgRoll.push(TBeanAvgThisRun);
-          //SpDebug("Added value:" + String(TBeanAvgThisRun) + " to TbeanAvgRoll with new max of:\t" + String(TBeanAvgRoll.maximum()) + "/t avg of:" + String(TBeanAvgRoll.mean())  );
         }
-        ReadTempFlag = -1;
-        //        long t = MeasureTempTimer.elapsed();
-
+        ReadSensorInSequenceFlag = -1;
         MeasureTempTimer.stop();
-        //Serial.print("New temps time:");Serial.println(t);
-        //Serial.print(F("bean1:"));Serial.print(TBean1);Serial.print(F(",bean2:"));Serial.print(TBean2);
         bNewTempsAvailable = true;
         break;
     }
@@ -208,7 +158,7 @@ void theloop() {
           TouchStatus.objectpress = 0;
         }
         if (TouchStatus.objectpress == PressOperDetailBox) {
-          spDebug("ClearingD menu press");
+          //spDebug("ClearingD menu press");
           myGLCD.setColor(BLACK);
           myGLCD_fillRect(OpDetailDisplay);
           myGLCD.setColor(PALEYELLOW);
@@ -222,7 +172,7 @@ void theloop() {
           EEPROM.put(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
         }
         if (TouchStatus.objectpress == PressCongurationBox) {
-          spDebug("ClearingD menu press");
+          //spDebug("ClearingD menu press");
           myGLCD.setColor(BLACK);
           myGLCD_fillRect(ConfigDisplay);
           myGLCD.setColor(PALEYELLOW);
@@ -490,8 +440,8 @@ void theloop() {
     if (State == STATEFANONLY) {  //fot testing fan flow pid
       SetFanFromOpticalSensorPID();
     }
-  }
-  if (bNewTempsAvailable) {  //add a line to graph UI if we have new temp data
+    //}
+    //if (bNewTempsAvailable) {  //add a line to graph UI if we have new temp data
     if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
       //SpDebug("Adding maxium of:\t" + String(TBeanAvgRoll.maximum()));
       RoastAcumHeat + TBeanAvgRoll.mean();

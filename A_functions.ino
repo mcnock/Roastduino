@@ -111,40 +111,11 @@ int YforAFan(int fanpwm) {
 }
 
 void SetFanFromOpticalSensorPID() {
-  
-  float value;
-  
-  switch(flowAveraging)
-  {
-      case 20:
-      {
-          value = deltaYflow_avg20.mean();
-          break;
-      }
-      case 50:
-      {
-          value = deltaYflow_avg50.mean();
-          break;
-      }
-      case 100:
-      {
-          value = deltaYflow_avg100.mean();
-          break;
-      }
-      case 200:
-      {
-          value = deltaYflow_avg200.mean();
-          break;
-      }
- 
-      default:
-      {
-          value = deltaYflow_avg20.mean();
-          break;
-      }
 
-  }
-  ErrFlow = setpointflow - value;                           //negative if temp is over setpoint. Positive it temp is under setupt
+  float value;
+  value = deltaYflow_avg.mean();
+  
+  ErrFlow = setpointflow - value;                                            //negative if temp is over setpoint. Positive it temp is under setupt
                                                                              //spDebug("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
                                                                              //if (abs(ErrFlow) < GainFlow) {
   if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every 5 seconds we add the err to be a sum of err
@@ -161,12 +132,11 @@ void SetFanFromOpticalSensorPID() {
     //IntegralSumFlow = 0;
   }
   float DutyFanTemp = ((ErrFlow + ErrIFlow) / (double)GainFlow);
-
   float PercentChange = 0;
   if (DutyFanLast > 0) {
     PercentChange = (DutyFanTemp - DutyFanLast) / DutyFanLast;
   }
-  if (abs(PercentChange) > .01) {
+  if (abs(PercentChange) > PercentChangeFlow) {
 
     if (DutyFanTemp > DutyFanLast) {
       DutyFan = (DutyFanLast * 1.01);
@@ -176,18 +146,12 @@ void SetFanFromOpticalSensorPID() {
   } else {
     DutyFan = DutyFanTemp;
   }
-
   if (DutyFan > 1.0) {
     DutyFan = 1.0;
   }
-
   DutyFanLast = DutyFan;
-  //} else {  //clear out the integral before set point 1.
-  //DutyFan = 1.0;
-  //}
-
-  spDebug("Avg" + String(flowAveraging) + ":" + String(value) + ",Err:" + String(ErrFlow) +  ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
-
+  spDebug1("Avg" + String(deltaYflow_avg.getSize()) + ":" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
+  spDebugxClose;
   sendFan_D_Wire();
 }
 
@@ -284,24 +248,28 @@ void Serial_println_rect(struct rect& rect) {
   Serial.println(rect.ymax);
 }
 
-int getCleanTemp(double temperature, int myID) {
-  if (isnan(temperature)) {
-    TempReadingskipped[myID]++;
-    //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
-    return -1;
-  } else if (temperature > 1000) {
-    TempReadingskipped[myID]++;
-    //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
-    return -1;
-  } else if (temperature < 40) {
-    TempReadingskipped[myID]++;
-    //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
-    return -1;
-  } else {
-    int r = temperature;
-    //Serial.print (myID);Serial.print ("clean temp returned:");Serial.println(r);
-    return r;
-  }
+int getCleanTemp(int myID) {
+
+  byte tries = 0;
+  do {
+    int temperature = thermocouples[myID].readFahrenheit();
+    if (isnan(temperature)) {
+      TempReadingskipped[myID]++;
+      //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
+    } else if (temperature > 1000) {
+      TempReadingskipped[myID]++;
+      //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
+    } else if (temperature < 40) {
+      TempReadingskipped[myID]++;
+      //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
+    } else {
+      //Serial.print (myID);Serial.print ("clean temp returned:");Serial.println(r);
+      return temperature;
+    }
+    tries++;
+  } while (tries < 2);
+
+  return -1;
 }
 
 double getBeanAvgTemp(double t1, double t2) {

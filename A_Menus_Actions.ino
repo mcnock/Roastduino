@@ -378,7 +378,7 @@ void ProcessAnAdjustment() {
       if (State == STATESTOPPED) {
         StateDebug = DEBUGDUTY;
         DutyTemp = RangeAdouble(DutyTemp + ActiveAdjustment.moveamount, 0.0, 1.0);
-        spDebug("DutyTemp:" + String(DutyTemp));
+        //spDebug("DutyTemp:" + String(DutyTemp));
       }
       break;
     case ActionAdjustIntegralFlow:
@@ -464,7 +464,10 @@ void DrawMenuButtons(buttonsetdef& butdefset) {
 
 void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
   //SpDebug("drawing menuid " + String(butdefset.menuID) + " button index " + String(i) + " with butID " + String(mybut.butID) );
-  if (butdefset.buttondefs[i].action == -1) { //this means it has never been expanded
+  
+  int butIDCalced = (butdefset.menuID * 10) + i;
+  
+  if (butdefset.buttondefs[i].butID == -1) { //this means it has never been expanded
     memcpy_P(&myLocalbuttontext, &Vmenutext[butdefset.menuID][i], sizeof(buttontext));
     butdefset.buttondefs[i].action = myLocalbuttontext.action;
     butdefset.buttondefs[i].adjustmentvalueset = myLocalbuttontext.adjustmentvalueset;
@@ -484,7 +487,11 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
   if (butdefset.buttondefs[i].butID < 0) {
     return;
   }
-
+  
+  if (butdefset.buttondefs[i].butID != butIDCalced) {
+     spDebug("DrawMenuButton butID " + String(butdefset.buttondefs[i].butID) + " does not matched calced butID " + String(butIDCalced) );
+  }
+  
   if (butdefset.buttondefs[i].action == ActionSelectAdustmentValue) {
     switch (i) {
       case 2:
