@@ -113,8 +113,9 @@ int YforAFan(int fanpwm) {
 void SetFanFromOpticalSensorPID() {
 
   float value;
-  value = deltaYflow_avg.mean();
+  value = (deltaYflow_avg.mean() + deltaYflow_avg.mode())/2 ;
   
+
   ErrFlow = setpointflow - value;                                            //negative if temp is over setpoint. Positive it temp is under setupt
                                                                              //spDebug("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
                                                                              //if (abs(ErrFlow) < GainFlow) {
@@ -267,7 +268,37 @@ int getCleanTemp(int myID) {
       return temperature;
     }
     tries++;
-  } while (tries < 2);
+  } while (tries < 1);
+
+  return -1;
+}
+
+int getCleanOpticaFlow(int myID) {
+  int r;
+  byte tries = 0;
+  do {
+    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
+    SPI.begin();
+    if (BeanOpticalFlowSensor.Initialized == false) {
+      Serial.println("Initializing");
+      if (!BeanOpticalFlowSensor.Initialize()) {
+        Serial.println("Initialization of the flow sensor failed");
+      }
+    }
+    BeanOpticalFlowSensor.readMotionCountY(&r);
+    if (r < 100) {
+      if (r > -1) {
+         return r;
+      }
+    } else {
+      spDebug("High bean flow value:" + String(r));
+      //spDebugxClose
+      YflowReadingskipped++;
+    }
+    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
+    SPI.end();
+    tries++;
+  } while (tries < 1);
 
   return -1;
 }

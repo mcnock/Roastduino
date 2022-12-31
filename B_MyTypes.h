@@ -73,10 +73,10 @@ typedef struct indexed10strings {
 
 typedef struct buttontext {
   int butID;
-  char label[7];
-  char tip1[7];
-  char tip2[7];
-  char tip3[7];
+  char label[8];
+  char tip1[12];
+  char tip2[12];
+  char tip3[12];
   uint16_t color;
   byte action;
   byte adjustmentvalueset;

@@ -36,27 +36,14 @@ void theloop() {
   }
 
   if (ReadBeanOpticalFlowRateFlag == true) {
-    //double start = millis();
-    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
-    SPI.begin();
-    if (BeanOpticalFlowSensor.Initialized == false) {
-      Serial.println("Initializing");
-      if (!BeanOpticalFlowSensor.Initialize()) {
-        Serial.println("Initialization of the flow sensor failed");
-      }
-    }
-    BeanOpticalFlowSensor.readMotionCountY(&deltaYflow);
-    if (deltaYflow < 100) {
+      deltaYflow = getCleanOpticaFlow(1);
       if (deltaYflow > -1) {
+      
         deltaYflow_avg.push(deltaYflow);
+        spDebug2("deltaY:" + String(deltaYflow) + ",mean:" + String(deltaYflow_avg.mean()) + ",mode:"  + String(deltaYflow_avg.mode()) + ",size:" + String(deltaYflow_avg.getSize()) );
+        spDebugxClose;
       }
-    } else {
-      spDebug1("High bean flow value:" + String(deltaYflow));
-      spDebugxClose
-    }
-    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
-    SPI.end();
-    //spDebug("time to read flow:" + String(millis() - start));
+    
   }
   if (ReadSensorInSequenceFlag > -1) {  //read thermocouples, 1 per loop
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);

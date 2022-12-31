@@ -608,7 +608,8 @@ byte CoilAmps = 0;
 
 boolean ReadBeanFlowRate = false;
 
-Average<int16_t> deltaYflow_avg(100,20);
+Average<byte> deltaYflow_avg(150,20);
+int YflowReadingskipped;
 
 int fastloopmillseconds = 50;
 

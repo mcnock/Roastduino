@@ -30,21 +30,25 @@ void processSerial(Stream &Serial) {
           if (incomingByte2 == 63) {
             Serial.print(F("Saxxx TimeSubSecondDuration:"));  //a
             Serial.println(TimeSubSecondDuration);
-            Serial.print(F("Sbxxx PIDIntegralUdateTimeValueTemp:")); //b
+            Serial.print(F("Sbxxx PIDIntegralUdateTimeValueTemp:"));  //b
             Serial.println(PIDIntegralUdateTimeValueTemp);
             Serial.print(F("Scxxx PIDIntegralUdateTimeValueFlow:"));  //c
             Serial.println(PIDIntegralUdateTimeValueFlow);
             Serial.print(F("Sdxxx PIDDutyWindowSizeTemp:"));  //d
             Serial.println(PIDDutyWindowSizeTemp);
             Serial.print(F("Sexxx deltaYflow_avg.getSize():"));  //e
-            Serial.println(deltaYflow_avg.getSize());
-            Serial.print(F("Sfxxx TimeReadThermoDuration:")); //f
-            Serial.println(TimeReadThermoDuration); 
-            Serial.print(F("Sgxxx PercentChangeFlow:")); //g
+            Serial.print(deltaYflow_avg.getSize());
+            Serial.print(" of ");
+            Serial.println(deltaYflow_avg.getSizeMax());
+            Serial.print(F("Sfxxx TimeReadThermoDuration:"));  //f
+            Serial.println(TimeReadThermoDuration);
+            Serial.print(F("Sgxxx PercentChangeFlow:"));  //g
             Serial.println(PercentChangeFlow);
-            Serial.print(F("Shxxx TBeanAvgRoll.getSize():")); //h
-            Serial.println(TBeanAvgRoll.getSize());
-            Serial.print(F("ihxxx _debugbyte:"));  //i
+            Serial.print(F("Shxxx TBeanAvgRoll.getSize():"));  //h
+            Serial.print(TBeanAvgRoll.getSize());
+            Serial.print(" of ");
+            Serial.println(TBeanAvgRoll.getSizeMax());
+            Serial.print(F("ihxxx _debugbyte (1 to 4):"));  //i
             Serial.println(_debugbyte);
           } else {
             delay(100);
@@ -133,8 +137,6 @@ void processSerial(Stream &Serial) {
                     Serial.println(_debugbyte);  //Serial.println();
                     break;
                   }
-
-                  
               }
             } else {
               Serial.println("No value found following the Sx string you typed");
