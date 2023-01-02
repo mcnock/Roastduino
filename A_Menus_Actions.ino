@@ -146,14 +146,18 @@ void ProcessHorFanMenu(int i) {
       break;
   }
   if (change != 0) {
-
     switch (State) {
       case STATEROASTING:
       case STATEFANONLY:
       case STATECOOLING:
-        FanDeviation = FanDeviation + change;
-        SetAndSendFanPWMForATime(RoastMinutes);
+        if (FanLegacy == true) {
+          FanDeviation = FanDeviation + change;
+          SetAndSendFanPWMForATime(RoastMinutes);
+        }
+        else
+        {
 
+        }
         break;
     }
   }
@@ -197,17 +201,16 @@ void DrawVMenu(int iMenu) {
         myGLCD.setColor(GRAY);
         myGLCD.printNumI(HorScaleLineYValue[i], 800 - 30, HorScaleLineY[i] - 5);
       }
-      UpdateFanPWMValuesDisplay(All);
-      DrawHorFanMenu();
+      if (FanLegacy){
+        UpdateFanPWMValuesDisplay(All);
+        DrawHorFanMenu();
+      }
     }
   }
 
   DrawMenuButtons(myButtonVertMenus[iMenu]);
 
-  //if (bRedraw) {
-  //  UpdateOpDetailsDisplayArea(All);
-  //  graphFanProfile();
-  //}
+
 }
 
 void ProcessVmenuButtonClick() {
@@ -455,7 +458,6 @@ void DrawMenuButtons(buttonsetdef& butdefset) {
     //SpDebug("cacled menu button count for menu " + String(butdefset.menuID) + " is:" + String(butdefset.ButtonCount));
   } else {
     //SpDebug("found a menu button count for menu " + String(butdefset.menuID) + " is:" + String(butdefset.ButtonCount));
-
     for (int i = 0; i < butdefset.ButtonCount; i++) {
       DrawMenuButton(butdefset, i, false);
     }

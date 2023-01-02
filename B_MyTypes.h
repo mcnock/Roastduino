@@ -23,15 +23,17 @@ typedef struct point {
   int y = -1;
 } point;
 
+typedef struct opticalflow {
+  PMW3901 sensor;
+  int YflowReadingskipped;
+} opticalflow;
+
+
 typedef struct thermocouple {
   MAX6675 sensor;
   int Readingskipped;
 } thermocouple;
 
-typedef struct opticalsensor {
-  //Bitcraze_PMW3901 sensor;
-  int Readingskipped;
-} opticalsensor;
 
 
 typedef struct graphhistory {

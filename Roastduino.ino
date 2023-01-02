@@ -1,10 +1,13 @@
+#include <digitalWriteFast.h>
+
 #include <SPI.h>
 #include <EEPROM.h>
 //#include <UTouchCD.h>
 #include <Chrono.h>
 #include <Time.h>
 #include <TimeLib.h>
-#include <max6675.h>
+#include "src/max6675.h"
+#include "src/PMW3901.h"
 #include "Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
@@ -14,7 +17,6 @@
 #include <stdio.h>  // for function sprintf
 #include <stdarg.h>
 #include <Arduino.h>
-#include "Bitcraze_PMW3901.h"
 
 #ifdef __arm__
 // should use uinstd.h to define sbrk but Due causes a conflict
@@ -72,6 +74,8 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define spDebug2 if(_debugbyte==2){Serial.println
 #define spDebug3 if(_debugbyte==3){Serial.println
 #define spDebug4 if(_debugbyte==4){Serial.println
+#define spDebug5 if(_debugbyte==5){Serial.println
+
 
 byte _debugbyte = 0;
 
@@ -80,7 +84,7 @@ byte _debugbyte = 0;
 
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
-#define SSR2_p6 6
+#define SSR2_p6 6 
 #define SSR1_p7 7
 //#define available 10
 //#define available 12
@@ -138,8 +142,6 @@ byte SSR1Status = 0;
 byte SSR2Status = 0;
 
 const ssrstatus SSRStatus[4] = {" NA"," ON","PWM","OFF"};
-
-
 //EPROM MEMORORY
 
 #define INTEGRALTEMP_EP 0
@@ -244,7 +246,7 @@ const char* StateName[] = {
 };
 
 
-Bitcraze_PMW3901 beanflow(10);
+
 int16_t deltaYflow, setpointflow;
 
 #define PROFILELINEID 0
@@ -481,6 +483,9 @@ graphhistory GraphHistory[] = {
   { COILLINEID, 5, 0,160, CoilPixelHistory }
 };
 
+//used when drawing lines. We support up to 3 lines (see line ID constants)
+point LastforLineID[GRAPHLINECOUNT];
+
 const int FanGraphXStart = 0;    //starting col of fan graph - a little past half
 const int FanGraphXWidth = 720;  //uses 1/4 of screen width
 const int FanGraphHeight = 340;  //uses 1/4 of screen width
@@ -514,7 +519,7 @@ boolean PIDNewWindowFlow;
 float ErrIFlow = 0;
 float ErrFlow = 0;
 double DutyFan = - 99;
-unsigned int PIDIntegralUdateTimeValueFlow = 1000;
+unsigned int PIDIntegralUdateTimeValueFlow = 500;
 unsigned int PIDWindowSizeFlow;
 
 boolean setpointschanged = true;
@@ -546,10 +551,10 @@ char _debug;
 Chrono TouchTimer(Chrono::MILLIS);
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
-double TimeSubSecondNext = 0;
-double TimeSubSecondDuration = 50;
-double TimeReadThermoNext = 0;
-double TimeReadThermoDuration = 100;
+long TimeSubSecondNext = 0;
+long TimeSubSecondDuration = 10;
+long TimeReadThermoNext = 0;
+long TimeReadThermoDuration = 500;
 Chrono SerialInputTimer(Chrono::MILLIS);
 Chrono Serial1InputTimer(Chrono::MILLIS);
 Chrono ThreeSecondTimer(Chrono::MILLIS);
@@ -559,8 +564,8 @@ Chrono MeasureTempTimer(Chrono::MILLIS);
 
 
 //temps are read once per second
-Average<int> TBeanAvgRoll(50,10);
-Average<int> TCoilRoll(50,10);  //this is minute avg
+Average<int> TBeanAvgRoll(10);
+Average<int> TCoilRoll(10);  //this is minute avg
 
 
 //int OVERHEATFANCount;
@@ -581,10 +586,6 @@ char s6[6];
 char s5[5];
 
 char spFormat[6] = "%6.2F";
-//used when drawing lines. We support up to 3 lines (see line ID constants)
-
-point LastforLineID[GRAPHLINECOUNT];
-
 
 double RoastMinutes = 0;
 unsigned int RoastAcumHeat = 0;
@@ -597,23 +598,31 @@ int TCoil;
 int TBean1;
 int TBean2;
 
+float FanCoolingBoostPercent = 1.5;
+
 bool ReadCoilCurrentFlag = false;
 bool ReadBeanOpticalFlowRateFlag = false;
+bool FanLegacy = false;
 
-Bitcraze_PMW3901 BeanOpticalFlowSensor(BEAN_OPTICAL_FLOW_SPI_SSp48);
+PMW3901 BeanOpticalFlow1(BEAN_OPTICAL_FLOW_SPI_SSp48);
+PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp49);
+opticalflow BeanOpticalFlowSensors[] = {BeanOpticalFlow1,0,BeanOpticalFlow2,0  };
+byte BeanOpticalFlowReadsPerSecond;
+byte BeanOpticalFlowReadsPerSecondCalcing;
+boolean ReadBeanFlowRate = false;
+Average<byte> deltaYflow_avg(50);
+byte TempSensorReadsPerSecond;
+byte TempSensorReadsPerSecondCalcing;
 
 char debugflag = ' ';
 
 byte CoilAmps = 0;
 
-boolean ReadBeanFlowRate = false;
 
-Average<byte> deltaYflow_avg(150,20);
-int YflowReadingskipped;
+//int fastloopmillseconds = 50;
 
-int fastloopmillseconds = 50;
-
-double MaxVoltage, MaxVread;
+//double MaxVoltage;
+double MaxVread;
 
 
 int TBeanAvg;
@@ -626,8 +635,11 @@ boolean HasDisplay = true;
 void setup() {
   //Serial1.begin(9600);
   Serial.begin(9600);
+
   Serial.println("setup starting");
-  // Pin Conffaiguration
+  //set pmw to slow hrz
+  TCCR4B = TCCR4B & B11111000 | B00000101; 
+ 
   pinMode(FANRELAYVCCp_3, OUTPUT);
   pinMode(FANRELAYp_2, OUTPUT);
   digitalWrite(FANRELAYVCCp_3, HIGH);  //5V
@@ -665,7 +677,9 @@ void setup() {
   delay(1000);
   MaxVread = 512;  //this is the expected half way value
   RoastTime.stop();
+  deltaYflow_avg._size = 10;
   byte SetDefaults;
+  
   EEPROM.get(SETDEFAULT_EP, SetDefaults);
   if (SetDefaults != 1) {
     //spDebug("Setting defaults with SetDefault value:" + String(SetDefaults));
@@ -776,7 +790,10 @@ void setup() {
 
   graphProfile();
   Serial.println("loop is starting...");
+
 }
+
+
 
 
 void loop() {

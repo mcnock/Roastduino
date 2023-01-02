@@ -113,12 +113,16 @@ int YforAFan(int fanpwm) {
 void SetFanFromOpticalSensorPID() {
 
   float value;
-  value = (deltaYflow_avg.mean() + deltaYflow_avg.mode())/2 ;
-  
+  value = deltaYflow_avg.mean();
 
-  ErrFlow = setpointflow - value;                                            //negative if temp is over setpoint. Positive it temp is under setupt
-                                                                             //spDebug("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
-                                                                             //if (abs(ErrFlow) < GainFlow) {
+  if (State == STATECOOLING) {
+    ErrFlow = setpointflow - value;
+  } else {
+    ErrFlow = (setpointflow * FanCoolingBoostPercent) - value;
+  }
+  //negative if temp is over setpoint. Positive it temp is under setupt
+  //spDebug("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
+  //if (abs(ErrFlow) < GainFlow) {
   if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every 5 seconds we add the err to be a sum of err
                                                                              //if (ErrIFlow < GainFlow) {
     IntegralSumFlow = IntegralSumFlow + ErrFlow;
@@ -126,7 +130,7 @@ void SetFanFromOpticalSensorPID() {
       IntegralSumFlow = 0;
     }
 
-    ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
+    ErrIFlow = (IntegralSumFlow * IntegralFlow / 10);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
     //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);
     PIDIntegralUdateTimeFlow.restart(0);
     //}
@@ -137,12 +141,12 @@ void SetFanFromOpticalSensorPID() {
   if (DutyFanLast > 0) {
     PercentChange = (DutyFanTemp - DutyFanLast) / DutyFanLast;
   }
-  if (abs(PercentChange) > PercentChangeFlow) {
+  if (abs(PercentChange) > (PercentChangeFlow / 10)) {
 
     if (DutyFanTemp > DutyFanLast) {
-      DutyFan = (DutyFanLast * 1.01);
+      DutyFan = DutyFanLast * (1 + PercentChangeFlow / 10);
     } else {
-      DutyFan = (DutyFanLast * .99);
+      DutyFan = DutyFanLast * (1 - PercentChangeFlow / 10);
     }
   } else {
     DutyFan = DutyFanTemp;
@@ -151,7 +155,9 @@ void SetFanFromOpticalSensorPID() {
     DutyFan = 1.0;
   }
   DutyFanLast = DutyFan;
-  spDebug1("Avg" + String(deltaYflow_avg.getSize()) + ":" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
+  spDebug1("DeltaY:" + String(deltaYflow) + ",mean:" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
+  spDebugxClose;
+  spDebug2("DeltaY:" + String(deltaYflow) + ",mean:" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
   spDebugxClose;
   sendFan_D_Wire();
 }
@@ -274,32 +280,30 @@ int getCleanTemp(int myID) {
 }
 
 int getCleanOpticaFlow(int myID) {
-  int r;
+  int16_t r;
   byte tries = 0;
-  do {
-    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
-    SPI.begin();
-    if (BeanOpticalFlowSensor.Initialized == false) {
-      Serial.println("Initializing");
-      if (!BeanOpticalFlowSensor.Initialize()) {
-        Serial.println("Initialization of the flow sensor failed");
-      }
-    }
-    BeanOpticalFlowSensor.readMotionCountY(&r);
-    if (r < 100) {
-      if (r > -1) {
-         return r;
-      }
+  //do {
+  tries++;
+  SPI.begin();
+  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
+  if (BeanOpticalFlowSensors[myID].sensor.Initialized == false) {
+    Serial.println("Initializing flow sensor");
+    if (!BeanOpticalFlowSensors[myID].sensor.Initialize()) {
+      Serial.println("Initialization of the flow sensor failed");
     } else {
-      spDebug("High bean flow value:" + String(r));
-      //spDebugxClose
-      YflowReadingskipped++;
+      Serial.println(" Success");
     }
-    digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
-    SPI.end();
-    tries++;
-  } while (tries < 1);
-
+  }
+  BeanOpticalFlowSensors[myID].sensor.readMotionCountY(&r);
+  if (r < 100) {
+    if (r > -1) {
+      return r;
+    }
+  } else {
+    BeanOpticalFlowSensors[myID].YflowReadingskipped++;
+  }
+  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
+  SPI.end();
   return -1;
 }
 
@@ -370,3 +374,4 @@ int freeMemory() {
   return __brkval ? &top - __brkval : &top - __malloc_heap_start;
 #endif  // __arm__
 }
+

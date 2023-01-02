@@ -1,45 +1,27 @@
-/* PMW3901 Arduino driver
- * Copyright (c) 2017 Bitcraze AB
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to
- * deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.
- */
 
-#include "Bitcraze_PMW3901.h"
+#include "PMW3901.h"
 
 #include <SPI.h>
 
-#define CHIP_ID         0x49  // 01001001
+#define CHIP_ID 0x49          // 01001001
 #define CHIP_ID_INVERSE 0xB6  // 10110110
 
-Bitcraze_PMW3901::Bitcraze_PMW3901(uint8_t cspin)
-  : _cs(cspin)
-{ Initialized = false;}
-
-boolean Bitcraze_PMW3901::Initialize(void) {
+PMW3901::PMW3901(uint8_t cspin)
+  : _cs(cspin) {
+  Initialized = false;
+}
+boolean PMW3901::Initialize(void) {
   // Setup SPI port
   // Power on reset
   registerWrite(0x3A, 0x5A);
   delay(5);
   // Test the SPI communication, checking chipId and inverse chipId
-  uint8_t chipId = registerRead(0x00);
-  uint8_t dIpihc = registerRead(0x5F);
+  delay(100);
 
+  uint8_t chipId = registerRead(0x00);
+  delay(100);
+
+  uint8_t dIpihc = registerRead(0x5F);
   if (chipId != CHIP_ID || dIpihc != CHIP_ID_INVERSE) {
     Serial.println("here12");
     return false;
@@ -57,40 +39,32 @@ boolean Bitcraze_PMW3901::Initialize(void) {
   Initialized = true;
   return true;
 }
-
 // Functional access
-
-void Bitcraze_PMW3901::readMotionCount(int16_t *deltaX, int16_t *deltaY)
-{
+void PMW3901::readMotionCount(int16_t *deltaX, int16_t *deltaY) {
   registerRead(0x02);
   *deltaX = ((int16_t)registerRead(0x04) << 8) | registerRead(0x03);
   *deltaY = ((int16_t)registerRead(0x06) << 8) | registerRead(0x05);
 }
-void Bitcraze_PMW3901::readMotionCountY( int16_t *deltaY)
-{
+void PMW3901::readMotionCountY(int16_t *deltaY) {
   registerRead(0x02);
   *deltaY = ((int16_t)registerRead(0x06) << 8) | registerRead(0x05);
 }
-
 // Low level register access
-void Bitcraze_PMW3901::registerWrite(uint8_t reg, uint8_t value) {
+void PMW3901::registerWrite(uint8_t reg, uint8_t value) {
   reg |= 0x80u;
   SPI.transfer(reg);
   delayMicroseconds(20);
   SPI.transfer(value);
- }
-
-uint8_t Bitcraze_PMW3901::registerRead(uint8_t reg) {
+}
+uint8_t PMW3901::registerRead(uint8_t reg) {
   reg &= ~0x80u;
   SPI.transfer(reg);
   delayMicroseconds(20);
   uint8_t value = SPI.transfer(0);
   return value;
 }
-
 // Performance optimisation registers
-void Bitcraze_PMW3901::initRegisters()
-{
+void PMW3901::initRegisters() {
   registerWrite(0x7F, 0x00);
   registerWrite(0x61, 0xAD);
   registerWrite(0x7F, 0x03);
@@ -167,9 +141,7 @@ void Bitcraze_PMW3901::initRegisters()
   registerWrite(0x5A, 0x50);
   registerWrite(0x40, 0x80);
 }
-
-void Bitcraze_PMW3901::setLed(bool ledOn)
-{
+void PMW3901::setLed(bool ledOn) {
   registerWrite(0x7f, 0x14);
   registerWrite(0x6f, ledOn ? 0x1c : 0x00);
   registerWrite(0x7f, 0x00);

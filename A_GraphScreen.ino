@@ -175,9 +175,11 @@ void graphProfile() {
     DrawTempSetPoint(xSetPoint, LineColorforLineID[PROFILELINEID], Regular);
   }
   DrawHorControlMenu();
-  DrawHorFanMenu();
-  graphFanProfile();
-
+  
+  if (FanLegacy) {
+    DrawHorFanMenu();
+    graphFanProfile();
+  }
   DrawVMenu(MenuStatus.VmenuShowing);
 
   UpdateErrorDisplayArea(All);
@@ -187,9 +189,11 @@ void graphProfile() {
   UpdateProgressDisplayArea(All);
   UpdateConfigsDisplayArea(All);
   DrawLineFromHistoryArray(ROLLAVGLINEID);
+  DrawLineFromHistoryArray(COILLINEID);
 }
 
 void graphFanProfile() {
+
   PixelsPerMinFan = (float)FanGraphXWidth / (float)MySetPoints[SetPointCount - 1].Minutes;
   if (true == false) {
     myGLCD.setFont(SmallFont);
@@ -420,11 +424,9 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
   int col2 = col + (myGLCD.getFontXsize() * 9);  //number
   if (OpDetailDisplay.xmax == 0) {
     OpDetailDisplay.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    OpDetailDisplay.ymax = row + (rowheight * 11) + 2;
+    OpDetailDisplay.ymax = row + (rowheight * 12) + 2;
   }
-
   FreeMemory = freeMemory();
-
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bValuesOnly == false) {
@@ -459,6 +461,10 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     myGLCD.print(F("lp/sec:"), col, row);
     myGLCD.printNumI(LoopsPerSecond, col2, row, 5, ' ');
     row = row + rowheight;
+    myGLCD.print(F("T&F/s:"), col, row);
+    myGLCD.printNumI(TempSensorReadsPerSecond, col2 - (myGLCD.getFontXsize() * 2), row, 3, ' ');
+    myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, col2 + (myGLCD.getFontXsize() * 2), row, 3, ' ');
+    row = row + rowheight;
     myGLCD.print(F("Terrs:"), col, row);
     int R = TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
     myGLCD.printNumI(R, col2, row, 5, ' ');
@@ -467,9 +473,9 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     myGLCD.printNumI(FreeMemory, col2, row, 5, ' ');
     row = row + rowheight;
     myGLCD.print(F("SSRs"), col, row);
-    myGLCD.print(SSRStatus[SSR1Status].status,col2 - (myGLCD.getFontXsize() * 2),row);
-    myGLCD.print(SSRStatus[SSR2Status].status,col2 + (myGLCD.getFontXsize() * 2 ),row);
-   
+    myGLCD.print(SSRStatus[SSR1Status].status, col2 - (myGLCD.getFontXsize() * 2), row);
+    myGLCD.print(SSRStatus[SSR2Status].status, col2 + (myGLCD.getFontXsize() * 2), row);
+
   } else {  //this is copy of above with myLCD commented out
     //myGLCD.print(F("Tavg:"), col, row);
     // myGLCD.print(F("Oper Detail"), col, row);
@@ -494,6 +500,10 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     //myGLCD.print(F("lps/sec:"), col, row);
     myGLCD.printNumI(LoopsPerSecond, col2, row, 5, ' ');
     row = row + rowheight;
+    //myGLCD.print(F("T&F/s:"), col, row);
+    myGLCD.printNumI(TempSensorReadsPerSecond, col2 - (myGLCD.getFontXsize() * 2), row, 3, ' ');
+    myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, col2 + (myGLCD.getFontXsize() * 2), row, 3, ' ');
+    row = row + rowheight;
     //myGLCD.print(F("Skiptemps:"), col, row);
     int R = TempReadingskipped[0] + TempReadingskipped[1] + TempReadingskipped[2];
     myGLCD.printNumI(R, col2, row, 5, ' ');
@@ -502,10 +512,8 @@ void UpdateOpDetailsDisplayArea(boolean bValuesOnly) {
     myGLCD.printNumI(FreeMemory, col2, row, 5, ' ');
     row = row + rowheight;
     myGLCD.print(F("SSRs"), col, row);
-    myGLCD.print(SSRStatus[SSR1Status].status,(col2 - (myGLCD.getFontXsize() * 2)),row);
-    myGLCD.print(SSRStatus[SSR2Status].status,(col2 + (myGLCD.getFontXsize() * 2 )),row);
-   
-
+    myGLCD.print(SSRStatus[SSR1Status].status, (col2 - (myGLCD.getFontXsize() * 2)), row);
+    myGLCD.print(SSRStatus[SSR2Status].status, (col2 + (myGLCD.getFontXsize() * 2)), row);
   }
 }
 
@@ -543,38 +551,28 @@ void StartLinebyTemp(int temp, int lineID) {
 }
 
 void StartLinebyXAndY(uint16_t X, uint16_t Y, int lineID) {
-
   LastforLineID[lineID].x = X;
   LastforLineID[lineID].y = Y;
-
   int HistoryID = GetHistoryIDfromLineID(lineID);
   if (HistoryID > -1) {
-    //SpDebug("Reseting history for lineID:" + String(lineID));
     for (int i = 0; i < GraphHistory[HistoryID].ArraySize; i++) {
       GraphHistory[HistoryID].Pixels[i].y = 0;
     }
     GraphHistory[HistoryID].Pixels[0].x = map(X, 0, 800, 0, 255);
     GraphHistory[HistoryID].Pixels[0].y = map(Y, 0, 480, 0, 255);
     GraphHistory[HistoryID].PixelsP = 0;
-    //GraphHistory[HistoryID].SkipCount = 0;
-    //GraphHistory[HistoryID].LastUnMappedXPixelLogged = 0;
   } else {
     //Serial.print(F("No history to reset starting lineID"));Serial.println(lineID);
   }
 }
 
 void AddLinebyXY(uint16_t& newX, uint16_t& newY, int lineID) {
-  // Serial.print("Adding line by xy line id:");Serial.println(lineID);
   myGLCD.setColor(LineColorforLineID[lineID]);  //LineColorforLineID[lineID]);
-  //x,y,x,y
-  //if (lineID == ROLLMAXLINEID){
-  //  Serial.print("Adding line by xy line id:");Serial.println(lineID);
-  //SpDebug("Adding to lineid:\t" + String(lineID) + "\t from x:" + String(LastforLineID[lineID].x) + "\ty:" + String((int)LastforLineID[lineID].y) + "\t to x:" + String(newX) + "\t y:" + String(newY));
-
+  SpDebug("Adding to lineid:\t" + String(lineID) + "\t from x:" + String(LastforLineID[lineID].x) + "\ty:" + String((int)LastforLineID[lineID].y) + "\t to x:" + String(newX) + "\t y:" + String(newY));
   myGLCD.drawLine((int)LastforLineID[lineID].x, (int)LastforLineID[lineID].y, (int)newX, (int)newY);
-  //if (LineBoldforLineID[lineID]) {
-  //  BoldLine(LastforLineID[lineID].x, LastforLineID[lineID].y, newX, newY);
-  //}
+  if (LineBoldforLineID[lineID]) {
+    BoldLine(LastforLineID[lineID].x, LastforLineID[lineID].y, newX, newY);
+  }
   LastforLineID[lineID].x = newX;
   LastforLineID[lineID].y = newY;
   int HistoryID = GetHistoryIDfromLineID(lineID);
@@ -585,7 +583,7 @@ void AddLinebyXY(uint16_t& newX, uint16_t& newY, int lineID) {
         GraphHistory[HistoryID].PixelsP++;
         //SpDebug("Adding to lineid:\t" + String(lineID) + "\tx:" + String(newX) + "\ty:" + String(newY));
         GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].x = map(newX, 0, 800, 0, 255);
-        GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].y = map(newY, 0, 480, 0, 255);    
+        GraphHistory[HistoryID].Pixels[GraphHistory[HistoryID].PixelsP].y = map(newY, 0, 480, 0, 255);
       } else {
         Serial.print(F("ERROR:LastTemp array size exceeded for LineID:"));
         Serial.println(lineID);
@@ -602,7 +600,6 @@ void AddLinebyXY(uint16_t& newX, uint16_t& newY, int lineID) {
 void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   uint16_t newY = YforATemp(temp);
   uint16_t newX = XforATime(timemins);
-
   AddLinebyXY(newX, newY, lineID);
 }
 
@@ -642,21 +639,21 @@ void DrawLineFromHistoryArray(int LineID) {
   if (HistoryID > -1) {
     //SpDebug("Redrawing lineid:\t" + String(LineID));
     myGLCD.setColor(LineColorforLineID[LineID]);
-    LastforLineID[LineID].x = map(GraphHistory[HistoryID].Pixels[0].x,0,255,0,800);
-    LastforLineID[LineID].y = map(GraphHistory[HistoryID].Pixels[0].y,0,255,0,480);
+    LastforLineID[LineID].x = map(GraphHistory[HistoryID].Pixels[0].x, 0, 255, 0, 800);
+    LastforLineID[LineID].y = map(GraphHistory[HistoryID].Pixels[0].y, 0, 255, 0, 480);
     for (int i = 1; i < GraphHistory[HistoryID].PixelsP; i++) {
       //if (GraphHistory[HistoryID].Pixels[i].y > 0) {
-        int xMapped =map(GraphHistory[HistoryID].Pixels[i].x,0,255,0,800);    
-        int yMapped = map(GraphHistory[HistoryID].Pixels[i].y,0,255,0,480);
-        myGLCD.drawLine((int)LastforLineID[LineID].x, (int)LastforLineID[LineID].y, xMapped, yMapped );
-        if (LineBoldforLineID[LineID]) {
-          BoldLine(LastforLineID[LineID].x, LastforLineID[LineID].y, GraphHistory[HistoryID].Pixels[i].x, GraphHistory[HistoryID].Pixels[i].y);
-        }
-        LastforLineID[LineID].x = xMapped;
-        LastforLineID[LineID].y = yMapped;
+      int xMapped = map(GraphHistory[HistoryID].Pixels[i].x, 0, 255, 0, 800);
+      int yMapped = map(GraphHistory[HistoryID].Pixels[i].y, 0, 255, 0, 480);
+      myGLCD.drawLine((int)LastforLineID[LineID].x, (int)LastforLineID[LineID].y, xMapped, yMapped);
+      if (LineBoldforLineID[LineID]) {
+        BoldLine(LastforLineID[LineID].x, LastforLineID[LineID].y, GraphHistory[HistoryID].Pixels[i].x, GraphHistory[HistoryID].Pixels[i].y);
+      }
+      LastforLineID[LineID].x = xMapped;
+      LastforLineID[LineID].y = yMapped;
       //} else {
-        //SpDebug("Exit ReDraw lineid:" + String(LineID) +  " at:" + String(i));
-        //break;
+      //SpDebug("Exit ReDraw lineid:" + String(LineID) +  " at:" + String(i));
+      //break;
       //}
     }
     return;
@@ -667,7 +664,7 @@ void DrawLineFromHistoryArray(int LineID) {
 }
 
 void DrawFanSetPoint(int setpoint, uint16_t color, boolean beingmoved) {
-  
+
   myGLCD.setFont(SmallFont);
   int Y = YforAFan(FanSetPoints[setpoint].PWM);
   int X = XforAFanMin(FanSetPoints[setpoint].Minutes);
@@ -706,7 +703,7 @@ void DrawFanSetPoint(int setpoint, uint16_t color, boolean beingmoved) {
 
   if (beingmoved == true) {
     myGLCD.setColor(BLACK);
-    myGLCD.fillRect(col1 - 2, row1 - 6 , (col1 + myGLCD.getFontXsize() * 3) + 1, (row2 + (myGLCD.getFontXsize() * 2) + 4));
+    myGLCD.fillRect(col1 - 2, row1 - 6, (col1 + myGLCD.getFontXsize() * 3) + 1, (row2 + (myGLCD.getFontXsize() * 2) + 4));
     myGLCD.setColor(AQUA);
     myGLCD.drawRect(col1 - 2, row1 - 5, (col1 + myGLCD.getFontXsize() * 3) + 1, (row2 + (myGLCD.getFontXsize() * 2) + 4));
   }
@@ -715,7 +712,6 @@ void DrawFanSetPoint(int setpoint, uint16_t color, boolean beingmoved) {
   myGLCD.fillCircle(X + xOffsetCircle + xOffsetmoved, Y, 5);
   myGLCD.printNumI(FanSetPoints[setpoint].PWM, col1, row1);
   myGLCD.printNumI(FanSetPoints[setpoint].Minutes, col2, row2);
-
 }
 
 void DrawTempSetPoint(int setpoint, uint16_t color, boolean beingmoved) {
@@ -774,12 +770,12 @@ void DrawTempSetPoint(int setpoint, uint16_t color, boolean beingmoved) {
   }
 }
 
-void AddPointbyTimeAndTempAndLineID(double timemins, int temp, int lineID, int radius) {
+void AddPointbyTimeAndTemp(double timemins, int temp, int lineID, int radius) {
   uint16_t newX = XforATime(timemins);
   uint16_t newY = YforATemp(temp);
   myGLCD.setColor(LineColorforLineID[lineID]);
   //myGLCD.setColor(0,150,0);
-  //Serial.print('a');Serial.print(newX);Serial.print( "   ");;Serial.print(timemins);Serial.print( "   ");Serial.println(temp);
+  spDebug("addingpoint x:" + String(newX) + "  y:" + String(newY));
   myGLCD.fillCircle(newX, newY, radius);
   LastforLineID[lineID].x = newX;
   LastforLineID[lineID].y = newY;
