@@ -60,21 +60,21 @@ boolean DetectTouch() {
       return true;
       break;
   }
-  if (InRect(Xtouch, Ytouch, &myHorControlMenuDef.bounding)) {
-    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &myHorControlMenuDef);
-    MenuStatus.TouchButtonSet = &myHorControlMenuDef;
+  if (InRect(Xtouch, Ytouch, &HorControlMenuDef.bounding)) {
+    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &HorControlMenuDef);
+    MenuStatus.TouchButtonSet = &HorControlMenuDef;
     MenuStatus.IsVmenu = false;
     TouchStatus.objectpress = PressMenu;
     OutlineClickedButton(WHITE);
-  } else if (InRect(Xtouch, Ytouch, &myHorFanButtonControl.bounding)) {
-    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &myHorFanButtonControl);
-    MenuStatus.TouchButtonSet = &myHorFanButtonControl;
+  } else if (InRect(Xtouch, Ytouch, &HorFanMenuDef.bounding)) {
+    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &HorFanMenuDef);
+    MenuStatus.TouchButtonSet = &HorFanMenuDef;
     MenuStatus.IsVmenu = false;
     TouchStatus.objectpress = PressMenu;
     OutlineClickedButton(WHITE);
-  } else if (InRect(Xtouch, Ytouch, &myButtonVertMenus[MenuStatus.VmenuShowing].bounding)) {
-    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &myButtonVertMenus[MenuStatus.VmenuShowing]);
-    MenuStatus.TouchButtonSet = &myButtonVertMenus[MenuStatus.VmenuShowing];
+  } else if (InRect(Xtouch, Ytouch, &VertMenuDefs[MenuStatus.VmenuShowing].bounding)) {
+    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &VertMenuDefs[MenuStatus.VmenuShowing]);
+    MenuStatus.TouchButtonSet = &VertMenuDefs[MenuStatus.VmenuShowing];
     MenuStatus.IsVmenu = true;
     TouchStatus.objectpress = PressMenu;
     OutlineClickedButton(WHITE);
@@ -86,7 +86,7 @@ boolean DetectTouch() {
     TouchStatus.dragx = 0;
     myGLCD.setColor(BLUE);
     myGLCD_drawRect(OpDetailDisplay);
-    //    spDebug("Starting drag with click at X" + String(Xtouch) + " Y" + String(Ytouch));
+    //    SPDEBUG("Starting drag with click at X" + String(Xtouch) + " Y" + String(Ytouch));
   } else if (InRect(Xtouch, Ytouch, &ConfigDisplay)) {
     TouchStatus.objectpress = PressCongurationBox;
     TouchStatus.Xdown = Xtouch;
@@ -95,7 +95,7 @@ boolean DetectTouch() {
     TouchStatus.dragx = 0;
     myGLCD.setColor(BLUE);
     myGLCD_drawRect(ConfigDisplay);
-    //    spDebug("Starting drag with click at X" + String(Xtouch) + " Y" + String(Ytouch));
+    //    SPDEBUG("Starting drag with click at X" + String(Xtouch) + " Y" + String(Ytouch));
   }
   if (TouchStatus.objectpress > 0) {
     return true;

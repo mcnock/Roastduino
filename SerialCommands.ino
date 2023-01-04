@@ -25,28 +25,28 @@ void processSerial(Stream &Serial) {
       case 83:  //S
         {
           if (incomingByte2 == 63) {
-            Serial.print(F("Saxxx TimeSubSecondDuration:"));  //a
-            Serial.println(TimeSubSecondDuration);
+            Serial.print(F("Saxxx TimeOpticalFlowDuration:"));  //a
+            Serial.println(TimeOpticalFlowDuration);
             Serial.print(F("Sbxxx PIDIntegralUdateTimeValueTemp:"));  //b
             Serial.println(PIDIntegralUdateTimeValueTemp);
             Serial.print(F("Scxxx PIDIntegralUdateTimeValueFlow:"));  //c
             Serial.println(PIDIntegralUdateTimeValueFlow);
             Serial.print(F("Sdxxx PIDDutyWindow register  OCR1A:"));  //d
             Serial.println(OCR1A);
-            Serial.print(F("Sexxx deltaYflow_avg._size:"));  //e
-            Serial.print(deltaYflow_avg._size);
+            Serial.print(F("Sexxx BeanYflow_avg._size:"));  //e
+            Serial.print(BeanYflow_avg._size);
             Serial.print(" of ");
-            Serial.println(deltaYflow_avg._sizemax);
+            Serial.println(BeanYflow_avg._sizemax);
             Serial.print(F("Sfxxx TimeReadThermoDuration:"));  //f
             Serial.println(TimeReadThermoDuration);
-            Serial.print(F("Sgxxx PercentChangeFlow:"));  //g
-            Serial.println(PercentChangeFlow);
+            Serial.print(F("Sgxxx MaxPercentChangeFlow:"));  //g
+            Serial.println(MaxPercentChangeFlow);
             Serial.print(F("Shxxx TBeanAvgRoll._size:"));  //h
             Serial.print(TBeanAvgRoll._size);
             Serial.print(" of ");
             Serial.println(TBeanAvgRoll._sizemax);
-            Serial.print(F("Sixxx _debugbyte (1 to 4):"));  //i
-            Serial.println(_debugbyte);
+            Serial.print(F("Sixxx Debugbyte (1 to 4):"));  //i
+            Serial.println(Debugbyte);
             Serial.print(F("jxxx FanCoolingBoostPercent:"));  //j
             Serial.println(FanCoolingBoostPercent);
           } else {
@@ -54,13 +54,13 @@ void processSerial(Stream &Serial) {
             if (Serial.available() > 0) {
               float n = Serial.parseFloat();
               switch (incomingByte2) {
-                case 97:  //a TimeSubSecondDuration
+                case 97:  //a TimeOpticalFlowDuration
                   {
-                    Serial.print(F("Set TimeSubSecondDuration from"));
-                    Serial.print(TimeSubSecondDuration);  //Serial.println();
-                    TimeSubSecondDuration = n;
+                    Serial.print(F("Set TimeOpticalFlowDuration from"));
+                    Serial.print(TimeOpticalFlowDuration);  //Serial.println();
+                    TimeOpticalFlowDuration = n;
                     Serial.print(F(" to:"));
-                    Serial.println(TimeSubSecondDuration);
+                    Serial.println(TimeOpticalFlowDuration);
                     break;
                   }
                 case 98:  //b PIDIntegralUdateTimeValueTemp
@@ -82,23 +82,14 @@ void processSerial(Stream &Serial) {
                     break;
                   }
 
-                case 100:  //d PIDDutyWindow register -  OCR1A
-                  {
-                    Serial.print(F("Set OCR1A from"));
-                    Serial.print(OCR1A);  //Serial.println();
-                    PIDDutyWindowSizeTemp = n;
-                    Serial.print(F(" to:"));
-                    Serial.println(OCR1A);  //Serial.println();
-                    break;
-                  }
-                case 101:  //e deltaYflow_avg._size
+                case 101:  //e BeanYflow_avg._size
                   {
                     Serial.print(F("Set flowAveraging._size from"));
-                    Serial.print(deltaYflow_avg._size);  //Serial.println();
-                    if (n > deltaYflow_avg._sizemax) { n = deltaYflow_avg._sizemax; }
-                    deltaYflow_avg._size = n;
+                    Serial.print(BeanYflow_avg._size);  //Serial.println();
+                    if (n > BeanYflow_avg._sizemax) { n = BeanYflow_avg._sizemax; }
+                    BeanYflow_avg._size = n;
                     Serial.print(F(" to:"));
-                    Serial.println(deltaYflow_avg._size);  //Serial.println();
+                    Serial.println(BeanYflow_avg._size);  //Serial.println();
                     break;
                   }
                 case 102:  //f TimeReadThermoDuration
@@ -110,13 +101,13 @@ void processSerial(Stream &Serial) {
                     Serial.println(TimeReadThermoDuration);  //Serial.println();
                     break;
                   }
-                case 103:  //g PercentChangeFlow
+                case 103:  //g MaxPercentChangeFlow
                   {
-                    Serial.print(F("Set PercentChangeFlow from"));
-                    Serial.print(PercentChangeFlow);  //Serial.println();
-                    PercentChangeFlow = n;
+                    Serial.print(F("Set MaxPercentChangeFlow from"));
+                    Serial.print(MaxPercentChangeFlow);  //Serial.println();
+                    MaxPercentChangeFlow = n;
                     Serial.print(F(" to:"));
-                    Serial.println(PercentChangeFlow);  //Serial.println();
+                    Serial.println(MaxPercentChangeFlow);  //Serial.println();
                     break;
                   }
                 case 104:  //h TBeanAvgRoll._size
@@ -129,13 +120,13 @@ void processSerial(Stream &Serial) {
                     Serial.println(TBeanAvgRoll._size);  //Serial.println();
                     break;
                   }
-                case 105:  //i _debugbyte
+                case 105:  //i Debugbyte
                   {
-                    Serial.print(F("Set _debugbyte from"));
-                    Serial.print(_debugbyte);  //Serial.println();
-                    _debugbyte = n;
+                    Serial.print(F("Set Debugbyte from"));
+                    Serial.print(Debugbyte);  //Serial.println();
+                    Debugbyte = n;
                     Serial.print(F(" to:"));
-                    Serial.println(_debugbyte);  //Serial.println();
+                    Serial.println(Debugbyte);  //Serial.println();
                     break;
                   }
                 case 106:  // FanCoolingBoostPercent
@@ -311,26 +302,26 @@ void processSerial(Stream &Serial) {
           switch (incomingByte2) {
             case 49:  //1
               {
-                serialOutPutStatusBySecond = !serialOutPutStatusBySecond;
+                SerialOutPutStatusBySecond = !SerialOutPutStatusBySecond;
                 Serial.print(F("1secondStatus:"));
-                Serial.println(serialOutPutStatusBySecond);
+                Serial.println(SerialOutPutStatusBySecond);
 
-                serialOutPutStatusBy3Seconds = false;
+                SerialOutPutStatusBy3Seconds = false;
                 break;
               }
             case 51:  //3
               {
-                serialOutPutStatusBy3Seconds = !serialOutPutStatusBy3Seconds;
+                SerialOutPutStatusBy3Seconds = !SerialOutPutStatusBy3Seconds;
                 Serial.print(F("3secondStatus:"));
-                Serial.println(serialOutPutStatusBySecond);
+                Serial.println(SerialOutPutStatusBySecond);
 
-                serialOutPutTempsBySecond = false;
+                SerialOutPutTempsBySecond = false;
                 break;
               }
             case 111:  //0
               {
-                serialOutPutStatusBySecond = false;
-                serialOutPutStatusBy3Seconds = false;
+                SerialOutPutStatusBySecond = false;
+                SerialOutPutStatusBy3Seconds = false;
                 Serial.println(F("Status by seconds off"));
                 break;
               }
@@ -372,33 +363,33 @@ void processSerial(Stream &Serial) {
           switch (incomingByte2) {
             case 49:  //1
               {
-                serialOutPutTempsBySecond = !serialOutPutTempsBySecond;
+                SerialOutPutTempsBySecond = !SerialOutPutTempsBySecond;
                 Serial.print(F("1secondtemps:"));
-                Serial.println(serialOutPutTempsBySecond);
+                Serial.println(SerialOutPutTempsBySecond);
 
-                serialOutPutTempsBy3Seconds = false;
+                SerialOutPutTempsBy3Seconds = false;
                 break;
               }
             case 51:  //3
               {
-                serialOutPutTempsBy3Seconds = !serialOutPutTempsBy3Seconds;
+                SerialOutPutTempsBy3Seconds = !SerialOutPutTempsBy3Seconds;
                 Serial.print(F("3secondtemps:"));
-                Serial.println(serialOutPutTempsBySecond);
+                Serial.println(SerialOutPutTempsBySecond);
 
-                serialOutPutTempsBySecond = false;
+                SerialOutPutTempsBySecond = false;
                 break;
               }
             case 111:  //0
               {
-                serialOutPutTempsBySecond = false;
-                serialOutPutTempsBy3Seconds = false;
+                SerialOutPutTempsBySecond = false;
+                SerialOutPutTempsBy3Seconds = false;
                 Serial.println(F("Temps by seconds off"));
                 break;
               }
             default:
               {
-                serialOutPutTempsBySecond = false;
-                serialOutPutTempsBy3Seconds = false;
+                SerialOutPutTempsBySecond = false;
+                SerialOutPutTempsBy3Seconds = false;
                 Serial.print(F("Bean1:"));
                 Serial.print(TBean1);
                 Serial.print(F(" Bean2:"));
@@ -408,16 +399,8 @@ void processSerial(Stream &Serial) {
                 Serial.print(F(" Coil"));
                 Serial.print(TCoil);
                 Serial.print(F(" Avg"));
-                Serial.print(TCoilRoll.mean());
-                Serial.print(F(" Skipped:"));
-                Serial.print(TempReadingskipped[1]);
-                Serial.print(F("/"));
-                Serial.print(TempReadingskipped[2]);
-                Serial.print(F("/"));
-                Serial.print(TempReadingskipped[0]);
-                Serial.println();
+                Serial.print(TCoilAvgRoll.mean());
               }
-
               break;
           }
           default:
@@ -445,7 +428,7 @@ void SerialOutputStatus() {
   Serial.print(F(" Duty:"));
   Serial.print(DutyTemp, 2);
   Serial.print(F(" Coil Temp:"));
-  Serial.print(TCoilRoll.mean(), 1);
+  Serial.print(TCoilAvgRoll.mean(), 1);
   Serial.print(F(" FanPWM:"));
   Serial.print(FanSpeed254PWM);
   Serial.print(F("/254"));
@@ -461,6 +444,6 @@ void SerialOutputTempsForPlotting() {
   Serial.print(F(",Coil:"));
   Serial.print(TCoil);
   Serial.print(F(",CoilAvg"));
-  Serial.print(TCoilRoll.mean());
+  Serial.print(TCoilAvgRoll.mean());
   Serial.println();
 }

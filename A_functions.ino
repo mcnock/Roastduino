@@ -21,30 +21,30 @@ int round5(int n) {
 }
 
 int CalcFan254PWMForATime(double minutes) {
-  //SpDebug("Starting CalcFanPWM");
+  //SPDEBUG("Starting CalcFanPWM");
   int calcedFanSpeed;
   int newFanSpeed;
   float ratio;
   if (minutes <= FanSetPoints[1].Minutes) {
     ratio = (float)(minutes) / (float)(FanSetPoints[1].Minutes);
     calcedFanSpeed = FanSetPoints[0].PWM + (ratio * (FanSetPoints[1].PWM - FanSetPoints[0].PWM));
-    //SpDebug("CaclPMW < sp1 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
+    //SPDEBUG("CaclPMW < sp1 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
   }
 
   else if (minutes < FanSetPoints[2].Minutes) {
     ratio = (float)(minutes - FanSetPoints[1].Minutes) / (float)(FanSetPoints[2].Minutes - FanSetPoints[1].Minutes);
     calcedFanSpeed = FanSetPoints[1].PWM + (ratio * (FanSetPoints[2].PWM - FanSetPoints[1].PWM));
-    //SpDebug("CaclPMW < sp2 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
+    //SPDEBUG("CaclPMW < sp2 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
 
   } else if (minutes <= FanSetPoints[3].Minutes)  //this should roast end
   {
     ratio = (float)(minutes - FanSetPoints[2].Minutes) / (float)(FanSetPoints[3].Minutes - FanSetPoints[2].Minutes);
     calcedFanSpeed = FanSetPoints[2].PWM + (ratio * (FanSetPoints[3].PWM - FanSetPoints[2].PWM));
-    //SpDebug("CaclPMW < sp3  mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
+    //SPDEBUG("CaclPMW < sp3  mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
 
   } else {  //this should be paste roaste - ie cooling
     calcedFanSpeed = FanSetPoints[3].PWM * 1.2;
-    //SpDebug("CaclPMW > 3   mins: " + String(minutes) +  " pwm:" + String(calcedFanSpeed));
+    //SPDEBUG("CaclPMW > 3   mins: " + String(minutes) +  " pwm:" + String(calcedFanSpeed));
   }
   newFanSpeed = calcedFanSpeed + FanDeviation;
   if (FanSetPoints[0].PWM > 254) {
@@ -113,15 +113,15 @@ int YforAFan(int fanpwm) {
 void SetFanFromOpticalSensorPID() {
 
   float value;
-  value = deltaYflow_avg.mean();
+  value = BeanYflow_avg.mean();
 
   if (State == STATECOOLING) {
-    ErrFlow = setpointflow - value;
+    ErrFlow = BeanYFlowSetpoint - value;
   } else {
-    ErrFlow = (setpointflow * FanCoolingBoostPercent) - value;
+    ErrFlow = (BeanYFlowSetpoint * FanCoolingBoostPercent) - value;
   }
   //negative if temp is over setpoint. Positive it temp is under setupt
-  //spDebug("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
+  //SPDEBUG("Call SetFanFromOpticalSensorPID  errflow:" + String(ErrFlow));
   //if (abs(ErrFlow) < GainFlow) {
   if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every 5 seconds we add the err to be a sum of err
                                                                              //if (ErrIFlow < GainFlow) {
@@ -141,12 +141,12 @@ void SetFanFromOpticalSensorPID() {
   if (DutyFanLast > 0) {
     PercentChange = (DutyFanTemp - DutyFanLast) / DutyFanLast;
   }
-  if (abs(PercentChange) > (PercentChangeFlow / 10)) {
+  if (abs(PercentChange) > (MaxPercentChangeFlow / 10)) {
 
     if (DutyFanTemp > DutyFanLast) {
-      DutyFan = DutyFanLast * (1 + PercentChangeFlow / 10);
+      DutyFan = DutyFanLast * (1 + MaxPercentChangeFlow / 10);
     } else {
-      DutyFan = DutyFanLast * (1 - PercentChangeFlow / 10);
+      DutyFan = DutyFanLast * (1 - MaxPercentChangeFlow / 10);
     }
   } else {
     DutyFan = DutyFanTemp;
@@ -155,10 +155,10 @@ void SetFanFromOpticalSensorPID() {
     DutyFan = 1.0;
   }
   DutyFanLast = DutyFan;
-  spDebug1("DeltaY:" + String(deltaYflow) + ",mean:" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
-  spDebugxClose;
-  spDebug2("DeltaY:" + String(deltaYflow) + ",mean:" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(setpointflow) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
-  spDebugxClose;
+  SPDEBUG1("DeltaY:" + String(BeanYflow) + ",mean:" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(BeanYFlowSetpoint) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
+  SPDEBUGXCLOSE;
+  SPDEBUG2("DeltaY:" + String(BeanYflow) + ",mean:" + String(value) + ",Err:" + String(ErrFlow) + ", %:" + String(PercentChange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(BeanYFlowSetpoint) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
+  SPDEBUGXCLOSE;
   sendFan_D_Wire();
 }
 
@@ -188,7 +188,7 @@ void sendFan_Wire() {
   Wire.write((valuefordac & 15) << 4);  // the 4 least significant bits...
   Wire.endTransmission();
 
-  spDebug("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
+  SPDEBUG("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
 }
 
 void sendFan_D_Wire() {
@@ -202,7 +202,7 @@ void sendFan_D_Wire() {
   Wire.write((valuefordac & 15) << 4);  // the 4 least significant bits...
   Wire.endTransmission();
 
-  //spDebug("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
+  //SPDEBUG("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
 }
 
 uint16_t YforATemp(double temp) {
@@ -259,15 +259,15 @@ int getCleanTemp(int myID) {
 
   byte tries = 0;
   do {
-    int temperature = thermocouples[myID].readFahrenheit();
+    int temperature = thermocouples[myID].sensor.readFahrenheit();
     if (isnan(temperature)) {
-      TempReadingskipped[myID]++;
+      thermocouples[myID].Readingskipped++;
       //Serial.print (myID);Serial.print ("nan temp:");Serial.println(temperature);
     } else if (temperature > 1000) {
-      TempReadingskipped[myID]++;
+      thermocouples[myID].Readingskipped++;
       //Serial.print (myID);Serial.print ("too high temp:");Serial.println(temperature);
     } else if (temperature < 40) {
-      TempReadingskipped[myID]++;
+      thermocouples[myID].Readingskipped++;
       //Serial.print (myID);Serial.print ("too low temp:");Serial.println(temperature);
     } else {
       //Serial.print (myID);Serial.print ("clean temp returned:");Serial.println(r);
@@ -326,7 +326,7 @@ void saveChangedSetpoints() {
       MySetPoints[xSetPoint].Temperature = MySetPoints[xSetPoint].TemperatureNew;
       MySetPoints[xSetPoint].TemperatureNew = 0;
 
-      EEPROM.put(SETPOINTTEMP_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
+      EEPROM.put(SetpointTemp_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
     }
   }
 }
