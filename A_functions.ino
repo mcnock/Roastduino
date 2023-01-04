@@ -180,15 +180,13 @@ void sendFan_Wire() {
   int valuefordac;
   float x = FanSpeed254PWM / 254;
   valuefordac = DACMax * x;
-
   double start = millis();
   Wire.beginTransmission(MCP4725_ADDR);
   Wire.write(64);                       // cmd to update the DAC
   Wire.write(valuefordac >> 4);         // the 8 most significant bits...
   Wire.write((valuefordac & 15) << 4);  // the 4 least significant bits...
   Wire.endTransmission();
-
-  SPDEBUG("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
+  //SPDEBUG("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
 }
 
 void sendFan_D_Wire() {
@@ -284,8 +282,6 @@ int getCleanOpticaFlow(int myID) {
   byte tries = 0;
   //do {
   tries++;
-  SPI.begin();
-  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, LOW);
   if (BeanOpticalFlowSensors[myID].sensor.Initialized == false) {
     Serial.println("Initializing flow sensor");
     if (!BeanOpticalFlowSensors[myID].sensor.Initialize()) {
@@ -302,8 +298,6 @@ int getCleanOpticaFlow(int myID) {
   } else {
     BeanOpticalFlowSensors[myID].YflowReadingskipped++;
   }
-  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
-  SPI.end();
   return -1;
 }
 

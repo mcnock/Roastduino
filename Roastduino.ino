@@ -7,7 +7,7 @@
 #include <Time.h>
 #include <TimeLib.h>
 #include "src/max6675.h"
-#include "src/PMW3901.h"
+#include "PMW3901.h"
 #include "Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
@@ -392,7 +392,7 @@ const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
     { -88, "", "go back", "to", "prior", GREEN } }
 };
 
-rect OpProgessDisplay = { 80, 0, 0, 0 };
+rect OpProgessDisplay = { 0, 80, 0, 0 };
 rect OpDetailDisplay = { 610, 200, 0, 0 };
 rect ConfigDisplay = { 205, 385, 0, 0 };
 buttontext myLocalbuttontext;
@@ -425,7 +425,6 @@ MAX6675 Thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
 thermocouple thermocouples[] = { { Thermocouple1, 0 }, { Thermocouple2, 0 }, { Thermocouple3, 0 } };
 PWMSetpoint FanSetPoints[4];
 int FanSpeed254PWM = -1;
-
 point_byte TempPixelHistory[160];
 point_byte FanPixelHistory[160];
 point_byte CoilPixelHistory[160];
@@ -446,7 +445,6 @@ const int DisplayWidth = 800;
 int FanGraphMinPWM = 100;
 int FanGraphMaxPWM = 254;
 float PixelsPerMinFan;
-
 int GainTemp = 0;           //read from eeprom
 double IntegralTemp = 0.1;  //read from eeprom
 long unsigned IntegralLastTimeTemp = 0;
@@ -590,8 +588,6 @@ void setup() {
   pinMode(TC_SCK_A9, OUTPUT);
   pinMode(COILCURRENT_SPI_SSp53, OUTPUT);
   digitalWrite(COILCURRENT_SPI_SSp53, HIGH);
-  pinMode(BEAN_OPTICAL_FLOW_SPI_SSp48, OUTPUT);
-  digitalWrite(BEAN_OPTICAL_FLOW_SPI_SSp48, HIGH);
   digitalWrite(FANRELAYp_2, RELAYOFF);
   //digitalWrite(VIBRELAYp, RELAYOFF);
   delay(1000);
@@ -602,7 +598,7 @@ void setup() {
   bool loadDefaults;
   EEPROM.get(LOADDEFAULTS_EP, loadDefaults);  //will be 255 (T) on first run.. then set 1 (T) or 0 (F)
   if (loadDefaults == true) {
-    //SPDEBUG("Setting defaults with SetDefault value:" + String(SetDefaults));
+    SPDEBUG("loadDefaults was true:" + String(loadDefaults));
     MySetPoints[0].Temperature = _MySetPoints_0_Temperature;
     MySetPoints[1].Temperature = _MySetPoints_1_Temperature;
     MySetPoints[2].Temperature = _MySetPoints_2_Temperature;
@@ -622,7 +618,7 @@ void setup() {
     for (int i = 0; i < 4; i++) {
       EEPROM.put(FanSetPoints_EP[i], FanSetPoints[i]);
     }
-    EEPROM.put(RoastLength_EP, (int)14);
+    EEPROM.put(RoastLength_EP, (int)_RoastLength);
     GainTemp = _GainTemp;
     EEPROM.put(GAINTEMP_EP, _GainTemp);
     IntegralTemp = _IntegralTemp;
@@ -645,9 +641,9 @@ void setup() {
     EEPROM.put(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
     EEPROM.put(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
     EEPROM.put(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
-    loadDefaults == false;
+    loadDefaults = false;
     EEPROM.put(LOADDEFAULTS_EP, loadDefaults);
-    //SPDEBUG("Done Setting defaults  SetDefault value to be saved is:" + String(SetDefaults));
+    SPDEBUG("Done loading loadDefaults:" + String(loadDefaults));
   }
   //temp set points are read  in graph screen function
   for (int i = 0; i < 4; i++) {
@@ -678,7 +674,16 @@ void setup() {
   State = STATESTOPPED;
   Setpointschanged = true;
   FanSpeed254PWM = FanSetPoints[0].PWM;
+
+  Serial.println("Starting FlowSensor 1 initialization...");
+  if (!BeanOpticalFlowSensors[0].sensor.Initialize()) {
+    Serial.println("Initialization of the flow sensor failed");
+  } else {
+    Serial.println("FlowSensor 1 initialized successfully");
+  }
+
   Wire.begin();
+
   StopAndSendFanPWM();
   graphProfile();
   Serial.println("loop is starting...");

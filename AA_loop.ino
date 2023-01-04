@@ -47,7 +47,6 @@ void theloop() {
     TimeReadThermoNext = millis() + TimeReadThermoDuration;
   }
   if (ReadBeanOpticalFlowRateFlag == true) {
-
     BeanOpticalFlowReadsPerSecondCalcing++;
     ReadBeanOpticalFlowRateFlag = false;
 
@@ -58,7 +57,7 @@ void theloop() {
       //float mytest =  BeanYflow_avg.mean();
       SPDEBUG2("deltaY:" + String(BeanYflow) + ",mean:" + String(BeanYflow_avg.mean()) + ",Y10:10,Y0:0,avgsize:" + String(BeanYflow_avg.getCount()) + ",skipped:" + String(BeanOpticalFlowSensors[sensorindex].YflowReadingskipped));
       SPDEBUGXCLOSE
-        bNewFlowAvailable = true;
+      bNewFlowAvailable = true;
     } else {
       bNewFlowAvailable = false;
     }
@@ -387,7 +386,7 @@ void theloop() {
     }
     SPDEBUG4("SSR1:" + String(SSR1PWM) + ",SSR2:" + String(SSRPWM));
     SPDEBUGXCLOSE
-      analogWrite(SSR1_p7, SSR1PWM);
+    analogWrite(SSR1_p7, SSR1PWM);
     analogWrite(SSR2_p6, SSR2PWM);
   }
   if (not(State == STATEROASTING || StateDebug == DEBUGDUTY || StateDebug == DEBUGCOIL)) {  //make sure to turn SSD's and other off if not running
@@ -409,7 +408,9 @@ void theloop() {
     //Serial.println("update after reach new temp");
     UpdateProgressDisplayArea(VALUESONLY);
     UpdateOpDetailsDisplayArea(VALUESONLY);
-    UpdateFanPWMValuesDisplay(VALUESONLY);
+    if (FanLegacy) {
+      UpdateFanPWMValuesDisplay(VALUESONLY);
+    }
     if (SerialOutPutTempsBySecond == true) {
       SerialOutputTempsForPlotting();
     }
@@ -434,7 +435,7 @@ void theloop() {
     if (5 == 5 & (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING)) {
       //SpDebu)g("Adding maxium of:\t" + String(TBeanAvgRoll.maximum()));
       if (1 == 1) {
-        float dummymean = SetpointforATime (RoastMinutes) - 5;
+        float dummymean = SetpointforATime(RoastMinutes) - 5;
         float dummycoil = 700 + RoastMinutes;
         RoastAcumHeat + dummymean;
         AddLinebyTimeAndTemp(RoastMinutes, dummymean, ROLLAVGLINEID);
@@ -442,8 +443,7 @@ void theloop() {
         if (coiloffsetted < 0) { coiloffsetted = 0; }
         AddPointbyTimeAndTemp(RoastMinutes, coiloffsetted, COILLINEID, 2);
 
-      }else
-      {
+      } else {
         RoastAcumHeat + TBeanAvgRoll.mean();
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         int coiloffsetted = (TCoilAvgRoll.mean() - CoilTempOffSet);
@@ -452,7 +452,7 @@ void theloop() {
       }
       //AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
       //AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.minimum(), ROLLMINLINEID);
-         }
+    }
   }
 
   if (ThreeSecondTimer.elapsed() > 3000) {  //what to output to UI each 3 seconds

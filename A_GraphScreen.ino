@@ -268,7 +268,6 @@ void graphFanProfile() {
 
 void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   //this is top row
-
   myGLCD.setFont(SmallFont);
   int rowheight = myGLCD.getFontYsize() * 1.1;
   int col = ConfigDisplay.x + 4;
@@ -276,7 +275,7 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   int col2 = col + (myGLCD.getFontXsize() * 9);  //number
   if (ConfigDisplay.xmax == 0) {
     ConfigDisplay.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    ConfigDisplay.ymax = row + (rowheight * 6) + 2;
+    ConfigDisplay.ymax = row + (rowheight * 9) + 2;
   }
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
@@ -293,6 +292,17 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   row = row + rowheight;
   myGLCD.print(F("T Intergal:"), col, row);
   myGLCD_printNumF(IntegralTemp, col2, row, 6, 2);
+
+  row = row + rowheight;
+  myGLCD.print(F("F sp   :"), col, row);
+  myGLCD.printNumI(BeanYFlowSetpoint, col2, row, 6, ' ');
+  row = row + rowheight;
+  myGLCD.print(F("F Gain   :"), col, row);
+  myGLCD.printNumI(GainFlow, col2, row, 6, ' ');
+  row = row + rowheight;
+  myGLCD.print(F("F Intergal:"), col, row);
+  myGLCD_printNumF(IntegralFlow, col2, row, 6, 2);
+
   row = row + rowheight;
   myGLCD.print(F("TooHotTemp:"), col, row);
   myGLCD.printNumI(TempCoilTooHot, col2, row, 6, ' ');
@@ -305,26 +315,42 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
 }
 
 void UpdateProgressDisplayArea(boolean bVALUESONLY) {
-
-  myGLCD.setBackColor(BLACK);
-
+  myGLCD.setBackColor(BLACK); 
   if (bVALUESONLY == ALL || LastStateUpdated != State) {
     myGLCD.setFont(Grotesk24x48);
     myGLCD.setColor(StateColor[State]);
     myGLCD.print(StateName[State], 2, 2);
     LastStateUpdated = State;
   }
-
   myGLCD.setColor(PALEYELLOW);
   myGLCD.setFont(arial_normal);
-  int rowstart = OpProgessDisplay.x;
+  int rowstart = OpProgessDisplay.y + 2;
   int row = rowstart;
-  int col = OpProgessDisplay.y;
+  int col = OpProgessDisplay.x + 1;
   int rowheight = myGLCD.getFontYsize() * 1.1;
   int col2 = col + (5 * myGLCD.getFontXsize());
   int colend = col2 + (5 * myGLCD.getFontXsize());
+
+  if (OpProgessDisplay.xmax == 0) {
+    OpProgessDisplay.xmax = colend + 2;
+    OpProgessDisplay.ymax = rowstart + (rowheight * 9) + 2;
+  }
+  //myGLCD_drawRect(col, rowstart - 1, colend, row + rowheight + 1);
+  if (bVALUESONLY == ALL || LastStateUpdated != State) {
+      myGLCD.setColor(BLACK);
+  
+      myGLCD_fillRect(OpProgessDisplay);
+      myGLCD.setColor(PALEYELLOW);
+      
+      myGLCD_drawRect(OpProgessDisplay);
+  
+  }
+  myGLCD.setBackColor(BLACK);
+  myGLCD.setColor(PALEYELLOW);
+
   int DutyPercent = DutyTemp * 100;
   double FanPercent = (FanSpeed254PWM / float(255)) * 100;
+
   if (bVALUESONLY == false) {
     myGLCD.print(F("Time:"), col, row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
@@ -341,12 +367,15 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     myGLCD.print(F("AccT:"), col, row);
     myGLCD.printNumI(RoastAcumHeat, col2, row, 5, ' ');
     row = row + rowheight;
+    row = row + rowheight;
     myGLCD.print(F("Fan%:"), col, row);
     myGLCD_printNumF(FanPercent, col2, row, 5, 1);
+    row = row + rowheight;
+    myGLCD.print(F("F SP:"), col, row);
+    myGLCD_printNumF(BeanYflow_avg.mean(), col2, row, 5, 1);
+    row = row + rowheight;
     myGLCD.print(F("Flow:"), col, row);
-    myGLCD_printNumF(BeanYflow_avg.mean(), col2 - (myGLCD.getFontXsize() - 2), row, 2, 1);
-    myGLCD_printNumF(BeanYflow_avg.mean(), col2 + (myGLCD.getFontXsize() - 2), row, 2, 1);
-  
+    myGLCD_printNumF(BeanYflow_avg.mean(), col2, row, 5, 1);
   } else {
     //myGLCD.print(F("Time:"), col , row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
@@ -363,11 +392,16 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     //myGLCD.print(F("AccT:"), col  , row);
     myGLCD.printNumI(RoastAcumHeat, col2, row, 5, ' ');
     row = row + rowheight;
+    row = row + rowheight;
     //myGLCD.print(F("Fan%:"), col, row);
     myGLCD_printNumF(FanPercent, col2, row, 5, 1);
+    row = row + rowheight;
+    //myGLCD.print(F("F SP:"), col, row);
+    myGLCD_printNumF(BeanYflow_avg.mean(), col2, row, 5, 1);
+    row = row + rowheight;
+    //myGLCD.print(F("Flow:"), col, row);
+    myGLCD_printNumF(BeanYflow_avg.mean(), col2, row, 5, 1);
   }
-
-  myGLCD.drawRect(col, rowstart - 1, colend, row + rowheight + 1);
 }
 
 void UpdateErrorDisplayArea(boolean bVALUESONLY) {
@@ -572,7 +606,7 @@ void StartLinebyXAndY(uint16_t X, uint16_t Y, int lineID) {
 
 void AddLinebyXY(uint16_t& newX, uint16_t& newY, int lineID) {
   myGLCD.setColor(LineColorforLineID[lineID]);  //LineColorforLineID[lineID]);
-  SPDEBUG("Adding to lineid:\t" + String(lineID) + "\t from x:" + String(LastforLineID[lineID].x) + "\ty:" + String((int)LastforLineID[lineID].y) + "\t to x:" + String(newX) + "\t y:" + String(newY));
+  //SPDEBUG("Adding to lineid:\t" + String(lineID) + "\t from x:" + String(LastforLineID[lineID].x) + "\ty:" + String((int)LastforLineID[lineID].y) + "\t to x:" + String(newX) + "\t y:" + String(newY));
   myGLCD.drawLine((int)LastforLineID[lineID].x, (int)LastforLineID[lineID].y, (int)newX, (int)newY);
   if (LineBoldforLineID[lineID]) {
     BoldLine(LastforLineID[lineID].x, LastforLineID[lineID].y, newX, newY);
@@ -662,8 +696,8 @@ void DrawLineFromHistoryArray(int LineID) {
     }
     return;
   } else {
-    Serial.print(F("Draw from  history  not available for lineID"));
-    Serial.println(LineID);
+    //Serial.print(F("Draw from  history  not available for lineID"));
+    //Serial.println(LineID);
   }
 }
 
@@ -852,8 +886,8 @@ void myGLCD_drawRect(rect& Rect) {
 
 void myGLCD_printNumF(double Number, int col, int row, int Len, int Dec) {
 
-  dtostrf(Number, Len, Dec, CharArrays[Len-1]);
-  myGLCD.print(CharArrays[Len-1], col, row);
+  dtostrf(Number, Len, Dec, CharArrays[Len - 1]);
+  myGLCD.print(CharArrays[Len - 1], col, row);
   return;
   if (Len == 5) {
     dtostrf(Number, Len, Dec, s6);

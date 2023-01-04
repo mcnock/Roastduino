@@ -3,6 +3,7 @@
 #define _MySetPoints_2_Temperature 410 
 #define _MySetPoints_3_Temperature 430 
 #define _MySetPoints_4_Temperature 440
+#define _RoastLength 14
 #define _GainTemp 30
 #define _IntegralTemp .03
 #define _PIDIntegralUdateTimeValueTemp 5000
@@ -15,7 +16,7 @@
 #define _OpDetailDisplay_x 600
 #define _OpDetailDisplay_y 200
 #define _ConfigDisplay_x 300
-#define _ConfigDisplay_y 400
+#define _ConfigDisplay_y 300
 #define _BeanYflow_avg_size 10
 #define _BeanYflow_avg_sizemax 50
 #define _TBeanAvgRoll_size 10

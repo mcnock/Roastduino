@@ -9,10 +9,16 @@
 PMW3901::PMW3901(uint8_t cspin)
   : _cs(cspin) {
   Initialized = false;
+  pinMode(_cs, OUTPUT);
+  digitalWrite(_cs, HIGH);
+
 }
 boolean PMW3901::Initialize(void) {
   // Setup SPI port
   // Power on reset
+  SPI.begin();
+  digitalWrite(_cs, LOW);
+
   registerWrite(0x3A, 0x5A);
   delay(5);
   // Test the SPI communication, checking chipId and inverse chipId
@@ -26,7 +32,6 @@ boolean PMW3901::Initialize(void) {
     Serial.println("here12");
     return false;
   }
-
   // Reading the motion registers one time
   registerRead(0x02);
   registerRead(0x03);
@@ -37,6 +42,9 @@ boolean PMW3901::Initialize(void) {
 
   initRegisters();
   Initialized = true;
+  digitalWrite(_cs, HIGH);
+  SPI.end();
+
   return true;
 }
 // Functional access
@@ -46,8 +54,14 @@ void PMW3901::readMotionCount(int16_t *deltaX, int16_t *deltaY) {
   *deltaY = ((int16_t)registerRead(0x06) << 8) | registerRead(0x05);
 }
 void PMW3901::readMotionCountY(int16_t *deltaY) {
+  SPI.begin();
+  digitalWrite(_cs, LOW);
+
   registerRead(0x02);
   *deltaY = ((int16_t)registerRead(0x06) << 8) | registerRead(0x05);
+  digitalWrite(_cs, HIGH);
+  SPI.end();
+
 }
 // Low level register access
 void PMW3901::registerWrite(uint8_t reg, uint8_t value) {
