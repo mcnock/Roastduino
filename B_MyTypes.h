@@ -4,8 +4,8 @@
 
 #include <WString.h>
 
-struct PWMSetpoint {
-  byte PWM = 0;
+struct flowsetpoint {
+  float flow = 0;
   byte Minutes = 0;
 };
 
@@ -27,7 +27,6 @@ typedef struct opticalflow {
   PMW3901 sensor;
   int YflowReadingskipped;
 } opticalflow;
-
 
 typedef struct thermocouple {
   MAX6675 sensor;

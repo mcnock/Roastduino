@@ -125,12 +125,12 @@ byte Debugbyte = 0;
 #define INTEGRALTEMP_EP 0
 #define LOADDEFAULTS_EP 4
 #define RoastLength_EP 36
-//#define FanGraphMinPWM_EP 37
-//#define FanGraphMaxPWM_EP 38
+//#define FlowSetPointMin_EP 37
+//#define FlowSetPointMax_EP 38
 #define INTEGRALFLOW_EP 70
-#define SETPOINTFLOW_EP 76
-#define FANGRAPHBOTTOM_EP 78
-#define FANGRAPHHEIGHT_EP 80
+//#define SETPOINTFLOW_EP 76
+#define FlowSetPointGraphBottompx_EP 78
+#define FlowSetPointGraphHeightpx_EP 80
 #define COILGRAPHTEMPOFFSET_EP 82
 #define COOLDOWNTEMP_EP 84
 #define TOOHOTTEMP_EP 86
@@ -140,6 +140,10 @@ byte Debugbyte = 0;
 #define OPERDETAILDISPLAY_Y_EP 94
 #define CONFIGURATIONDISPLAY_X_EP 96
 #define CONFIGURATIONDISPLAY_Y_EP 98
+#define OPPROGRESSDISPLAY_X_EP 100
+#define OPPROGRESSDISPLAY_Y_EP 102
+#define SETPOINTFLOW_EP 104
+
 #define STATEROASTING 1
 #define STATESTOPPED 2
 #define STATECOOLING 3
@@ -227,7 +231,7 @@ const char* StateName[] = {
   Sname11
 };
 
-int16_t BeanYflow, BeanYFlowSetpoint;
+double BeanYflow, BeanYflowsetpoint;
 const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
 
@@ -269,20 +273,23 @@ activeadjustment ActiveAdjustment;
 #define ACTIONGETLABLEFROMPRIOR 32
 #define ACTIONSELECTADUSTMENTVALUE 33
 #define ACTIONRESETTODEFAULTONNEXTSTART 34
+
 #define ACTIONADJUSTMENTS 40
 #define ACTIONADJUSTINTEGRALTEMP 41
 #define ACTIONADJUSTGAINTEMP 42
 #define ACTIONADJUSTSETPOINTTEMP 43
-#define ACTIONADJUSTSETPOINTFAN 44
+#define ACTIONADJUSTSETPOINTFLOW 44
 #define ACTIONADJUSTROASTLENGTH 45
 #define ACTIONADJUSTTEMPTOHOT 46
 #define ACTIONADJUSTCOOLDOWNTEMP 47
 #define ActionAdjustCoilGraphTempOffset 48
-#define ActionAdjustFanGraphPixelBottom 48
+#define ActionAdjustFanGraphPixelBottom 49
 #define ACTIONADJUSTTEMPDUTY 50
 #define ACTIONADJUSTINTEGRALFLOW 51
 #define ACTIONADJUSTGAINFLOW 52
-#define ACTIONADJUSTSETPOINTFLOW 53
+#define ACTIONADJUSTFANMANUAL 53
+#define ACTIONADJUSTCOOLBURST 54
+
 #define VMENUCOUNT 7
 #define MAXBUTTONCOUNT 9
 #define VMENUBASE 0
@@ -310,7 +317,7 @@ byte GetLablesFromPrior = 41;
 
 const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
   { { VMENUBASE0, ">>", "Show", "debug", "menu", GREEN, VMENUDEBUG },
-    { 1, "SPs", "Show", "Temp", "menu", YELLOW, ACTIONSHOWSETPOINTSELECTMENU },
+    { 1, "T Sps", "Show", "Temp", "menu", YELLOW, ACTIONSHOWSETPOINTSELECTMENU },
     { 2, "GainT", "Adjust", "T PID", "Gain", YELLOW, ACTIONADJUSTGAINTEMP, VALUES1_3_5 },
     { 3, "IntT", "Adjust", "T PID", "Interg", YELLOW, ACTIONADJUSTINTEGRALTEMP, VALUESD01_D03_D05 },
     { 4, "Fan", "Show", "Fan", "menu", YELLOW, ACTIONSHOWSETPOINTFANMENU },
@@ -328,14 +335,14 @@ const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
     { 17, "Last 3", "Adjust", "last 3", "points", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
     { 18, "", "", "", "", BLACK } },
   { { VMENUDEBUG0, ">>", "show", "empty", "menu", GREEN, VMENUEMPTY },
-    { 21, "SetDut", "Set", "Duty", "Manua", GREEN, ACTIONADJUSTTEMPDUTY, VALUESD5_D1_D01 },
-    { 22, "", "subject", "of", "menu", YELLOW },
-    { 23, "C1", "toggle", "coil 1 SSR", "on and off", YELLOW },
-    { 24, "C2", "toggle", "coil 2 SSR", "on and off", YELLOW },
+    { 21, "SetDut", "Set", "TDuty", "Manua", GREEN, ACTIONADJUSTTEMPDUTY, VALUESD5_D1_D01 },
+    { 22, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUESD5_D1_D01 },
+    { 23, "", "toggle", "coil 1 SSR", "on and off", YELLOW },
+    { 24, "", "toggle", "coil 2 SSR", "on and off", YELLOW },
     { 25, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5 },
     { 26, "FanI", "Adjust", "F PID", "Interg", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUESD01_D03_D05 },
-    { 27, "FanSP", "Adjust", "F", "Setpnt", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
-    { 28, "Tem", "go back", "to", "prior", YELLOW } },
+    { 27, "FanSP", "Adjust", "F", "Setpnt", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUESD5_D1_D01 },
+    { 28, "", "go back", "to", "prior", YELLOW } },
   { { VMENUONOFF0, "<<", "go to", "prior", "menu", GREEN, VMENUFINDPRIOR },
     { 31, "", "selected", "device", "to debug", GREEN },
     { 32, "ON", "turn", "device", "on", ORANGE },
@@ -355,14 +362,14 @@ const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
     { 47, "x", "Select", "this", "amount", ORANGE, ACTIONSELECTADUSTMENTVALUE },
     { 48, "", "", "", "", BLACK } },
   { { VMENUFAN0, "<<", "go to", "prior", "menu", GREEN, VMENUBASE },
-    { 51, "A PWM", "Adjust", "A", "PWM", AQUA, ACTIONADJUSTSETPOINTFAN, VALUES1_3_5 },
-    { 52, "B PWM", "Adjust", "B", "PWM", AQUA, ACTIONADJUSTSETPOINTFAN, VALUES1_3_5 },
-    { 53, "C PWM", "Adjust", "C", "PWM", AQUA, ACTIONADJUSTSETPOINTFAN, VALUES1_3_5 },
-    { 54, "D PWM", "Adjust", "D", "PWM", AQUA, ACTIONADJUSTSETPOINTFAN, VALUES1_3_5 },
-    { 55, "Btime", "Adjust", "B", "Time", AQUA, ACTIONADJUSTSETPOINTFAN, VALUES1_0_0 },
-    { 56, "Ctime", "Adjust", "C", "Time", AQUA, ACTIONADJUSTSETPOINTFAN, VALUES1_0_0 },
-    { 57, "GrBot", "Raise", "Fan", "Graph", AQUA, ActionAdjustFanGraphPixelBottom, VALUES5_10_20 },
-    { 58, "", "", "", "", BLACK } },
+    { 51, "0 sp", "Adjust", "0 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUESD5_D1_D01 },
+    { 52, "7 sp", "Adjust", "7 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUESD5_D1_D01 },
+    { 53, "11 sp", "Adjust", "11min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUESD5_D1_D01 },
+    { 54, "14 sp", "Adjust", "14min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUESD5_D1_D01 },
+    { 55, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5  },
+    { 56, "FanI", "Adjust", "F PID", "Int", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUESD01_D03_D05  },
+    { 57, "CBST", "Set", "Cool", "Burst", AQUA,  ACTIONADJUSTCOOLBURST, VALUESD5_D1_D01 },
+    { 58, "FMan", "Set", "FDuty", "Manual", AQUA,  ACTIONADJUSTFANMANUAL, VALUESD5_D1_D01  } },
   { { VMENUEMPTY0, ">>", "go to", "next", "menu", GREEN, VMENUBASE },
     { -61, "", "go back", "to", "prior", AQUA },
     { -62, "", "go", "to", "prior", AQUA },
@@ -415,15 +422,15 @@ boolean SerialOutPutTempsBy3Seconds;
 boolean SerialOutPutStatusBy3Seconds;
 boolean SerialOutPutStatusBySecond;
 
-const int ThermoCoil = 0;
+const int ThermoCoil = 2;
 const int ThermoBean1 = 1;
-const int ThermoBean2 = 2;
+const int ThermoBean2 = 0;
 
 MAX6675 Thermocouple1(TC_SCK_A9, TC_CS1_A11, TC_SD1_A10);
 MAX6675 Thermocouple2(TC_SCK_A9, TC_CS2_A13, TC_SD2_A12);
 MAX6675 Thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
 thermocouple thermocouples[] = { { Thermocouple1, 0 }, { Thermocouple2, 0 }, { Thermocouple3, 0 } };
-PWMSetpoint FanSetPoints[4];
+flowsetpoint FlowSetPoints[4];
 int FanSpeed254PWM = -1;
 point_byte TempPixelHistory[160];
 point_byte FanPixelHistory[160];
@@ -437,14 +444,14 @@ graphhistory GraphHistory[] = {
 //used when drawing lines. We support up to 3 lines (see line ID constants)
 point LastforLineID[GRAPHLINECOUNT];
 const int FanGraphXStart = 0;    //starting col of fan graph - a little past half
-const int FanGraphXWidth = 720;  //uses 1/4 of screen width
-const int FanGraphHeight = 340;  //uses 1/4 of screen width
+const int FanGraphXWidth = 720;  
+const int FlowSetPointGraphHeightpx = 340;  
 const int FanGraphHorGridSpacingPWM = 15;
-int FanGraphBottom = 450;
+int FlowSetPointGraphBottompx = 450;
 const int DisplayWidth = 800;
-int FanGraphMinPWM = 100;
-int FanGraphMaxPWM = 254;
-float PixelsPerMinFan;
+int FlowSetPointMin = 0;
+int FlowSetPointMax = 8;
+float PixelsPerFlowRate;
 int GainTemp = 0;           //read from eeprom
 double IntegralTemp = 0.1;  //read from eeprom
 long unsigned IntegralLastTimeTemp = 0;
@@ -542,6 +549,7 @@ float FanCoolingBoostPercent = _FanCoolingBoostPercent;
 bool ReadCoilCurrentFlag = false;
 bool ReadBeanOpticalFlowRateFlag = false;
 bool FanLegacy = false;
+bool FanManual = false;
 PMW3901 BeanOpticalFlow1(BEAN_OPTICAL_FLOW_SPI_SSp48);
 PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp49);
 opticalflow BeanOpticalFlowSensors[] = { { BeanOpticalFlow1, 0 }, { BeanOpticalFlow2, 0 } };
@@ -605,18 +613,18 @@ void setup() {
     MySetPoints[3].Temperature = _MySetPoints_3_Temperature;
     MySetPoints[4].Temperature = _MySetPoints_4_Temperature;
     for (int i = 0; i < 5; i++) {
-      EEPROM.update(SetpointTemp_EP[i], MySetPoints[i].Temperature);
+      EEPROM.put(SetpointTemp_EP[i], MySetPoints[i].Temperature);
     }
-    FanSetPoints[0].PWM = 185;
-    FanSetPoints[0].Minutes = 0;
-    FanSetPoints[1].PWM = 160;
-    FanSetPoints[1].Minutes = 2;
-    FanSetPoints[2].PWM = 150;
-    FanSetPoints[2].Minutes = 5;
-    FanSetPoints[3].PWM = 135;
-    FanSetPoints[3].Minutes = 14;
+    FlowSetPoints[0].flow = FanSetPoints_0_flow;
+    FlowSetPoints[0].Minutes = 0;
+    FlowSetPoints[1].flow= FanSetPoints_1_flow;
+    FlowSetPoints[1].Minutes = 7;
+    FlowSetPoints[2].flow = FanSetPoints_2_flow;
+    FlowSetPoints[2].Minutes = 11;
+    FlowSetPoints[3].flow = FanSetPoints_3_flow;
+    FlowSetPoints[3].Minutes = 14;
     for (int i = 0; i < 4; i++) {
-      EEPROM.put(FanSetPoints_EP[i], FanSetPoints[i]);
+      EEPROM.put(FanSetPoints_EP[i], FlowSetPoints[i]);
     }
     EEPROM.put(RoastLength_EP, (int)_RoastLength);
     GainTemp = _GainTemp;
@@ -627,39 +635,43 @@ void setup() {
     EEPROM.put(INTEGRALFLOW_EP, IntegralFlow);
     GainFlow = _GainFlow;
     EEPROM.put(GAINFLOW_EP, GainFlow);
-    BeanYFlowSetpoint = _BeanYFlowSetpoint;
-    EEPROM.put(SETPOINTFLOW_EP, BeanYFlowSetpoint);
-    FanGraphBottom = 450;
-    EEPROM.put(FANGRAPHBOTTOM_EP, FanGraphBottom);
+    FlowSetPointGraphBottompx = 450;
+    EEPROM.put(FlowSetPointGraphBottompx_EP, FlowSetPointGraphBottompx);
     TempCoilTooHot = _TempCoilTooHot;
     EEPROM.put(TOOHOTTEMP_EP, TempCoilTooHot);
     OpDetailDisplay.x = _OpDetailDisplay_x;
     OpDetailDisplay.y = _OpDetailDisplay_y;
     ConfigDisplay.x = _ConfigDisplay_x;
     ConfigDisplay.y = _ConfigDisplay_y;
+    OpProgessDisplay.x = _OpProgessDisplay_x;
+    OpProgessDisplay.y = _OpProgessDisplay_y;
     EEPROM.put(OPERDETAILDISPLAY_X_EP, OpDetailDisplay.x);
     EEPROM.put(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
     EEPROM.put(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
     EEPROM.put(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
+    EEPROM.put(OPPROGRESSDISPLAY_X_EP, OpProgessDisplay.x);
+    EEPROM.put(OPPROGRESSDISPLAY_Y_EP, OpProgessDisplay.y);
     loadDefaults = false;
     EEPROM.put(LOADDEFAULTS_EP, loadDefaults);
     SPDEBUG("Done loading loadDefaults:" + String(loadDefaults));
   }
   //temp set points are read  in graph screen function
   for (int i = 0; i < 4; i++) {
-    EEPROM.get(FanSetPoints_EP[i], FanSetPoints[i]);
+    EEPROM.get(FanSetPoints_EP[i], FlowSetPoints[i]);
   }
   EEPROM.get(GAINTEMP_EP, GainTemp);
   EEPROM.get(INTEGRALTEMP_EP, IntegralTemp);
   EEPROM.get(GAINFLOW_EP, GainFlow);
   EEPROM.get(INTEGRALFLOW_EP, IntegralFlow);
-  EEPROM.get(SETPOINTFLOW_EP, BeanYFlowSetpoint);
-  EEPROM.get(FANGRAPHBOTTOM_EP, FanGraphBottom);
+  EEPROM.get(FlowSetPointGraphBottompx_EP, FlowSetPointGraphBottompx);
   EEPROM.get(TOOHOTTEMP_EP, TempCoilTooHot);
   EEPROM.get(OPERDETAILDISPLAY_X_EP, OpDetailDisplay.x);
   EEPROM.get(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
   EEPROM.get(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
   EEPROM.get(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
+  EEPROM.get(OPPROGRESSDISPLAY_X_EP, OpProgessDisplay.x);
+  EEPROM.get(OPPROGRESSDISPLAY_Y_EP, OpProgessDisplay.y);
+     
   SecondTimer.restart(0);
   // -------------------------------------------------------------
   if (HasDisplay == true) {
@@ -673,7 +685,7 @@ void setup() {
   intializeMenus();
   State = STATESTOPPED;
   Setpointschanged = true;
-  FanSpeed254PWM = FanSetPoints[0].PWM;
+  //FanSpeed254PWM = FlowSetPoints[0].PWM;
 
   Serial.println("Starting FlowSensor 1 initialization...");
   if (!BeanOpticalFlowSensors[0].sensor.Initialize()) {

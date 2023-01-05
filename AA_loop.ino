@@ -68,6 +68,7 @@ void theloop() {
       case 0:  //coil temp
         MeasureTempTimer.restart();
         TCoil = getCleanTemp(ThermoCoil);
+        SPDEBUG("TCoil:" + String(TCoil));
         if (TCoil > -1) {
           TCoilAvgRoll.push(TCoil);
         }
@@ -75,10 +76,12 @@ void theloop() {
         break;
       case 1:  //bean temp 1
         TBean1 = getCleanTemp(ThermoBean1);
+        SPDEBUG("TBean1:" + String(TBean1));
         ReadSensorInSequenceFlag++;
         break;
       case 2:  //beam temp 2
         TBean2 = getCleanTemp(ThermoBean2);
+        SPDEBUG("TBean2:" + String(TBean2) + " id:" + String(ThermoBean2));
         TBeanAvgThisRun = getBeanAvgTemp(TBean1, TBean2);
         if (TBeanAvgThisRun > -1) {
           TBeanAvgRoll.push(TBeanAvgThisRun);
@@ -254,7 +257,7 @@ void theloop() {
             //StartLinebyTemp(0, ROLLMINLINEID);
             StartLinebyTemp(0, ROLLAVGLINEID);
             StartLinebyTemp(0, COILLINEID);
-            //StartLinebyXAndY(FanGraphXStart, YforAFan(FanSpeed254PWM), FANSPEEDLINEID);
+            //StartLinebyXAndY(FanGraphXStart, YforAFlow(FanSpeed254PWM), FANSPEEDLINEID);
             graphProfile();
             RoastTime.restart(0);
             RoastMinutes = 0;
@@ -283,7 +286,7 @@ void theloop() {
           BeanYflow_avg.clear();
           //DutyFlow = .7;
 
-          // FanSpeed254PWM = FanSetPoints[0].PWM;
+          // FanSpeed254PWM = FlowSetPoints[0].PWM;
           //SetAndSendFanPWMForATime(0);
           digitalWrite(FANRELAYp_2, RELAYON);
           break;
@@ -434,17 +437,17 @@ void theloop() {
   if (bNewSecond) {  //add a line to graph UI if we have new temp data
     if (5 == 5 & (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING)) {
       //SpDebu)g("Adding maxium of:\t" + String(TBeanAvgRoll.maximum()));
-      if (1 == 1) {
+      if (1 == 2) {
         float dummymean = SetpointforATime(RoastMinutes) - 5;
         float dummycoil = 700 + RoastMinutes;
-        RoastAcumHeat + dummymean;
+        RoastAcumHeat  = RoastAcumHeat + dummymean;
         AddLinebyTimeAndTemp(RoastMinutes, dummymean, ROLLAVGLINEID);
         float coiloffsetted = (dummycoil + CoilTempOffSet);
         if (coiloffsetted < 0) { coiloffsetted = 0; }
         AddPointbyTimeAndTemp(RoastMinutes, coiloffsetted, COILLINEID, 2);
 
       } else {
-        RoastAcumHeat + TBeanAvgRoll.mean();
+        RoastAcumHeat  =   RoastAcumHeat + TBeanAvgRoll.mean();
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         int coiloffsetted = (TCoilAvgRoll.mean() - CoilTempOffSet);
         if (coiloffsetted < 0) { coiloffsetted = 0; }
