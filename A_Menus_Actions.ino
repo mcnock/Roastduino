@@ -213,25 +213,34 @@ void ProcessVmenuButtonClick() {
   int i = MenuStatus.ButtonClicked;
   //SPDEBUG("ProcessVmenuButtonClick_ button id " + String(mybutton.butID) +  " action:" + String(mybutton.action) + " adjustmentvalueset:" + String(mybutton.adjustmentvalueset));
   //SPDEBUG("ProcessVmenuButtonClick_ buttonclicked " + String(MenuStatus.ButtonClicked));
-  if (MenuStatus.ButtonClicked == 0) {// user clicked on top button
+  if (MenuStatus.ButtonClicked == 0) {  // user clicked on top button
     if (MenuStatus.VmenuShowing == VMENUADJUSTVALUE) {
       switch (ActiveAdjustment.name) {
-          case ACTIONADJUSTFANMANUAL: {
-              if (FanManual == true) 
-                  { FanManual = false; }
-              break;
-            }
-        }
-    } 
+        case ACTIONADJUSTFANMANUAL:
+          {
+            if (FanManual == true) { FanManual = false; }
+            break;
+          }
+        case ACTIONADJUSTTIMEMANUAL:
+          {
+            if (TimeManual == true) { TimeManual = false; }
+            break;
+          }
+      }
+    }
     if (MenuStatus.VmenuShowing == VMENUSETPOINTSELECT) {
       ActiveAdjustment.spSelected = -1;
-    } else if (MenuStatus.VmenuShowing == VMENUDEBUG) {
+    }
+    if (MenuStatus.VmenuShowing == VMENUDEBUG) {
       StateDebug = 0;
-    } else if (mybutton.action == VMENUFINDPRIOR) {
+    }
+
+    if (mybutton.action == VMENUFINDPRIOR) {
       DrawVMenu(MenuStatus.VmenuPrior);
     } else {
       DrawVMenu(mybutton.action);
     }
+
     return;
   }
   if (mybutton.action > ACTIONADJUSTMENTS) {
@@ -369,20 +378,26 @@ void ProcessAnAdjustment() {
       if ((ActiveAdjustment.ButtonWhenCalled >= 0) & (ActiveAdjustment.ButtonWhenCalled <= 4)) {
         spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
         FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
-        EEPROM.put(FanSetPoints_EP[spSelected], FlowSetPoints[spSelected]);
+        EEPROM.put(Flowsetpoints_int_EP[spSelected], FlowSetPoints[spSelected]);
+        
         if (ActiveAdjustment.moveamount > 0) {
+          if (spSelected < 3) {
           for (byte i = spSelected + 1; i <= 3; i++) {
             if (FlowSetPoints[i].flow < FlowSetPoints[spSelected].flow) {
               FlowSetPoints[i].flow = FlowSetPoints[spSelected].flow;
-              EEPROM.put(FanSetPoints_EP[i], FlowSetPoints[i]);
+              EEPROM.put(Flowsetpoints_int_EP[i], FlowSetPoints[i]);
             }
           }
+          }
         }
+        
         if (ActiveAdjustment.moveamount < 0) {
-          for (byte i = spSelected - 1; i >= 0; i--) {
-            if (FlowSetPoints[i].flow > FlowSetPoints[spSelected].flow) {
-              FlowSetPoints[i].flow = FlowSetPoints[spSelected].flow;
-              EEPROM.put(FanSetPoints_EP[i], FlowSetPoints[i]);
+          if (spSelected > 0) {
+            for (int i = spSelected - 1; i > -1; i--) {
+              if (FlowSetPoints[i].flow > FlowSetPoints[spSelected].flow) {
+                FlowSetPoints[i].flow = FlowSetPoints[spSelected].flow;
+                EEPROM.put(Flowsetpoints_int_EP[i], FlowSetPoints[i]);
+              }
             }
           }
         }
@@ -429,6 +444,21 @@ void ProcessAnAdjustment() {
       EEPROM.put(GAINFLOW_EP, GainFlow);
       UpdateConfigsDisplayArea(VALUESONLY);
       break;
+    case ACTIONADJUSTMAXPERCENTCHANGEPERSECONDFLOW:
+      //SPDEBUG("here");
+      MaxPercentChangePerSecondFlow = MaxPercentChangePerSecondFlow + ActiveAdjustment.moveamount;
+      EEPROM.put(MAXPERCENTCHANGEPERSECONDFLOW_float_EP, MaxPercentChangePerSecondFlow);
+      UpdateConfigsDisplayArea(VALUESONLY);
+      break;
+    case ACTIONADJUSTTIMEMANUAL:
+      //SPDEBUG("here");
+      TimeManual = true;
+      RoastMinutes = RoastMinutes;
+      UpdateProgressDisplayArea(VALUESONLY);
+      break;
+
+
+
     default:
       break;
   }

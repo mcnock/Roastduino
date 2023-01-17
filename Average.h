@@ -59,7 +59,7 @@ public:
   // outside the class.
   uint16_t _sizemax;
   uint16_t _size;
-  int _sum;              // _sum variable for faster mean calculation
+  T _sum;              // _sum variable for faster mean calculation
   Average(uint16_t size);
   ~Average();
   float rolling(T entry);
@@ -107,7 +107,7 @@ template<class T> void Average<T>::push(T entry) {
     _sum = _sum - _store[_position];  // remove old value from _sum
   }
   _store[_position] = entry;              // store new value in array
-  _sum += entry;                          // add the new value to _sum
+  _sum = _sum + entry;                          // add the new value to _sum
   _position += 1;
   _meandirty = true;
                            // increment the position counter

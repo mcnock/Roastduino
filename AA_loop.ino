@@ -19,19 +19,17 @@ void theloop() {
   NewState = 0;
   boolean bUpdateFan = false;
   if (RoastTime.isRunning()) {
-    RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+    if (TimeManual == false) {
+      RoastMinutes = ((double)RoastTime.elapsed()) / 60;
+    }
   }
   if (SecondTimer.elapsed() > 1000) {
     bNewSecond = true;
     LoopsPerSecond = LoopsPerSecondCalcing;
     LoopsPerSecondCalcing = 0;
-
     BeanOpticalFlowReadsPerSecond = BeanOpticalFlowReadsPerSecondCalcing;
-
     BeanOpticalFlowReadsPerSecondCalcing = 0;
-
     TempSensorReadsPerSecond = TempSensorReadsPerSecondCalcing;
-
     TempSensorReadsPerSecondCalcing = 0;
     SecondTimer.restart(0);
   } else {
@@ -49,18 +47,25 @@ void theloop() {
   if (ReadBeanOpticalFlowRateFlag == true) {
     BeanOpticalFlowReadsPerSecondCalcing++;
     ReadBeanOpticalFlowRateFlag = false;
-
     byte sensorindex = 0;
     BeanYflow = getCleanOpticaFlow(sensorindex);
-    if (BeanYflow > -1) {
+    if (BeanYflow > 0) {
+      //Serial.println(BeanYflow);
       BeanYflow_avg.push(BeanYflow);
       //float mytest =  BeanYflow_avg.mean();
-      SPDEBUG2("deltaY:" + String(BeanYflow) + ",mean:" + String(BeanYflow_avg.mean()) + ",Y10:10,Y0:0,avgsize:" + String(BeanYflow_avg.getCount()) + ",skipped:" + String(BeanOpticalFlowSensors[sensorindex].YflowReadingskipped));
-      SPDEBUGXCLOSE
+      //Serial.println(mytest);
+
+      //SPDEBUG2("deltaY:" + String(BeanYflow) + ",mean:" + String(BeanYflow_avg.mean()) + ",Y10:10,Y0:0,avgsize:" + String(BeanYflow_avg.getCount()) + ",skipped:" + String(BeanOpticalFlowSensors[sensorindex].YflowReadingskipped));
+      //SPDEBUGXCLOSE
       bNewFlowAvailable = true;
     } else {
-      bNewFlowAvailable = false;
+      BeanYflow_avg.push(BeanYflow);
+      bNewFlowAvailable = true;
     }
+    byte fc = digitalRead(FANCURRENT_A0);
+    FanCurrentAvgRoll.push(fc);
+    byte cc = digitalRead(COILCURRENT_A1);
+    CoilCurrentAvgRoll.push(cc);
   }
   if (ReadSensorInSequenceFlag > -1) {  //read thermocouples, 1 per loop
     //Serial.println("B1:");Serial.print(TBean1);Serial.println("B2:");Serial.print(TBean2);Serial.print("C:");Serial.println(TCoil);
@@ -68,7 +73,7 @@ void theloop() {
       case 0:  //coil temp
         MeasureTempTimer.restart();
         TCoil = getCleanTemp(ThermoCoil);
-        SPDEBUG("TCoil:" + String(TCoil));
+        //SPDEBUG("TCoil:" + String(TCoil));
         if (TCoil > -1) {
           TCoilAvgRoll.push(TCoil);
         }
@@ -76,12 +81,12 @@ void theloop() {
         break;
       case 1:  //bean temp 1
         TBean1 = getCleanTemp(ThermoBean1);
-        SPDEBUG("TBean1:" + String(TBean1));
+        //SPDEBUG("TBean1:" + String(TBean1));
         ReadSensorInSequenceFlag++;
         break;
       case 2:  //beam temp 2
         TBean2 = getCleanTemp(ThermoBean2);
-        SPDEBUG("TBean2:" + String(TBean2) + " id:" + String(ThermoBean2));
+        //SPDEBUG("TBean2:" + String(TBean2) + " id:" + String(ThermoBean2));
         TBeanAvgThisRun = getBeanAvgTemp(TBean1, TBean2);
         if (TBeanAvgThisRun > -1) {
           TBeanAvgRoll.push(TBeanAvgThisRun);
@@ -135,7 +140,7 @@ void theloop() {
           TouchTimer.restart(0);
         }
       } else {
-        if (TouchStatus.objectpress == PressMenu) {
+        if (TouchStatus.objectpressID == PressMenu) {
           if (TouchTimer.elapsed() > 1500) {
             if (LongPressDetected == false) {
               LongPressDetected = true;
@@ -144,70 +149,49 @@ void theloop() {
             }
           }
         } else {
+          //SPDEBUG("Hdere");
           DetectTouch();
         }
       }
     } else {
-      //Serial.println("UnPress")
+      //no data available ("aka UnPress")
       if (TouchDetected == true) {
         TouchDetected = false;
-        if (TouchStatus.objectpress == PressMenu) {
-          if (LongPressDetected == false) {
-            if (TouchTimer.elapsed() > 100) {
-              MenuTouchClickDetected();
-              TouchStatus.objectpress = 0;
+        switch (TouchStatus.objectpressID) {
+          case PressMenu:
+            {
+              if (LongPressDetected == false) {
+                if (TouchTimer.elapsed() > 100) {
+                  MenuTouchClickDetected();
+                  TouchStatus.objectpressID = PressNone;
+                }
+              } else {
+                //long press is proccessed during when data available
+
+                LongPressDetected = false;
+              }
+              //clear anyhightlighting that maybe left inplace
+              OutlineClickedButton(BLACK);
+              TouchStatus.objectpressID = PressNone;
+              break;
             }
-
-          } else {
-            LongPressDetected = false;
-          }
+          case PressOpDetailBox:
+          case PressConfigDisplayBox:
+            {
+              UpdateDisplayBoxLocation(TouchStatus.objectpressID);
+              break;
+            }
         }
-        if (TouchStatus.objectpress == PressMenu) {
-          //SPDEBUG("ClearingC menu press");
-          OutlineClickedButton(BLACK);
-          TouchStatus.objectpress = 0;
-        }
-        if (TouchStatus.objectpress == PressOperDetailBox) {
-          //SPDEBUG("ClearingD menu press");
-          myGLCD.setColor(BLACK);
-          myGLCD_fillRect(OpDetailDisplay);
-          myGLCD.setColor(PALEYELLOW);
-          OpDetailDisplay.x = OpDetailDisplay.x - TouchStatus.dragx;
-          OpDetailDisplay.y = OpDetailDisplay.y - TouchStatus.dragy;
-          OpDetailDisplay.xmax = OpDetailDisplay.xmax - TouchStatus.dragx;
-          OpDetailDisplay.ymax = OpDetailDisplay.ymax - TouchStatus.dragy;
-          UpdateOpDetailsDisplayArea(ALL);
-          TouchStatus.objectpress = 0;
-          EEPROM.put(OPERDETAILDISPLAY_X_EP, OpDetailDisplay.x);
-          EEPROM.put(OPERDETAILDISPLAY_Y_EP, OpDetailDisplay.y);
-        }
-        if (TouchStatus.objectpress == PressCongurationBox) {
-          //SPDEBUG("ClearingD menu press");
-          myGLCD.setColor(BLACK);
-          myGLCD_fillRect(ConfigDisplay);
-          myGLCD.setColor(PALEYELLOW);
-          ConfigDisplay.x = ConfigDisplay.x - TouchStatus.dragx;
-          ConfigDisplay.y = ConfigDisplay.y - TouchStatus.dragy;
-          ConfigDisplay.xmax = ConfigDisplay.xmax - TouchStatus.dragx;
-          ConfigDisplay.ymax = ConfigDisplay.ymax - TouchStatus.dragy;
-          UpdateConfigsDisplayArea(ALL);
-          TouchStatus.objectpress = 0;
-          EEPROM.put(CONFIGURATIONDISPLAY_X_EP, ConfigDisplay.x);
-          EEPROM.put(CONFIGURATIONDISPLAY_Y_EP, ConfigDisplay.y);
-        }
-
-        TouchTimer.stop();
       }
-
-
       TouchTimer.stop();
+      TouchStatus.objectpressID = PressNone;
     }
     //else {
     //  SPDEBUG("No touch data available");
-    //  if (TouchStatus.objectpress == PressMenu) {
+    //  if (TouchStatus.objectpressID == PressMenu) {
     //    SPDEBUG("ClearingC menu press");
     //    OutlineClickedButton(BLACK);
-    //    TouchStatus.objectpress = 0;
+    //    TouchStatus.objectpressID = PressNone;
     //  }
     // }
   }
@@ -282,7 +266,7 @@ void theloop() {
           State = NewState;
           //reset fan pid values
           ErrIFlow = 0.0;
-          IntegralSumFlow = 0.0;
+          IntegralSumFlow = _IntegralSumFlow;
           BeanYflow_avg.clear();
           //DutyFlow = .7;
 
@@ -429,7 +413,9 @@ void theloop() {
     }
   }
   if (4 == 4 & (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING || State == STATEFANONLY)) {
-    if (bNewFlowAvailable == true) {
+    //if (bNewFlowAvailable == true) {
+
+    if (bNewSecond == true) {
       SetFanFromOpticalSensorPID();
     }
   }
@@ -440,14 +426,14 @@ void theloop() {
       if (1 == 2) {
         float dummymean = SetpointforATime(RoastMinutes) - 5;
         float dummycoil = 700 + RoastMinutes;
-        RoastAcumHeat  = RoastAcumHeat + dummymean;
+        RoastAcumHeat = RoastAcumHeat + dummymean;
         AddLinebyTimeAndTemp(RoastMinutes, dummymean, ROLLAVGLINEID);
         float coiloffsetted = (dummycoil + CoilTempOffSet);
         if (coiloffsetted < 0) { coiloffsetted = 0; }
         AddPointbyTimeAndTemp(RoastMinutes, coiloffsetted, COILLINEID, 2);
 
       } else {
-        RoastAcumHeat  =   RoastAcumHeat + TBeanAvgRoll.mean();
+        RoastAcumHeat = RoastAcumHeat + TBeanAvgRoll.mean();
         AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
         int coiloffsetted = (TCoilAvgRoll.mean() - CoilTempOffSet);
         if (coiloffsetted < 0) { coiloffsetted = 0; }

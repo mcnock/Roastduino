@@ -136,6 +136,13 @@ typedef struct error {
   char line1[75];
 } error;
 
+typedef struct displaybox {
+byte DisplayboxID;
+rect Rect;
+byte X_EP;
+byte Y_EP;
+} displaybox;
+
 typedef struct menustatus {
   int VmenuShowing = -1;
   int VmenuPrior = -1;
@@ -148,19 +155,21 @@ typedef struct menustatus {
 
 typedef struct setpoint {
 
-  unsigned int Minutes;
+  byte Minutes;
   int Temperature;
   int SpanMinutes;
-  int TemperatureNew;
+  //int TemperatureNew;
 
 } roastdef;
 
 typedef struct touchstatus{
-   byte objectpress = -1;
+   byte objectpressID = 3;
    int Xdown;
    int Ydown;
-   unsigned int dragx;
-   unsigned int dragy;
+   int dragx;
+   int dragy;
+   int dragxlastdrawn;
+   int dragylastdrawn;
 } touchstatus;
 
 typedef struct ssrstatus{

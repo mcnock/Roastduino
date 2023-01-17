@@ -19,7 +19,7 @@ void graphProfile() {
     int accumulatedbySetPoint = 0;
     int accumulatedMinutes = 0;
     byte m;
-    EEPROM.get(RoastLength_EP, m);
+    EEPROM.get(ROASTLENGTH_int_EP, m);
     MySetPoints[SetPointCount - 1].Minutes = m;
     //SPDEBUG("Loading " + String(SetPointCount) + " new setpoints with length " + String(MySetPoints[SetPointCount - 1].Minutes));
     if (MySetPoints[SetPointCount - 1].Minutes < 10 or MySetPoints[SetPointCount - 1].Minutes > 20) {
@@ -42,6 +42,7 @@ void graphProfile() {
     if (SetPointCount == 5) {
       if (MySetPoints[SetPointCount - 1].Minutes >= 14) {
         MySetPoints[1].Minutes = 6;
+
         MySetPoints[2].Minutes = 9;
         MySetPoints[3].Minutes = 12;
 
@@ -58,7 +59,7 @@ void graphProfile() {
     }
     //read setpoint temps from eprom
     for (int xSetPoint = 0; xSetPoint < SetPointCount; xSetPoint++) {
-      EEPROM.get(SetpointTemp_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
+      EEPROM.get(TempSetpoint_int_EP[xSetPoint], MySetPoints[xSetPoint].Temperature);
       if (xSetPoint == 0) {
         MySetPoints[0].SpanMinutes = 0;
         MySetPoints[0].Minutes = 0;
@@ -181,11 +182,10 @@ void graphProfile() {
   UpdateErrorDisplayArea(ALL);
   UpdateOpDetailsDisplayArea(ALL);
   UpdateProgressDisplayArea(ALL);
-  Setpointschanged = false;
-  UpdateProgressDisplayArea(ALL);
   UpdateConfigsDisplayArea(ALL);
   DrawLineFromHistoryArray(ROLLAVGLINEID);
   DrawLineFromHistoryArray(COILLINEID);
+  Setpointschanged = false;
 }
 
 void graphFanProfile() {
@@ -264,22 +264,26 @@ void graphFanProfile() {
 
 void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   //this is top row
+
+  if (TouchStatus.objectpressID == PressConfigDisplayBox){
+    return;
+  }
   myGLCD.setFont(SmallFont);
   int rowheight = myGLCD.getFontYsize() * 1.1;
-  int col = ConfigDisplay.x + 4;
-  int row = ConfigDisplay.y + 2;
+  int col = DisplayBoxes[ConfigDisplay].Rect.x + 4;
+  int row = DisplayBoxes[ConfigDisplay].Rect.y + 2;
   int col2 = col + (myGLCD.getFontXsize() * 9);  //number
-  if (ConfigDisplay.xmax == 0) {
-    ConfigDisplay.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    ConfigDisplay.ymax = row + (rowheight * 12) + 2;
+  if (DisplayBoxes[ConfigDisplay].Rect.xmax == 0) {
+    DisplayBoxes[ConfigDisplay].Rect.xmax = col2 + (myGLCD.getFontXsize() * 6);
+    DisplayBoxes[ConfigDisplay].Rect.ymax = row + (rowheight * 13) + 2;
   }
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bVALUESONLY == false) {
     myGLCD.setColor(BLACK);
-    myGLCD_fillRect(ConfigDisplay);
+    myGLCD_fillRect(DisplayBoxes[ConfigDisplay].Rect);
     myGLCD.setColor(PALEYELLOW);
-    myGLCD_drawRect(ConfigDisplay);
+    myGLCD_drawRect(DisplayBoxes[ConfigDisplay].Rect);
   }
   myGLCD.print(F("Configurations"), col, row);
   row = row + rowheight;
@@ -290,25 +294,25 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   myGLCD_printNumF(IntegralTemp, col2, row, 6, 2);
   row = row + rowheight;
   myGLCD.print(F("Fsp  0m:"), col, row);
-  myGLCD.printNumI(FlowSetPoints[0].flow, col2, row, 6, ' ');
+  myGLCD_printNumF(FlowSetPoints[0].flow, col2, row, 6, 1);
   row = row + rowheight;
   myGLCD.print(F("Fsp  7m:"), col, row);
-  myGLCD.printNumI(FlowSetPoints[1].flow, col2, row, 6, ' ');
+  myGLCD_printNumF(FlowSetPoints[1].flow, col2, row, 6, 1);
   row = row + rowheight;
   myGLCD.print(F("Fsp 11m:"), col, row);
-  myGLCD.printNumI(FlowSetPoints[2].flow, col2, row, 6, ' ');
+  myGLCD_printNumF(FlowSetPoints[2].flow, col2, row, 6, 1);
   row = row + rowheight;
   myGLCD.print(F("Fsp 14m:"), col, row);
-  myGLCD.printNumI(FlowSetPoints[3].flow, col2, row, 6, ' ');
-
-
+  myGLCD_printNumF(FlowSetPoints[3].flow, col2, row, 6, 1);
   row = row + rowheight;
   myGLCD.print(F("F Gain   :"), col, row);
   myGLCD.printNumI(GainFlow, col2, row, 6, ' ');
   row = row + rowheight;
   myGLCD.print(F("F Intergal:"), col, row);
   myGLCD_printNumF(IntegralFlow, col2, row, 6, 2);
-
+  row = row + rowheight;
+  myGLCD.print(F("F Der:"), col, row);
+  myGLCD_printNumF(MaxPercentChangePerSecondFlow, col2, row, 6, 2);
   row = row + rowheight;
   myGLCD.print(F("TooHotTemp:"), col, row);
   myGLCD.printNumI(TempCoilTooHot, col2, row, 6, ' ');
@@ -330,29 +334,26 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
   }
   myGLCD.setColor(PALEYELLOW);
   myGLCD.setFont(arial_normal);
-  int rowstart = OpProgessDisplay.y + 2;
+  int rowstart = DisplayBoxes[OpProgessDisplay].Rect.y + 2;
   int row = rowstart;
-  int col = OpProgessDisplay.x + 1;
+  int col = DisplayBoxes[OpProgessDisplay].Rect.x + 1;
   int rowheight = myGLCD.getFontYsize() * 1.1;
   int col2 = col + (5 * myGLCD.getFontXsize());
   int colend = col2 + (5 * myGLCD.getFontXsize());
 
-  if (OpProgessDisplay.xmax == 0) {
-    OpProgessDisplay.xmax = colend + 2;
-    OpProgessDisplay.ymax = rowstart + (rowheight * 9) + 2;
+  if (DisplayBoxes[OpProgessDisplay].Rect.xmax == 0) {
+    DisplayBoxes[OpProgessDisplay].Rect.xmax = colend + 2;
+    DisplayBoxes[OpProgessDisplay].Rect.ymax = rowstart + (rowheight * 10) + 2;
   }
   //myGLCD_drawRect(col, rowstart - 1, colend, row + rowheight + 1);
   if (bVALUESONLY == ALL || LastStateUpdated != State) {
     myGLCD.setColor(BLACK);
-
-    myGLCD_fillRect(OpProgessDisplay);
+    myGLCD_fillRect(DisplayBoxes[OpProgessDisplay].Rect);
     myGLCD.setColor(PALEYELLOW);
-
-    myGLCD_drawRect(OpProgessDisplay);
+    myGLCD_drawRect(DisplayBoxes[OpProgessDisplay].Rect);
   }
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
-
   int DutyPercent = DutyTemp * 100;
   double FanPercent;
   if (FanLegacy == true) {
@@ -360,7 +361,6 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
   } else {
     FanPercent = DutyFan * 100;
   }
-
   if (bVALUESONLY == false) {
     myGLCD.print(F("Time:"), col, row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
@@ -371,11 +371,14 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     myGLCD.print(F("Pwr%:"), col, row);
     myGLCD.printNumI(DutyPercent, col2, row, 5, ' ');
     row = row + rowheight;
+    myGLCD.print(F("sp:"), col, row);
+    myGLCD_printNumF(CurrentSetPointTemp, col2, row, 5, 1);
+    row = row + rowheight;
     myGLCD.print(F("Err :"), col, row);
     myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
     row = row + rowheight;
-    myGLCD.print(F("AccT:"), col, row);
-    myGLCD.printNumI(RoastAcumHeat, col2, row, 5, ' ');
+    myGLCD.print(F("AccTk:"), col, row);
+    myGLCD.printNumI(RoastAcumHeat / 1000, col2, row, 5, ' ');
     row = row + rowheight;
     row = row + rowheight;
     myGLCD.print(F("Fan%:"), col, row);
@@ -385,7 +388,7 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     myGLCD_printNumF(BeanYflowsetpoint, col2, row, 5, 1);
     row = row + rowheight;
     myGLCD.print(F("Flow:"), col, row);
-    myGLCD_printNumF(BeanYflow_avg.mean(), col2, row, 5, 1);
+    myGLCD_printNumF(sq(BeanYflow_avg.mean()), col2, row, 5, 1);
   } else {
     //myGLCD.print(F("Time:"), col , row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
@@ -395,6 +398,9 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     row = row + rowheight;
     //myGLCD.print(F("Pwr%:"), col, row);
     myGLCD.printNumI(DutyPercent, col2, row, 5);
+    row = row + rowheight;
+    //myGLCD.print(F("sp:"), col, row);
+    myGLCD_printNumF(CurrentSetPointTemp, col2, row, 5, 1);
     row = row + rowheight;
     //myGLCD.print(F("Err :"), col , row);
     myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
@@ -410,7 +416,7 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     myGLCD_printNumF(BeanYflowsetpoint, col2, row, 5, 1);
     row = row + rowheight;
     //myGLCD.print(F("Flow:"), col, row);
-    myGLCD_printNumF(BeanYflow_avg.mean(), col2, row, 5, 1);
+    myGLCD_printNumF(sq(BeanYflow_avg.mean()), col2, row, 5, 1);
   }
 }
 
@@ -465,23 +471,26 @@ void UpdateErrorDisplayArea(boolean bVALUESONLY) {
 
 void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
 
+  if (TouchStatus.objectpressID == PressOpDetailBox){
+    return;
+  }
   myGLCD.setFont(SmallFont);
   int rowheight = myGLCD.getFontYsize() * 1.1;
-  int col = OpDetailDisplay.x + 4;
-  int row = OpDetailDisplay.y + 2;
+  int col = DisplayBoxes[OpDetailDisplay].Rect.x + 4;
+  int row = DisplayBoxes[OpDetailDisplay].Rect.y + 2;
   int col2 = col + (myGLCD.getFontXsize() * 9);  //number
-  if (OpDetailDisplay.xmax == 0) {
-    OpDetailDisplay.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    OpDetailDisplay.ymax = row + (rowheight * 12) + 2;
+  if (DisplayBoxes[OpDetailDisplay].Rect.xmax == 0) {
+    DisplayBoxes[OpDetailDisplay].Rect.xmax = col2 + (myGLCD.getFontXsize() * 6);
+    DisplayBoxes[OpDetailDisplay].Rect.ymax = row + (rowheight * 12) + 2;
   }
   FreeMemory = freeMemory();
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bVALUESONLY == false) {
     myGLCD.setColor(BLACK);
-    myGLCD_fillRect(OpDetailDisplay);
+    myGLCD_fillRect(DisplayBoxes[OpDetailDisplay].Rect);
     myGLCD.setColor(PALEYELLOW);
-    myGLCD_drawRect(OpDetailDisplay);
+    myGLCD_drawRect(DisplayBoxes[OpDetailDisplay].Rect);
     myGLCD.print(F("Oper Detail"), col, row);
     row = row + rowheight;
     myGLCD.print(F("Tavg:"), col, row);
@@ -853,7 +862,7 @@ void MoveAFanPointsPWM(int SetPoint) {
   Serial.println(ActiveAdjustment.moveamount);
   if (SetPoint > -1) {
     FlowSetPoints[SetPoint].flow = FlowSetPoints[SetPoint].flow + ActiveAdjustment.moveamount;
-    EEPROM.put(FanSetPoints_EP[SetPoint], FlowSetPoints[SetPoint]);
+    EEPROM.put(Flowsetpoints_int_EP[SetPoint], FlowSetPoints[SetPoint]);
     delay(100);
     myGLCD.setFont(SmallFont);
     DrawFanSetPoint(SetPoint, AQUA, true);
@@ -867,7 +876,7 @@ void MoveAFanPointsTime(int SetPoint) {
   Serial.println(ActiveAdjustment.moveamount);
   if (SetPoint > -1) {
     FlowSetPoints[SetPoint].Minutes = FlowSetPoints[SetPoint].Minutes + ActiveAdjustment.moveamount;
-    EEPROM.put(FanSetPoints_EP[SetPoint], FlowSetPoints[SetPoint]);
+    EEPROM.put(Flowsetpoints_int_EP[SetPoint], FlowSetPoints[SetPoint]);
     delay(100);
     myGLCD.setFont(SmallFont);
     DrawFanSetPoint(SetPoint, AQUA, false);
@@ -878,7 +887,7 @@ void MoveAPoint(int SetPoint) {
   //Serial.print("MoveAPoint Setpoint:"); Serial.print(SetPoint); Serial.print("ActiveAdjustment.moveamount:"); Serial.println(ActiveAdjustment.moveamount);
   if (SetPoint > -1) {
     MySetPoints[SetPoint].Temperature = MySetPoints[SetPoint].Temperature + ActiveAdjustment.moveamount;
-    EEPROM.put(SetpointTemp_EP[SetPoint], MySetPoints[SetPoint].Temperature);
+    EEPROM.put(TempSetpoint_int_EP[SetPoint], MySetPoints[SetPoint].Temperature);
     delay(100);
     myGLCD.setFont(SmallFont);
     DrawTempSetPoint(SetPoint, YELLOW, BEINGMOVED);
@@ -890,6 +899,9 @@ void myGLCD_fillRect(rect& Rect) {
   myGLCD.fillRect(Rect.x, Rect.y, Rect.xmax, Rect.ymax);
 }
 
+void myGLCD_fillRect_wBuffer(rect& Rect, byte buffer) {
+  myGLCD.fillRect(Rect.x - buffer, Rect.y - buffer, Rect.xmax + buffer, Rect.ymax + buffer);
+}
 void myGLCD_drawRect(rect& Rect) {
   myGLCD.drawRect(Rect.x, Rect.y, Rect.xmax, Rect.ymax);
 }
@@ -906,4 +918,48 @@ void myGLCD_printNumF(double Number, int col, int row, int Len, int Dec) {
     dtostrf(Number, Len, Dec, s7);
     myGLCD.print(s7, col, row);
   }
+}
+
+void UpdateDisplayBoxLocation(byte DisplayIDBeingMoved) {
+  displaybox* BoxedBeingMoved = &DisplayBoxes[DisplayIDBeingMoved];
+  //blank out the prior box
+  myGLCD.setColor(BLACK);
+
+  myGLCD_fillRect_wBuffer(BoxedBeingMoved->Rect, 1);
+  myGLCD.setColor(PALEYELLOW);
+
+  int revisedDragx = TouchStatus.dragx;
+  int revisedDragy = TouchStatus.dragy;
+
+  SPDEBUG("Draw new id:" + String(BoxedBeingMoved->DisplayboxID) + " x delta:" + String(revisedDragx) + " y delta:" + String(revisedDragy));
+  BoxedBeingMoved->Rect.x = BoxedBeingMoved->Rect.x + revisedDragx;
+  BoxedBeingMoved->Rect.y = BoxedBeingMoved->Rect.y + revisedDragy;
+  BoxedBeingMoved->Rect.xmax = BoxedBeingMoved->Rect.xmax + revisedDragx;
+  BoxedBeingMoved->Rect.ymax = BoxedBeingMoved->Rect.ymax + revisedDragy;
+  SPDEBUG("Draw new: xnew:" + String(BoxedBeingMoved->Rect.x) + " y new:" + String(BoxedBeingMoved->Rect.y));
+TouchStatus.objectpressID = PressNone;
+  switch (BoxedBeingMoved->DisplayboxID) {
+    case OpProgessDisplay:
+      {
+
+        break;
+      }
+
+    case ConfigDisplay:
+      {
+        UpdateConfigsDisplayArea(ALL);
+
+        break;
+      }
+
+    case OpDetailDisplay:
+      {
+        UpdateOpDetailsDisplayArea(ALL);
+
+        break;
+      }
+  }
+  
+  EEPROM.put(BoxedBeingMoved->X_EP, BoxedBeingMoved->Rect.x);
+  EEPROM.put(BoxedBeingMoved->Y_EP, BoxedBeingMoved->Rect.y);
 }

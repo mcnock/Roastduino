@@ -39,8 +39,8 @@ void processSerial(Stream &Serial) {
             Serial.println(BeanYflow_avg._sizemax);
             Serial.print(F("Sfxxx TimeReadThermoDuration:"));  //f
             Serial.println(TimeReadThermoDuration);
-            Serial.print(F("Sgxxx MaxPercentChangeFlow:"));  //g
-            Serial.println(MaxPercentChangeFlow);
+            Serial.print(F("Sgxxx MaxPercentChangePerSecondFlow:"));  //g
+            Serial.println(MaxPercentChangePerSecondFlow);
             Serial.print(F("Shxxx TBeanAvgRoll._size:"));  //h
             Serial.print(TBeanAvgRoll._size);
             Serial.print(" of ");
@@ -101,13 +101,13 @@ void processSerial(Stream &Serial) {
                     Serial.println(TimeReadThermoDuration);  //Serial.println();
                     break;
                   }
-                case 103:  //g MaxPercentChangeFlow
+                case 103:  //g MaxPercentChangePerSecondFlow
                   {
-                    Serial.print(F("Set MaxPercentChangeFlow from"));
-                    Serial.print(MaxPercentChangeFlow);  //Serial.println();
-                    MaxPercentChangeFlow = n;
+                    Serial.print(F("Set MaxPercentChangePerSecondFlow from"));
+                    Serial.print(MaxPercentChangePerSecondFlow);  //Serial.println();
+                    MaxPercentChangePerSecondFlow = n;
                     Serial.print(F(" to:"));
-                    Serial.println(MaxPercentChangeFlow);  //Serial.println();
+                    Serial.println(MaxPercentChangePerSecondFlow);  //Serial.println();
                     break;
                   }
                 case 104:  //h TBeanAvgRoll._size
@@ -216,7 +216,7 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("Profile Decrease 5 "));
                 ActiveAdjustment.moveamount = -5;
                 //MoveLast3Point();
-                saveChangedSetpoints();
+               // saveChangedSetpoints();
                 break;
               }
             case 100:  //d
@@ -224,7 +224,7 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("Profile Decrease 3 "));
                 ActiveAdjustment.moveamount = -3;
                 // MoveLast3Point();
-                saveChangedSetpoints();
+                //saveChangedSetpoints();
                 break;
               }
             case 105:  //i
@@ -232,7 +232,7 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("Profile Increase 3 "));
                 ActiveAdjustment.moveamount = 3;
                 // MoveLast3Point();
-                saveChangedSetpoints();
+                //saveChangedSetpoints();
 
                 break;
               }
@@ -241,7 +241,7 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("Profile Increase 5 "));
                 ActiveAdjustment.moveamount = 5;
                 // MoveLast3Point();
-                saveChangedSetpoints();
+                //saveChangedSetpoints();
 
 
                 break;
