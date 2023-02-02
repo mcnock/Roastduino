@@ -8,22 +8,23 @@ void processSerial(Stream &Serial) {
     int incomingByte2 = 0;
     //int incomingByte3 = 0;
     delay(100);
-    if (Serial.available() > 0) {
-      incomingByte2 = Serial.read();
-    }
-
+    //if (Serial.available() > 0) {
+    //   incomingByte2 = Serial.read();
+    //}
     // say what you got:
     switch (incomingByte1) {
-      case 63:  //?
+      case 63:  //? first char
         {
           //Serial.println(F("E:End  s:GetStatus c:GetConfiguration t:temperatures  t[1,2,o]:1secondtemps,3secondtemps,off"));
           //Serial.println(F("F:Fan[S,i,I,d,D]:Start,Incr,Decr   R:Roast[S,A,R]:Start,AddMinute,RemMinute   P[i,I,d,D]:ProfileIncrDec]"));
           //Serial.println(F("GXX:SetGain   IXX:SetIntegral"));
-          Serial.println("Sx-set by code x. S? shows option and current values.");
+          Serial.println(F("Dx-send debug info by serial. D?"));
+          Serial.println(F("Sx-set by code x. S? shows option and current values."));
           break;
         }
-      case 83:  //S
+      case 83:  //S first char
         {
+          incomingByte2 = Serial.read();
           if (incomingByte2 == 63) {
             Serial.print(F("Saxxx TimeOpticalFlowDuration:"));  //a
             Serial.println(TimeOpticalFlowDuration);
@@ -35,7 +36,7 @@ void processSerial(Stream &Serial) {
             Serial.println(OCR1A);
             Serial.print(F("Sexxx BeanYflow_avg._size:"));  //e
             Serial.print(BeanYflow_avg._size);
-            Serial.print(" of ");
+            Serial.print(F(" of "));
             Serial.println(BeanYflow_avg._sizemax);
             Serial.print(F("Sfxxx TimeReadThermoDuration:"));  //f
             Serial.println(TimeReadThermoDuration);
@@ -43,7 +44,7 @@ void processSerial(Stream &Serial) {
             Serial.println(MaxPercentChangePerSecondFlow);
             Serial.print(F("Shxxx TBeanAvgRoll._size:"));  //h
             Serial.print(TBeanAvgRoll._size);
-            Serial.print(" of ");
+            Serial.print(F(" of "));
             Serial.println(TBeanAvgRoll._sizemax);
             Serial.print(F("Sixxx Debugbyte (1 to 4):"));  //i
             Serial.println(Debugbyte);
@@ -140,64 +141,52 @@ void processSerial(Stream &Serial) {
                   }
               }
             } else {
-              Serial.println("No value found following the Sx string you typed");
+              Serial.println(F("No value found following the Sx string you typed"));
             }
           }
           break;
         }
-      case 1070:  //F
+      case 68:  //D first char
         {
-          int v = 0;
-          int b = FanSpeed254PWM;
-          ;
-          switch (incomingByte2) {
-            case 83:  //S
-              {
-                Serial.print(F("Fan On "));
-                ProcessHorControlMenu(2);
-                Serial.println(FanSpeed254PWM);
-                break;
-              }
-            case 68:  //D
-              {
-                v = -10;
-                ProcessHorFanMenu(0);
-                break;
-              }
+          if (Serial.peek() == 63) {
+            incomingByte2 = Serial.read();
+          } else {
+            incomingByte2 = Serial.parseInt();
+          }
 
-            case 100:  //d
+          switch (incomingByte2) {
+            case 63:  // ?
               {
-                v = -3;
-                ProcessHorFanMenu(1);
+                Serial.println(F("FLOWPIDINFO_10 - show flow pid information real time"));
+                Serial.println(F("FLOWSENSORDATARAW_11 - show flow data real time"));
+                Serial.println(F("DRAWBOXESINFO_20 - show box redrawing information"));
+                Serial.println(F("TEMPPIDINFO_30 - show temp pid information real time"));
+                Serial.println(F("TEMPDATARAW_31 - show temp data real time"));
                 break;
               }
-            case 105:  //i
+            case 10:
+            case 11:
+            case 20:
+            case 30:
+            case 31:
               {
-                v = 3;
-                ProcessHorFanMenu(2);
-                break;
-              }
-            case 73:  //I
-              {
-                v = 10;
-                ProcessHorFanMenu(3);
+                if (Debugbyte != incomingByte2) {
+                  Debugbyte = incomingByte2;
+                } else {
+                  Debugbyte = 0;
+                }
                 break;
               }
             default:
               {
+                Serial.print(F("Value after D not recognized:"));
+                Serial.println(incomingByte2);
+                break;
               }
-          }
-          if (v != 0) {
-            Serial.print(F("Fan "));
-            Serial.print(v);
-            Serial.print(F(" from "));
-            Serial.print(b);
-            Serial.print(F(" to "));
-            Serial.println(FanSpeed254PWM);
           }
           break;
         }
-      case 1080:  //P
+         case 1080:  //P
         {
           Serial.print(F("Profile before:"));
           for (int x = 0; x < SetPointCount; x++) {
@@ -216,7 +205,7 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("Profile Decrease 5 "));
                 ActiveAdjustment.moveamount = -5;
                 //MoveLast3Point();
-               // saveChangedSetpoints();
+                // saveChangedSetpoints();
                 break;
               }
             case 100:  //d
@@ -252,9 +241,9 @@ void processSerial(Stream &Serial) {
             Serial.print(x);
             Serial.print(F("-"));
             Serial.print(MySetPoints[x].Minutes);
-            Serial.print("-");
+            Serial.print(F("-"));
             Serial.print(MySetPoints[x].Temperature);
-            Serial.print(":");
+            Serial.print(F(":"));
           }
           Serial.println("");
 
@@ -287,7 +276,7 @@ void processSerial(Stream &Serial) {
       case 10100:  //d
         {
           _debug = incomingByte2;
-          Serial.print("debug char recieved:");
+          Serial.print(F("debug char recieved:"));
           Serial.println(_debug);
           break;
         }
@@ -339,11 +328,11 @@ void processSerial(Stream &Serial) {
           Serial.print(F("Profile"));
           for (int x = 0; x < SetPointCount; x++) {
             Serial.print(x);
-            Serial.print("-");
+            Serial.print(F("-"));
             Serial.print(MySetPoints[x].Minutes);
-            Serial.print("-");
+            Serial.print(F("-"));
             Serial.print(MySetPoints[x].Temperature);
-            Serial.print(":");
+            Serial.print(F(":"));
           }
           Serial.println("");
 
@@ -429,9 +418,6 @@ void SerialOutputStatus() {
   Serial.print(DutyTemp, 2);
   Serial.print(F(" Coil Temp:"));
   Serial.print(TCoilAvgRoll.mean(), 1);
-  Serial.print(F(" FanPWM:"));
-  Serial.print(FanSpeed254PWM);
-  Serial.print(F("/254"));
   Serial.println();
 }
 void SerialOutputTempsForPlotting() {

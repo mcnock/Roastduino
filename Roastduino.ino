@@ -20,21 +20,18 @@
 #ifdef __arm__
 // should use uinstd.h to define sbrk but Due causes a conflict
 extern "C" char* sbrk(int incr);
-#else                           // __ARM__
+#else                                         // __ARM__
 extern char* __brkval;
-#endif                          // __arm__
-extern uint8_t SmallFont[];     //8 x 12
-extern uint8_t Retro8x16[];     //8 x 16
-extern uint8_t BigFont[];       //16 x 16
-extern uint8_t arial_normal[];  //16 x 16
-extern uint8_t arial_bold[];    //16 x 16
-extern uint8_t Grotesk16x32[];  //16 x 32
-extern uint8_t Grotesk24x48[];  //24 x 48
-
-
+#endif                                        // __arm__
+extern uint8_t SmallFont[];                   //8 x 12
+extern uint8_t Retro8x16[];                   //8 x 16
+extern uint8_t BigFont[];                     //16 x 16
+extern uint8_t arial_normal[];                //16 x 16
+extern uint8_t arial_bold[];                  //16 x 16
+extern uint8_t Grotesk16x32[];                //16 x 32
+extern uint8_t Grotesk24x48[];                //24 x 48
 UTFT myGLCD(SSD1963_800480, 38, 39, 40, 41);  //(byte model, int RS, int WR, int CS, int RST, int SER)
 UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, byte dout, byte irq
-
 //#define Font8x12 SmallFont
 //#define Font8x16 Retro8x16
 #define FONT16X16 BigFont
@@ -54,23 +51,19 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 #define ORANGE 0xF241
 #define AQUA 0x1D5C
 #define MCP4725_ADDR 0x60
-#define SPDEBUG Serial.println
-#define SPDEBUGXCLOSE }
-#define SPDEBUG1 if (Debugbyte == 1) {Serial.println
-#define SPDEBUG2 \
-  if (Debugbyte == 2) { \
-  Serial.println
-#define SPDEBUG3 \
-  if (Debugbyte == 3) { \
-  Serial.println
-#define SPDEBUG4 \
-  if (Debugbyte == 4) { \
-  Serial.println
-#define SPDEBUG5 \
-  if (Debugbyte == 5) { \
-  Serial.println
+#define SERIALPRINT_DB Serial.print
+#define SERIALPRINTLN_DB Serial.println
+#define SERIALPRINT_ERR Serial.print
+#define SERIALPRINTLN_ERR Serial.println
+#define SERIALPRINT_OP Serial.print
+#define SERIALPRINTLN_OP Serial.println
 byte Debugbyte = 0;
-//PIN  definitions
+#define FLOWPIDINFO_10 10
+#define FLOWSENSORDATARAW_11 11
+#define DRAWBOXESINFO_20 20
+#define TEMPPIDINFO_30 30
+#define TEMPDATARAW_31 31
+
 //AJN 5 TFT inch display shield does not use digital pins 30-34, 10 , 12,  13,  i2c pins 20,21, or miso pins 39 to 54
 #define FANRELAYVCCp_3 3
 #define FANRELAYp_2 2
@@ -86,7 +79,7 @@ byte Debugbyte = 0;
 //#define available 33
 //#define available 34
 #define BEAN_OPTICAL_FLOW_SPI_SSp48 48
-#define BEAN_OPTICAL_FLOW2_SPI_SSp49 49
+#define BEAN_OPTICAL_FLOW2_SPI_SSp53 53
 #define FANCURRENT_A0 A0
 #define COILCURRENT_A1 A1
 #define FANOUTG_A2 A2    // can be replaced with wire to add-on CB
@@ -121,14 +114,10 @@ byte Debugbyte = 0;
 //EPROM MEMORORY
 #define INTEGRALTEMP_EP 0
 #define LOADDEFAULTS_EP 4
-//const int TempSetpoint_int_EP[] = { 6, 10, 15, 20, 25, 30 };  //these are EEprom memory locations - not data
 const byte TempSetpoint_int_EP[] = { 6, 8, 10, 12, 14, 16 };  //these are EEprom memory
 #define ROASTLENGTH_int_EP 36
-//#define FlowSetPointMin_EP 37
-//#define FlowSetPointMax_EP 38
 const byte Flowsetpoints_int_EP[] = { 50, 55, 60, 65 };  //these are EEprom memory locations - not data
 #define INTEGRALFLOW_EP 70
-//#define SETPOINTFLOW_EP 76
 #define FlowSetPointGraphBottompx_EP 78
 #define FlowSetPointGraphHeightpx_EP 80
 #define COILGRAPHTEMPOFFSET_EP 82
@@ -143,6 +132,7 @@ const byte Flowsetpoints_int_EP[] = { 50, 55, 60, 65 };  //these are EEprom memo
 #define OPPROGRESSDISPLAY_X_EP 100
 #define OPPROGRESSDISPLAY_Y_EP 102
 #define MAXPERCENTCHANGEPERSECONDFLOW_float_EP 104
+
 #define STATEROASTING 1
 #define STATESTOPPED 2
 #define STATECOOLING 3
@@ -154,7 +144,6 @@ const byte Flowsetpoints_int_EP[] = { 50, 55, 60, 65 };  //these are EEprom memo
 #define DEBUGDUTY 9
 #define DEBUGCOIL 10
 #define STATERESTARTROASTING 11
-
 #define PROFILELINEID 0
 #define ROLLAVGLINEID 1
 #define ROLLMAXLINEID 2
@@ -162,8 +151,6 @@ const byte Flowsetpoints_int_EP[] = { 50, 55, 60, 65 };  //these are EEprom memo
 #define FANSPEEDLINEID 4
 #define ROLLMINLINEID 5
 #define GRAPHLINECOUNT 6
-
-
 error_status ErrorStatus;
 const char ErrDisplay[6] = "ERROR";
 const int NoError = -1;
@@ -185,7 +172,6 @@ const ssrstatus SSRStatus[4] = { " NA", " ON", "PWM", "OFF" };
 int TempCoolingDone = 250;
 int FreeMemory = 0;
 bool RoastRestartNeeded = false;
-
 const uint16_t StateColor[] = {
   0,
   GREEN,
@@ -200,7 +186,6 @@ const uint16_t StateColor[] = {
   YELLOW,
   GREEN
 };
-
 const char Sname0[] = "";
 const char Sname1[] = "Roasting  ";
 const char Sname2[] = "Stopped   ";
@@ -227,19 +212,16 @@ const char* StateName[] = {
   Sname10,
   Sname11
 };
-
-float BeanYflow, BeanYflowsetpoint;
+float BeanYflowsqrt[2];
+float BeanYflowsetpoint;
 const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
-
 #define RELAYON LOW
 #define RELAYOFF HIGH
 #define VALUESONLY true
 #define ALL false
 #define BEINGMOVED true
 #define REGULAR false
-
-
 #define VALUESD01_D03_D05 0
 #define VALUES1_3_5 1
 #define VALUES1_3_10 2
@@ -263,14 +245,12 @@ const float AdustmentValues[][3] = {
   { 20, 5, 1 },
   { .5, .1, .01 }
 };
-
 activeadjustment ActiveAdjustment;
 #define ACTIONSHOWSETPOINTSELECTMENU 30
 #define ACTIONSHOWSETPOINTFANMENU 31
 #define ACTIONGETLABLEFROMPRIOR 32
 #define ACTIONSELECTADUSTMENTVALUE 33
 #define ACTIONRESETTODEFAULTONNEXTSTART 34
-
 #define ACTIONADJUSTMENTS 40
 #define ACTIONADJUSTINTEGRALTEMP 41
 #define ACTIONADJUSTGAINTEMP 42
@@ -288,8 +268,6 @@ activeadjustment ActiveAdjustment;
 #define ACTIONADJUSTCOOLBURST 54
 #define ACTIONADJUSTMAXPERCENTCHANGEPERSECONDFLOW 55
 #define ACTIONADJUSTTIMEMANUAL 56
-
-
 #define VMENUCOUNT 7
 #define MAXBUTTONCOUNT 9
 #define VMENUBASE 0
@@ -402,52 +380,36 @@ const byte PressOpProgressDisplayBox = 0;
 const byte OpProgessDisplay = 0;
 const byte PressConfigDisplayBox = 1;
 const byte ConfigDisplay = 1;
-
 const byte PressOpDetailBox = 2;
 const byte OpDetailDisplay = 2;
-
-//displaybox OpProgessDisplay = { PressOpProgressDisplayBox, { 0, 80, 0, 0 }, OPPROGRESSDISPLAY_X_EP, OPPROGRESSDISPLAY_Y_EP };
-//rect OpProgessDisplay = { 0, 80, 0, 0 };
-//displaybox ConfigDisplay = { PressConfigDisplayBox, { 205, 385, 0, 0 }, CONFIGURATIONDISPLAY_X_EP, CONFIGURATIONDISPLAY_Y_EP };
-//rect ConfigDisplay = { 205, 385, 0, 0 };
-//displaybox DisplayBoxes[OpDetailDisplay] = { PressOpDetailBox, { 610, 200, 0, 0 }, OPERDETAILDISPLAY_X_EP, OPERDETAILDISPLAY_Y_EP };
-//rect DisplayBoxes[OpDetailDisplay] = { 610, 200, 0, 0 };
 displaybox DisplayBoxes[] = { { PressOpProgressDisplayBox, { 0, 80, 0, 0 }, OPPROGRESSDISPLAY_X_EP, OPPROGRESSDISPLAY_Y_EP },
-{ PressConfigDisplayBox, { 205, 385, 0, 0 }, CONFIGURATIONDISPLAY_X_EP, CONFIGURATIONDISPLAY_Y_EP },
-{ PressOpDetailBox, { 610, 200, 0, 0 }, OPERDETAILDISPLAY_X_EP, OPERDETAILDISPLAY_Y_EP }
- };
+                              { PressConfigDisplayBox, { 205, 385, 0, 0 }, CONFIGURATIONDISPLAY_X_EP, CONFIGURATIONDISPLAY_Y_EP },
+                              { PressOpDetailBox, { 610, 200, 0, 0 }, OPERDETAILDISPLAY_X_EP, OPERDETAILDISPLAY_Y_EP } };
 
 buttontext myLocalbuttontext;
-
-
-
 touchstatus TouchStatus;
-
 int LastStateUpdated = -1;
 int NewState;
 int State;
 int StateDebug;
-
-
 boolean SerialOutPutTempsBySecond;
 boolean SerialOutPutTempsBy3Seconds;
 boolean SerialOutPutStatusBy3Seconds;
 boolean SerialOutPutStatusBySecond;
-
 const int ThermoCoil = 2;
 const int ThermoBean1 = 1;
 const int ThermoBean2 = 0;
-
 MAX6675 Thermocouple1(TC_SCK_A9, TC_CS1_A11, TC_SD1_A10);
 MAX6675 Thermocouple2(TC_SCK_A9, TC_CS2_A13, TC_SD2_A12);
 MAX6675 Thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
 thermocouple thermocouples[] = { { Thermocouple1, 0 }, { Thermocouple2, 0 }, { Thermocouple3, 0 } };
 flowsetpoint FlowSetPoints[4];
-int FanSpeed254PWM = -1;
+
 point_byte TempPixelHistory[160];
 point_byte FanPixelHistory[160];
 point_byte CoilPixelHistory[160];
 //800/160 = 5
+const byte GraphHistorySize = 3;
 graphhistory GraphHistory[] = {
   { ROLLAVGLINEID, 5, 0, 160, TempPixelHistory },
   { FANSPEEDLINEID, 5, 0, 160, FanPixelHistory },
@@ -486,6 +448,8 @@ boolean PIDNewWindowFlow;
 float ErrIFlow = 0;
 float ErrFlow = 0;
 double DutyFan = -99;
+double DutyFanCalced;
+float Lastflowvalueforpid;
 unsigned int PIDIntegralUdateTimeValueFlow = _PIDIntegralUdateTimeValueFlow;
 unsigned int PIDWindowSizeFlow;
 boolean Setpointschanged = true;
@@ -508,6 +472,7 @@ buttonsetdef* TouchButtonSet;
 ClickHandler* TouchButtonHandler;
 boolean TouchDetected;
 boolean LongPressDetected;
+double UpFlowThreshold = _UpFlowThreshold;
 int TouchButton;
 char _debug;
 Chrono TouchTimer(Chrono::MILLIS);
@@ -534,7 +499,6 @@ int TempCoilTooHotCount;
 int TempCoilTooHot;
 int TempReachedCount;
 buttonsetdef HorControlMenuDef;
-buttonsetdef HorFanMenuDef;
 buttonsetdef VertMenuDefs[VMENUCOUNT];
 char s7[7];
 char s6[6];
@@ -556,6 +520,7 @@ char* CharArrays[] = {
 };
 char spFormat[6] = "%6.2F";
 double RoastMinutes = 0;
+byte RoastLength;
 unsigned int RoastAcumHeat = 0;
 int FanDeviation = 0;
 boolean bNewTempsAvailable = false;
@@ -567,12 +532,12 @@ int TBean2;
 float FanCoolingBoostPercent = _FanCoolingBoostPercent;
 bool ReadCoilCurrentFlag = false;
 bool ReadBeanOpticalFlowRateFlag = false;
-bool FanLegacy = false;
+
 bool FanManual = false;
 bool TimeManual = false;
 
 PMW3901 BeanOpticalFlow1(BEAN_OPTICAL_FLOW_SPI_SSp48);
-PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp49);
+PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp53);
 opticalflow BeanOpticalFlowSensors[] = { { BeanOpticalFlow1, 0 }, { BeanOpticalFlow2, 0 } };
 byte BeanOpticalFlowReadsPerSecond;
 byte BeanOpticalFlowReadsPerSecondCalcing;
@@ -588,9 +553,8 @@ boolean HasDisplay = true;
 // SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP
 // =====================================================================================================================================================================
 void setup() {
-  //Serial1.begin(9600);
-  Serial.begin(9600);
-  Serial.println("setup starting");
+  SERIALPRINTLN_OP("setup starting");
+  Serial.begin(19200);
   //set pmw for  pins 5 and 6 36 hrz
   TCCR4B = TCCR4B & B11111000 | B00000101;
   pinMode(SSR1_p7, OUTPUT);
@@ -615,8 +579,7 @@ void setup() {
   pinMode(TC_5v_A8, OUTPUT);
   digitalWrite(TC_5v_A8, HIGH);  //5V
   pinMode(TC_SCK_A9, OUTPUT);
-
-  digitalWrite(FANRELAYp_2, RELAYOFF);
+  //digitalWrite(FANRELAYp_2, RELAYOFF);
   //digitalWrite(VIBRELAYp, RELAYOFF);
   delay(1000);
   RoastTime.stop();
@@ -626,7 +589,7 @@ void setup() {
   bool loadDefaults;
   EEPROM.get(LOADDEFAULTS_EP, loadDefaults);  //will be 255 (T) on first run.. then set 1 (T) or 0 (F)
   if (loadDefaults == true) {
-    SPDEBUG("loadDefaults was true:" + String(loadDefaults));
+    SERIALPRINTLN_OP(F("Reseting values from DefaultValues.h"));
     MySetPoints[0].Temperature = _MySetPoints_0_Temperature;
     MySetPoints[1].Temperature = _MySetPoints_1_Temperature;
     MySetPoints[2].Temperature = _MySetPoints_2_Temperature;
@@ -676,7 +639,6 @@ void setup() {
     EEPROM.put(OPPROGRESSDISPLAY_Y_EP, DisplayBoxes[OpProgessDisplay].Rect.y);
     loadDefaults = false;
     EEPROM.put(LOADDEFAULTS_EP, loadDefaults);
-    SPDEBUG("Done loading loadDefaults:" + String(loadDefaults));
   }
   //temp set points are read  in graph screen function
   for (int i = 0; i < 4; i++) {
@@ -689,7 +651,7 @@ void setup() {
   EEPROM.get(FlowSetPointGraphBottompx_EP, FlowSetPointGraphBottompx);
   EEPROM.get(TOOHOTTEMP_EP, TempCoilTooHot);
   EEPROM.get(MAXPERCENTCHANGEPERSECONDFLOW_float_EP, MaxPercentChangePerSecondFlow);
-  if (MaxPercentChangePerSecondFlow > 5) {MaxPercentChangePerSecondFlow = 5;}
+  if (MaxPercentChangePerSecondFlow > 5) { MaxPercentChangePerSecondFlow = 5; }
 
   EEPROM.get(OPERDETAILDISPLAY_X_EP, DisplayBoxes[OpDetailDisplay].Rect.x);
   EEPROM.get(OPERDETAILDISPLAY_Y_EP, DisplayBoxes[OpDetailDisplay].Rect.y);
@@ -697,24 +659,22 @@ void setup() {
   EEPROM.get(CONFIGURATIONDISPLAY_Y_EP, DisplayBoxes[ConfigDisplay].Rect.y);
   EEPROM.get(OPPROGRESSDISPLAY_X_EP, DisplayBoxes[OpProgessDisplay].Rect.x);
   EEPROM.get(OPPROGRESSDISPLAY_Y_EP, DisplayBoxes[OpProgessDisplay].Rect.y);
-
   if (DisplayBoxes[OpDetailDisplay].Rect.x < 0) {
-   DisplayBoxes[OpDetailDisplay].Rect.x = 0;}
-  
+    DisplayBoxes[OpDetailDisplay].Rect.x = 0;
+  }
   if (DisplayBoxes[OpDetailDisplay].Rect.y < 0) {
-   DisplayBoxes[OpDetailDisplay].Rect.y = 0;}
+    DisplayBoxes[OpDetailDisplay].Rect.y = 0;
+  }
 
- if (DisplayBoxes[OpDetailDisplay].Rect.y > 440) {
-   DisplayBoxes[OpDetailDisplay].Rect.y = 200;}
-
-
+  if (DisplayBoxes[OpDetailDisplay].Rect.y > 440) {
+    DisplayBoxes[OpDetailDisplay].Rect.y = 200;
+  }
   if (DisplayBoxes[ConfigDisplay].Rect.y > 440) {
-   DisplayBoxes[ConfigDisplay].Rect.y = 200;}
-
-   if (DisplayBoxes[ConfigDisplay].Rect.y < 0) {
-   DisplayBoxes[ConfigDisplay].Rect.y = 0;}
-  
-
+    DisplayBoxes[ConfigDisplay].Rect.y = 200;
+  }
+  if (DisplayBoxes[ConfigDisplay].Rect.y < 0) {
+    DisplayBoxes[ConfigDisplay].Rect.y = 0;
+  }
   SecondTimer.restart(0);
   // -------------------------------------------------------------
   if (HasDisplay == true) {
@@ -728,21 +688,39 @@ void setup() {
   intializeMenus();
   State = STATESTOPPED;
   Setpointschanged = true;
-  //FanSpeed254PWM = FlowSetPoints[0].PWM;
-
-  Serial.println("Starting FlowSensor 1 initialization...");
+  SERIALPRINTLN_OP("Starting FlowSensor 0 initialization...");
   if (!BeanOpticalFlowSensors[0].sensor.Initialize()) {
-    Serial.println("Initialization of the flow sensor failed");
+    SERIALPRINTLN_OP("  Initialization of the flow sensor 0 failed delaying 1 second");
+    delay(1000);
+    if (!BeanOpticalFlowSensors[0].sensor.Initialize()) {
+      SERIALPRINTLN_OP("  Initialization of the flow sensor 0 failed 2nd time");
+    } else {
+      SERIALPRINTLN_OP("   FlowSensor 0 initialized successfully");
+    }
+
+
   } else {
-    Serial.println("FlowSensor 1 initialized successfully");
+    SERIALPRINTLN_OP("  FlowSensor 0 initialized successfully");
   }
+  SERIALPRINTLN_OP("Starting FlowSensor 1 initialization...");
+  if (!BeanOpticalFlowSensors[1].sensor.Initialize()) {
+    SERIALPRINTLN_OP("  Initialization of the flow sensor 1 failed. Delaying 1 second");
+    delay(1000);
+    if (!BeanOpticalFlowSensors[1].sensor.Initialize()) {
+      SERIALPRINTLN_OP("Initialization of the flow sensor 1 failed 2nd time");
+    } else {
+      SERIALPRINTLN_OP("   FlowSensor 1 initialized successfully");
+    }
 
+  } else {
+    SERIALPRINTLN_OP("FlowSensor 1 initialized successfully");
+  }
   Wire.begin();
-
-  StopAndSendFanPWM();
+  SetFanOff();
   graphProfile();
-  Serial.println("loop is starting...");
+  SERIALPRINTLN_OP("loop is starting...");
 }
+
 void loop() {
   theloop();
 }

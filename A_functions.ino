@@ -6,10 +6,11 @@
 
 
 float FlowErrorLast = 0;
+
 unsigned long FlowErrorLastTime = 0;
 
 int GetHistoryIDfromLineID(int lineID) {
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < GraphHistorySize; i++) {
     if (GraphHistory[i].LineID == lineID) {
       return i;
     }
@@ -50,10 +51,6 @@ float CalcflowsetpointForATime(double minutes) {
   return calcedflowsetpoint;
 }
 
-int XforAFanMin(double minute) {
-  return (FanGraphXStart + (PixelsPerFlowRate * minute));
-}
-
 uint16_t XforATime(float time) {
 
   uint16_t result = 0;
@@ -66,130 +63,80 @@ uint16_t XforATime(float time) {
   return result;
 }
 
-int YforADuty(int fanpwm) {
-  //Serial.print("starting YforAFlow");Serial.println(fanpwm);
-  if (fanpwm <= FlowSetPointMin) {
-    //Serial.print("return min:"); Serial.println(FanGraphYBottom);
-    return FlowSetPointGraphBottompx;
-  } else {
-    double ratio = (fanpwm - FlowSetPointMin) / float(FlowSetPointMax - FlowSetPointMin);
-    //Serial.print("ratio:");Serial.println(ratio);
-    if (ratio > 1) { ratio = 1; }
-    return (FlowSetPointGraphBottompx - (ratio * FlowSetPointGraphHeightpx));
-  }
-}
-
-int YforAFlow(int flowrate) {
-  //Serial.print("starting YforAFlow");Serial.println(fanpwm);
-  if (flowrate <= FlowSetPointMin) {
-    //Serial.print("return min:"); Serial.println(FanGraphYBottom);
-    return FlowSetPointGraphBottompx;
-  } else {
-    double ratio = (flowrate - FlowSetPointMin) / float(FlowSetPointMax - FlowSetPointMin);
-    //Serial.print("ratio:");Serial.println(ratio);
-    if (ratio > 1) { ratio = 1; }
-    return (FlowSetPointGraphBottompx - (ratio * FlowSetPointGraphHeightpx));
-  }
-}
-
-void SetFanFromOpticalSensorPID() {
-  
-  if (FanManual == false) {
-    float value;
-    value = sq(BeanYflow_avg.mean());
-    
-    BeanYflowsetpoint = CalcflowsetpointForATime(RoastMinutes);
-    ErrFlow = BeanYflowsetpoint - value;
-
-    if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every x seconds we add the err to be a sum of err scaled by integral flow factor                                                                          //if (ErrIFlow < GainFlow) {
-      IntegralSumFlow = IntegralSumFlow + ErrFlow;
-      if (IntegralSumFlow < 0) {
-        //IntegralSumFlow = 0;
-      }
-      ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
-      //Serial.println("Isum:");Serial.println(IntegralSum);Serial.println("ErrI:");Serial.println(ErrI);
-      PIDIntegralUdateTimeFlow.restart(0);
-      //SPDEBUG("Adding to integral...");
-      //}
-      //IntegralSumFlow = 0;
-    }
-    double errorcombined = ErrFlow + ErrIFlow;
-    double elapsedmillseconds = millis() - FlowErrorLastTime;
-    float changes = errorcombined - FlowErrorLast;
-    float changesperseconds = changes * (float)(1000 / elapsedmillseconds);
-    float percentchange = changesperseconds / BeanYflowsetpoint;
-    float requestedchanges = changes;
-    if (MaxPercentChangePerSecondFlow > 0)
-      if (FlowErrorLastTime > 0) {
-        if (requestedchanges > MaxPercentChangePerSecondFlow) {
-          changes = MaxPercentChangePerSecondFlow;
-          errorcombined = FlowErrorLast + MaxPercentChangePerSecondFlow;
-        } else if (requestedchanges < -MaxPercentChangePerSecondFlow) {
-          changes = -MaxPercentChangePerSecondFlow;
-          errorcombined = FlowErrorLast - MaxPercentChangePerSecondFlow;
-        }
-
-        //SPDEBUG("errcombined changed to:" + String(errorcombined));
-      }
-
-    //SPDEBUG("errcombined:" + String(errorcombined) + ",actchanges:" + String(changes) + ",reqchanges:" + String(requestedchanges));
-
-    
-    FlowErrorLast = errorcombined;
-    FlowErrorLastTime = millis();
-
-    DutyFan = (errorcombined / (double)GainFlow);
-
-    if (DutyFan > 1.0) {
-      DutyFan = 1.0;
-    }
-    //SPDEBUG("LastY:" + String(BeanYflow) + ",meanY:" + String(value) + ",Err:" + String(ErrFlow) + ",c/s:" + String(changesperseconds) + ",%:" + String(percentchange) + ",Duty:" + String(DutyFan) + ",intSum:" + String(IntegralSumFlow) + ",setpoint:" + String(BeanYflowsetpoint) + ",Gain:" + String(GainFlow) + ",integral:" + String(IntegralFlow));
-    Serial.print("Y:");
-    Serial.print(sq(BeanYflow));
-    Serial.print(",Avg:");
-    Serial.print(value);
-    Serial.print(",Err:");
-    Serial.print(ErrFlow);
-    Serial.print(",ErrI:");
-    Serial.print(ErrIFlow);
-    Serial.print(",changes:");
-    Serial.print(changes);
-    Serial.print(",ISF:");
-    Serial.print(IntegralSumFlow);
-    Serial.print(",Duty:");
-    Serial.println(DutyFan);
-
-    //SPDEBUGXCLOSE;
-  }
-  
+void SetFanOff() {
+  DutyFan = 0;
   sendFan_D_Wire();
 }
 
-void SetAndSendFanPWMForATime(double minutes) {
-  //Serial.println("Call From SetFan");
-  //Serial.println(minutes);
-  //FanSpeed254PWM = CalcFan254PWMForATime(minutes);
-  //sendFan_Wire();
-}
+void CalcStartingIntegralSumFlow() {
 
-void StopAndSendFanPWM() {
-  FanSpeed254PWM = 0;
-  DutyFan = 0;
-  sendFan_Wire();
-}
+  //double BeanYflowsetpoint = CalcflowsetpointForATime(0);
 
-void sendFan_Wire() {
-  float DACMax = 4092;
-  int valuefordac;
-  float x = FanSpeed254PWM / 254;
-  valuefordac = DACMax * x;
-  double start = millis();
-  Wire.beginTransmission(MCP4725_ADDR);
-  Wire.write(64);                       // cmd to update the DAC
-  Wire.write(valuefordac >> 4);         // the 8 most significant bits...
-  Wire.write((valuefordac & 15) << 4);  // the 4 least significant bits...
-  Wire.endTransmission();
-  //SPDEBUG("updated fanDAC.  Elapsed:" + String(millis() - start) + " value:" + String(valuefordac));
+  IntegralSumFlow = _DutyStartingFlow * GainFlow / IntegralFlow;
+
+
+  //DutyFan = (errorcombined / (double)GainFlow);
+  //errorcombined = ErrFlow + ErrIFlow
+  //ErrFlow = BeanYflowsetpoint - Lastflowvalueforpid;
+}
+void SetFanFromOpticalSensorPID() {
+  Lastflowvalueforpid = sq(BeanYflow_avg.mean());
+  BeanYflowsetpoint = CalcflowsetpointForATime(RoastMinutes);
+  ErrFlow = BeanYflowsetpoint - Lastflowvalueforpid;
+  if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every x seconds we add the err to be a sum of err scaled by integral flow factor                                                                          //if (ErrIFlow < GainFlow) {
+    IntegralSumFlow = IntegralSumFlow + ErrFlow;
+    if (IntegralSumFlow < 0) {
+      //IntegralSumFlow = 0;
+    }
+    ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
+    PIDIntegralUdateTimeFlow.restart(0);
+  }
+  double errorcombined = ErrFlow + ErrIFlow;
+  double elapsedmillseconds = millis() - FlowErrorLastTime;
+  float changes = errorcombined - FlowErrorLast;
+  float changesperseconds = changes * (float)(1000 / elapsedmillseconds);
+  float percentchange = changesperseconds / BeanYflowsetpoint;
+  float requestedchanges = changes;
+  if (MaxPercentChangePerSecondFlow > 0)
+    if (FlowErrorLastTime > 0) {
+      if (requestedchanges > MaxPercentChangePerSecondFlow) {
+        changes = MaxPercentChangePerSecondFlow;
+        errorcombined = FlowErrorLast + MaxPercentChangePerSecondFlow;
+      } else if (requestedchanges < -MaxPercentChangePerSecondFlow) {
+        changes = -MaxPercentChangePerSecondFlow;
+        errorcombined = FlowErrorLast - MaxPercentChangePerSecondFlow;
+      }
+    }
+  FlowErrorLast = errorcombined;
+  FlowErrorLastTime = millis();
+  DutyFanCalced = (errorcombined / (double)GainFlow);
+  if (DutyFanCalced > 1.0) {
+    DutyFanCalced = 1.0;
+  }
+  if (FanManual == false) {
+    DutyFan = DutyFanCalced;
+  }
+
+  if (Debugbyte == FLOWPIDINFO_10) {
+    SERIALPRINT_DB("FlowSetpoint:");
+    SERIALPRINT_DB(BeanYflowsetpoint);
+    SERIALPRINT_DB(",AvgSq:");
+    SERIALPRINT_DB(Lastflowvalueforpid);
+    SERIALPRINT_DB(",Err:");
+    SERIALPRINT_DB(ErrFlow);
+    SERIALPRINT_DB(",ErrI:");
+    SERIALPRINT_DB(ErrIFlow);
+    SERIALPRINT_DB(",changes:");
+    SERIALPRINT_DB(changes);
+    SERIALPRINT_DB(",ISF:");
+    SERIALPRINT_DB(IntegralSumFlow);
+    SERIALPRINT_DB(",DutyFanCalced:");
+    SERIALPRINT_DB(DutyFanCalced);
+    SERIALPRINT_DB(",DutyFan:");
+    SERIALPRINTLN_DB(DutyFan);
+  }
+
+  sendFan_D_Wire();
 }
 
 void sendFan_D_Wire() {
@@ -230,31 +177,6 @@ uint16_t YforATemp(double temp) {
   }
 }
 
-void ReturnSetPoints(Stream& port) {
-  for (int x = 0; x < SetPointCount; x++) {
-    if (x > 0) {
-      port.print("!");
-    }
-    port.print(x);
-    port.print(":");
-    port.print(MySetPoints[x].Minutes);
-    port.print(":");
-    port.print(MySetPoints[x].Temperature);
-  }
-  port.println("");
-}
-
-void Serial_println_rect(struct rect& rect) {
-  Serial.print("x:");
-  Serial.print(rect.x);
-  Serial.print(" y:");
-  Serial.print(rect.y);
-  Serial.print(" xmax:");
-  Serial.print(rect.xmax);
-  Serial.print(" ymax:");
-  Serial.println(rect.ymax);
-}
-
 int getCleanTemp(int myID) {
 
   byte tries = 0;
@@ -279,39 +201,51 @@ int getCleanTemp(int myID) {
   return -1;
 }
 
-float getCleanOpticaFlow(int myID) {
+float getCleanOpticaFlow(int mySensorID) {
   int16_t r;
   double root;
   byte tries = 0;
   //do {
   tries++;
-  
-  if (BeanOpticalFlowSensors[myID].sensor.Initialized == false) {
-    Serial.println("Initializing flow sensor");
-    if (!BeanOpticalFlowSensors[myID].sensor.Initialize()) {
-      Serial.println("Initialization of the flow sensor failed");
+  if (BeanOpticalFlowSensors[mySensorID].sensor.Initialized == false) {
+    SERIALPRINT_DB(F("During run:Initializing flow sensor id:"));
+    SERIALPRINTLN_DB(mySensorID);
+    if (!BeanOpticalFlowSensors[mySensorID].sensor.Initialize()) {
+      SERIALPRINT_DB(F("Initialization of the flow sensor failed :"));
+      SERIALPRINTLN_DB(mySensorID);
+
     } else {
-      Serial.println(" Success");
+      SERIALPRINTLN_DB(F(" Success"));
     }
   }
-  BeanOpticalFlowSensors[myID].sensor.readMotionCountY(&r);
+  BeanOpticalFlowSensors[mySensorID].sensor.readMotionCountY(&r);
   if (r < 1000) {
     if (r > 0) {
       root = sqrt(float(r));
-      //Serial.print(r);Serial.print(" "); Serial.println(root);   
-      return root;  
-      }
-      else {
-      root = sqrt(float(abs(r)));
-      //Serial.print(r);Serial.print(" "); Serial.println(-root);
-      
-      return -root;  
-        
-      }
+    } else {
+      root = -sqrt(float(abs(r)));
+    }
   } else {
-    BeanOpticalFlowSensors[myID].YflowReadingskipped++;
+    root = -999;
+    BeanOpticalFlowSensors[mySensorID].YflowReadingskipped++;
   }
-  return -999;
+  if (Debugbyte == FLOWSENSORDATARAW_11) {
+    SERIALPRINT_DB(F(",F"));
+    SERIALPRINT_DB(mySensorID);
+    SERIALPRINT_DB(F("raw:"));
+    SERIALPRINT_DB(r);
+    SERIALPRINT_DB(F(",F"));
+    SERIALPRINT_DB(mySensorID);
+    SERIALPRINT_DB(F("sqrt:"));
+    SERIALPRINT_DB(root);
+    if (root < UpFlowThreshold) {
+      SERIALPRINT_DB(F("upflow:0"));
+    } else {
+      SERIALPRINT_DB(F("upflow:1"));
+    }
+
+  }  // note the println comes in AA_LOOP
+  return root;
 }
 
 double getBeanAvgTemp(double t1, double t2) {
@@ -338,6 +272,7 @@ double SetpointforATime(double roastminutes) {
     return 0;
   }
 }
+
 int RangeAint(int Value, int H, int L) {
   if (Value > H) {
     return H;

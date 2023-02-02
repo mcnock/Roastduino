@@ -22,7 +22,6 @@ void MenuTouchLongPressDetected() {
   DrawMenuButton(*TouchButtonSet, MenuStatus.ButtonClicked, true);
 }
 
-
 boolean DetectTouch() {
   myTouch.read();
   int16_t Xtouch = myTouch.getX();
@@ -30,76 +29,17 @@ boolean DetectTouch() {
   // int Ytouchinv = myGLCD.getDisplayYSize() - Ytouch;
   switch (TouchStatus.objectpressID) {
     case PressMenu:
-
       return true;
       break;
     case PressConfigDisplayBox:
-      
-      DrawBoxMove(PressConfigDisplayBox, Xtouch,Ytouch);
-
-      // TouchStatus.dragx = Xtouch - TouchStatus.Xdown;
-      // TouchStatus.dragy = TouchStatus.Ydown - Ytouch;
-      // if (millis() > NextDragRedrawTime) {
-      //   if (abs(TouchStatus.dragylastdrawn - TouchStatus.dragy) > 5 || abs(TouchStatus.dragylastdrawn = TouchStatus.dragy) > 5) {
-      //     if (TouchStatus.dragylastdrawn != 0 || TouchStatus.dragxlastdrawn != 0) {
-      //       myGLCD.setColor(BLACK);
-      //       myGLCD.drawRect(DisplayBoxes[ConfigDisplay].Rect.x + TouchStatus.dragxlastdrawn, DisplayBoxes[ConfigDisplay].Rect.y - TouchStatus.dragylastdrawn, DisplayBoxes[ConfigDisplay].Rect.xmax + TouchStatus.dragxlastdrawn, DisplayBoxes[ConfigDisplay].Rect.ymax - TouchStatus.dragylastdrawn);
-      //     }
-
-      //     myGLCD.setColor(PALEYELLOW);
-      //     TouchStatus.dragylastdrawn = TouchStatus.dragy;
-      //     TouchStatus.dragxlastdrawn = TouchStatus.dragx;
-      //     myGLCD.drawRect(DisplayBoxes[ConfigDisplay].Rect.x + TouchStatus.dragx, DisplayBoxes[ConfigDisplay].Rect.y - TouchStatus.dragy, DisplayBoxes[ConfigDisplay].Rect.xmax + TouchStatus.dragx, DisplayBoxes[ConfigDisplay].Rect.ymax - TouchStatus.dragy);
-      //   }
-      //   NextDragRedrawTime = millis() + DragRedrawWait;
-      // }
-      return true;
-      break;
     case PressOpDetailBox:
-      DrawBoxMove(PressOpDetailBox, Xtouch,Ytouch);
-
-      // if (millis() > NextDragRedrawTime) {
-      //   if (TouchStatus.dragylastdrawn != 0 || TouchStatus.dragxlastdrawn != 0) {
-      //     myGLCD.setColor(BLACK);
-      //     myGLCD.drawRect(DisplayBoxes[OpDetailDisplay].Rect.x + TouchStatus.dragxlastdrawn, DisplayBoxes[OpDetailDisplay].Rect.y + TouchStatus.dragylastdrawn, DisplayBoxes[OpDetailDisplay].Rect.xmax + TouchStatus.dragxlastdrawn, DisplayBoxes[OpDetailDisplay].Rect.ymax + TouchStatus.dragylastdrawn);
-      //   }
-      //   TouchStatus.dragx = Xtouch - TouchStatus.Xdown;
-      //   TouchStatus.dragy = Ytouch - TouchStatus.Ydown ;
-      //   myGLCD.setColor(PALEYELLOW);
-      //     if ((DisplayBoxes[OpDetailDisplay].Rect.y + TouchStatus.dragy) < 60){
-      //           TouchStatus.dragy = 60 - DisplayBoxes[OpDetailDisplay].Rect.y;
-      //     }
-      //     if ((DisplayBoxes[OpDetailDisplay].Rect.ymax + TouchStatus.dragy) > 440){
-      //           TouchStatus.dragy = 440 - DisplayBoxes[OpDetailDisplay].Rect.ymax;
-      //     }
-
-      //     if ((DisplayBoxes[OpDetailDisplay].Rect.x + TouchStatus.dragx) < 10){
-      //           TouchStatus.dragx = 10 - DisplayBoxes[OpDetailDisplay].Rect.x;
-      //     }
-
-      //     if ((DisplayBoxes[OpDetailDisplay].Rect.xmax + TouchStatus.dragx) > 730){
-      //           TouchStatus.dragx = 740 - DisplayBoxes[OpDetailDisplay].Rect.xmax;
-      //     }
-      //   myGLCD.drawRect(DisplayBoxes[OpDetailDisplay].Rect.x + TouchStatus.dragx, DisplayBoxes[OpDetailDisplay].Rect.y + TouchStatus.dragy, DisplayBoxes[OpDetailDisplay].Rect.xmax + TouchStatus.dragx, DisplayBoxes[OpDetailDisplay].Rect.ymax + TouchStatus.dragy);
-      //   TouchStatus.dragylastdrawn = TouchStatus.dragy;
-      //   TouchStatus.dragxlastdrawn = TouchStatus.dragx;
-      //   //delay(100);
-      //   NextDragRedrawTime = millis() + DragRedrawWait;
-      // }
-
+      DrawBoxMove(TouchStatus.objectpressID, Xtouch,Ytouch);
       return true;
       break;
   }
-
   if (InRect(Xtouch, Ytouch, &HorControlMenuDef.bounding)) {
     MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &HorControlMenuDef);
     MenuStatus.TouchButtonSet = &HorControlMenuDef;
-    MenuStatus.IsVmenu = false;
-    TouchStatus.objectpressID = PressMenu;
-    OutlineClickedButton(WHITE);
-  } else if (InRect(Xtouch, Ytouch, &HorFanMenuDef.bounding)) {
-    MenuStatus.ButtonClicked = WhatButton(Xtouch, Ytouch, &HorFanMenuDef);
-    MenuStatus.TouchButtonSet = &HorFanMenuDef;
     MenuStatus.IsVmenu = false;
     TouchStatus.objectpressID = PressMenu;
     OutlineClickedButton(WHITE);

@@ -16,11 +16,19 @@ PMW3901::PMW3901(uint8_t cspin)
 boolean PMW3901::Initialize(void) {
   // Setup SPI port
   // Power on reset
+
   SPI.begin();
+ 
   digitalWrite(_cs, LOW);
+  delay(100);
+
+ digitalWrite(_cs, HIGH);
+  delay(100);
+
+ digitalWrite(_cs, LOW);
 
   registerWrite(0x3A, 0x5A);
-  delay(5);
+  
   // Test the SPI communication, checking chipId and inverse chipId
   delay(100);
 
@@ -28,8 +36,9 @@ boolean PMW3901::Initialize(void) {
   delay(100);
 
   uint8_t dIpihc = registerRead(0x5F);
+  delay(100);
   if (chipId != CHIP_ID || dIpihc != CHIP_ID_INVERSE) {
-    Serial.println("here12");
+    digitalWrite(_cs, HIGH);
     return false;
   }
   // Reading the motion registers one time
@@ -41,6 +50,7 @@ boolean PMW3901::Initialize(void) {
   delay(1);
 
   initRegisters();
+  //setLed(true);
   Initialized = true;
   digitalWrite(_cs, HIGH);
   SPI.end();

@@ -20,9 +20,6 @@ void intializeMenus() {
     //bsd->pClickHandler = ProcessVmenuButtonClick;
     SetMenuBoundingRect(VertMenuDefs[i]);
   }
-
-  //VertMenuDefs[VMENUEMPTY].ButtonCount = 1;
-
   HorControlMenuDef.H = ButHeight;
   HorControlMenuDef.W = hButWidth;
   HorControlMenuDef.rowstart = 0;
@@ -31,21 +28,10 @@ void intializeMenus() {
   HorControlMenuDef.ButtonCount = 6;
   HorControlMenuDef.menuID = HMENUCTRL;
   HorControlMenuDef.pClickHandler = ProcessHorControlMenu;
-
   HorControlMenuDef.colstart = (800 - vButWidth - (hButWidth * HorControlMenuDef.ButtonCount));
 
   SetMenuBoundingRect(HorControlMenuDef);
 
-  HorFanMenuDef.H = 40;
-  HorFanMenuDef.W = 50;
-  HorFanMenuDef.rowstart = 480 - 40 - 20;
-  HorFanMenuDef.colstart = 800 - (40 * 6) - vButWidth;
-  HorFanMenuDef.ButtonCount = 5;
-  HorFanMenuDef.vertical = false;
-  HorFanMenuDef.menuID = HMENUFAN;
-  SetMenuBoundingRect(HorFanMenuDef);
-
-  HorFanMenuDef.pClickHandler = ProcessHorFanMenu;
 }
 void DrawHorControlMenu() {
   DrawMenuButtons(HorControlMenuDef);
@@ -75,7 +61,7 @@ void ProcessHorControlMenu(int i) {
       if (State != STATESTOPPED) {
         NewState = STATESTOPPED;
       }
-      Serial.println(F("Stop Called!"));
+      SERIALPRINTLN_OP(F("Stop Called!"));
       break;
     case 2:
       if (State == STATESTOPPED) {
@@ -112,49 +98,6 @@ void ProcessHorControlMenu(int i) {
     case 6:
 
       break;
-  }
-}
-
-void DrawHorFanMenu() {
-
-  DrawMenuButtons(HorFanMenuDef);
-}
-
-void ProcessHorFanMenu(int i) {
-  //Serial.print("ProcessFanMenu:");Serial.println (i);
-  int change = 0;
-  switch (i) {
-    case 0:
-      break;
-    case 1:
-      //decrease quickly
-      change = -5;
-      break;
-    case 2:
-      change = -1;
-      break;
-    case 3:
-      change = 1;
-      break;
-    case 4:
-      change = 5;
-      break;
-    case 5:
-
-      break;
-  }
-  if (change != 0) {
-    switch (State) {
-      case STATEROASTING:
-      case STATEFANONLY:
-      case STATECOOLING:
-        if (FanLegacy == true) {
-          FanDeviation = FanDeviation + change;
-          SetAndSendFanPWMForATime(RoastMinutes);
-        } else {
-        }
-        break;
-    }
   }
 }
 
@@ -196,10 +139,7 @@ void DrawVMenu(int iMenu) {
         myGLCD.setColor(GRAY);
         myGLCD.printNumI(HorScaleLineYValue[i], 800 - 30, HorScaleLineY[i] - 5);
       }
-      if (FanLegacy) {
-        UpdateFanPWMValuesDisplay(ALL);
-        DrawHorFanMenu();
-      }
+     
     }
   }
 
@@ -379,18 +319,18 @@ void ProcessAnAdjustment() {
         spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
         FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
         EEPROM.put(Flowsetpoints_int_EP[spSelected], FlowSetPoints[spSelected]);
-        
+
         if (ActiveAdjustment.moveamount > 0) {
           if (spSelected < 3) {
-          for (byte i = spSelected + 1; i <= 3; i++) {
-            if (FlowSetPoints[i].flow < FlowSetPoints[spSelected].flow) {
-              FlowSetPoints[i].flow = FlowSetPoints[spSelected].flow;
-              EEPROM.put(Flowsetpoints_int_EP[i], FlowSetPoints[i]);
+            for (byte i = spSelected + 1; i <= 3; i++) {
+              if (FlowSetPoints[i].flow < FlowSetPoints[spSelected].flow) {
+                FlowSetPoints[i].flow = FlowSetPoints[spSelected].flow;
+                EEPROM.put(Flowsetpoints_int_EP[i], FlowSetPoints[i]);
+              }
             }
           }
-          }
         }
-        
+
         if (ActiveAdjustment.moveamount < 0) {
           if (spSelected > 0) {
             for (int i = spSelected - 1; i > -1; i--) {
@@ -405,7 +345,7 @@ void ProcessAnAdjustment() {
       }
       if ((ActiveAdjustment.ButtonWhenCalled >= 5) & (ActiveAdjustment.ButtonWhenCalled <= 6)) {
         spSelected = ActiveAdjustment.ButtonWhenCalled - 4;
-        MoveAFanPointsTime(spSelected);
+        //MoveAFanPointsTime(spSelected);
       }
 
       break;
@@ -541,7 +481,10 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
   }
 
   if (butdefset.buttondefs[i].butID != butIDCalced) {
-    SPDEBUG("DrawMenuButton butID " + String(butdefset.buttondefs[i].butID) + " does not matched calced butID " + String(butIDCalced));
+    SERIALPRINT_ERR(F("Error DrawMenuButton butID "));
+    SERIALPRINT_ERR(butdefset.buttondefs[i].butID); 
+    SERIALPRINT_ERR(F( " does not matched calced butID "));
+    SERIALPRINTLN_ERR(butIDCalced);
   }
 
   if (butdefset.buttondefs[i].action == ACTIONSELECTADUSTMENTVALUE) {

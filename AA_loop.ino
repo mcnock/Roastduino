@@ -7,7 +7,7 @@
 //4000 4 == 4
 //3800 5 == 5
 //3800 6 == 6
-
+float TempErrorLast;
 // **************************************************************************************************************************************************************
 // LOOP A   LOOP A   LOOP A   LOOP  A  LOOP A   LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP    LOOP
 // **************************************************************************************************************************************************************
@@ -47,21 +47,41 @@ void theloop() {
   if (ReadBeanOpticalFlowRateFlag == true) {
     BeanOpticalFlowReadsPerSecondCalcing++;
     ReadBeanOpticalFlowRateFlag = false;
-    byte sensorindex = 0;
-    BeanYflow = getCleanOpticaFlow(sensorindex);
-    if (BeanYflow > 0) {
-      //Serial.println(BeanYflow);
-      BeanYflow_avg.push(BeanYflow);
-      //float mytest =  BeanYflow_avg.mean();
-      //Serial.println(mytest);
-
-      //SPDEBUG2("deltaY:" + String(BeanYflow) + ",mean:" + String(BeanYflow_avg.mean()) + ",Y10:10,Y0:0,avgsize:" + String(BeanYflow_avg.getCount()) + ",skipped:" + String(BeanOpticalFlowSensors[sensorindex].YflowReadingskipped));
-      //SPDEBUGXCLOSE
-      bNewFlowAvailable = true;
-    } else {
-      BeanYflow_avg.push(BeanYflow);
-      bNewFlowAvailable = true;
+    BeanYflowsqrt[0] = getCleanOpticaFlow(0);
+    double upflowdetected0 = false;
+    if (BeanYflowsqrt[0] > -999) {
+      if (BeanYflowsqrt[0] > UpFlowThreshold) {
+        BeanYflow_avg.push(BeanYflowsqrt[0]);
+        bNewFlowAvailable = true;
+      } else {
+        upflowdetected0 = true;
+      }
     }
+
+    BeanYflowsqrt[1] = getCleanOpticaFlow(1);
+    if (BeanYflowsqrt[1] != -999) {
+      if (BeanYflowsqrt[1] > UpFlowThreshold) {
+        BeanYflow_avg.push(BeanYflowsqrt[1]);
+        bNewFlowAvailable = true;
+      } else {
+        if (upflowdetected0 == true) {//this means upflow in both so don't ignore them
+          BeanYflow_avg.push(BeanYflowsqrt[0]);
+          BeanYflow_avg.push(BeanYflowsqrt[1]);
+        }
+      }
+    }
+
+    if (Debugbyte == FLOWSENSORDATARAW_11) {
+      SERIALPRINT_DB(F(",AvgSqrt:"));
+      SERIALPRINT_DB(BeanYflow_avg.mean());
+      SERIALPRINT_DB(F(",AvgSq:"));
+      SERIALPRINT_DB(sq(BeanYflow_avg.mean()));
+      SERIALPRINT_DB(F(",AvgSz:"));
+      SERIALPRINT_DB(BeanYflow_avg._size);
+      SERIALPRINT_DB(F(",setpoint:"));
+      SERIALPRINTLN_DB(BeanYflowsetpoint);
+    }
+
     byte fc = digitalRead(FANCURRENT_A0);
     FanCurrentAvgRoll.push(fc);
     byte cc = digitalRead(COILCURRENT_A1);
@@ -95,6 +115,23 @@ void theloop() {
         MeasureTempTimer.stop();
         bNewTempsAvailable = true;
         TempSensorReadsPerSecondCalcing++;
+        if (Debugbyte == TEMPDATARAW_31) {
+          SERIALPRINT_DB(F("Bean1:"));
+          SERIALPRINT_DB(TBean1);
+          SERIALPRINT_DB(F(",Bean2:"));
+          SERIALPRINT_DB(TBean2);
+          SERIALPRINT_DB(F(",BeanAvg:"));
+          SERIALPRINT_DB(TBeanAvgRoll.mean());
+          SERIALPRINT_DB(F(",SetPoint:"));
+          SERIALPRINT_DB(CurrentSetPointTemp);
+          SERIALPRINT_DB(F(",Coil:"));
+          SERIALPRINT_DB(TCoil);
+          SERIALPRINT_DB(F(",CoilAvg"));
+          SERIALPRINT_DB(TCoilAvgRoll.mean());
+          SERIALPRINT_DB(F(",TooHottemp:"));
+          SERIALPRINT_DB(TempCoilTooHot);
+          SERIALPRINTLN_DB();
+        }
         break;
     }
   }
@@ -111,9 +148,9 @@ void theloop() {
           } else {
             TempReachedCount = 0;
           }
-          if (RoastMinutes > MySetPoints[SetPointCount - 1].Minutes) {
+          if (RoastMinutes > (double)RoastLength) {
             NewState = STATECOOLING;
-            Serial.println(F("Max time reached. Cooling starting"));
+            SERIALPRINTLN_OP(F("Max time reached. Cooling starting"));
           }
         }
         break;
@@ -122,11 +159,11 @@ void theloop() {
       {
         if (TBeanAvgRoll.mean() < TempCoolingDone) {
           NewState = STATESTOPPED;
-          Serial.println(F("Auto Cooling Complete "));
-        } else if ((RoastMinutes < MySetPoints[SetPointCount - 1].Minutes) & RoastRestartNeeded) {
+          SERIALPRINTLN_OP(F("Auto Cooling Complete "));
+        } else if ((RoastMinutes < (double)RoastLength) & RoastRestartNeeded) {
           NewState = STATEROASTING;
           RoastRestartNeeded = false;
-          Serial.println(F("RestartRoasting request detected"));
+          SERIALPRINTLN_OP(F("RestartRoasting request detected"));
         }
         break;
       }
@@ -199,8 +236,8 @@ void theloop() {
     processSerial(Serial);
   }
   if (NewState != 0) {  //rules on how to switch state
-    Serial.print("Moving  to new state:");
-    Serial.println(StateName[NewState]);
+    SERIALPRINT_DB(F("Moving  to new state:"));
+    SERIALPRINTLN_DB(StateName[NewState]);
     switch (NewState) {
       case STATESTOPPED:  //newstate
         {
@@ -210,10 +247,10 @@ void theloop() {
             State = STATESTOPPED;
             digitalWrite(SSR1_p7, LOW);
             digitalWrite(SSR2_p6, LOW);
-            digitalWrite(FANRELAYp_2, RELAYOFF);
+            SetFanOff();
             //digitalWrite(VIBRELAYp, RELAYOFF);
             RoastTime.stop();
-            FanSpeed254PWM = 0;
+
             DutyFan = 0;
           } else {
             NewState = STATECOOLING;
@@ -229,7 +266,6 @@ void theloop() {
 
       case STATEROASTING:  //newstate
         {
-          digitalWrite(FANRELAYp_2, RELAYON);
           if (State == STATESTOPPED || State == STATEFANONLY) {
             //SetAndSendFanPWMForATime(0);
             TCoilAvgRoll.clear();
@@ -264,15 +300,13 @@ void theloop() {
       case STATEFANONLY:  //newstate
         {
           State = NewState;
-          //reset fan pid values
+          //reset fan pid values to correct starting values
           ErrIFlow = 0.0;
-          IntegralSumFlow = _IntegralSumFlow;
-          BeanYflow_avg.clear();
-          //DutyFlow = .7;
+          //IntegralSumFlow = _IntegralSumFlowStarting;
+          CalcStartingIntegralSumFlow();
 
-          // FanSpeed254PWM = FlowSetPoints[0].PWM;
-          //SetAndSendFanPWMForATime(0);
-          digitalWrite(FANRELAYp_2, RELAYON);
+          BeanYflow_avg.clear();
+          SetFanFromOpticalSensorPID();
           break;
         }
       case STATEOVERHEATED:  //newstate
@@ -300,8 +334,9 @@ void theloop() {
         break;
     }
   }
-  if (2 == 2 & (State == STATEROASTING)) {  //calc error and duty for temperature PID
+  if (State == STATEROASTING) {  //calc error and duty for temperature PID
     if (bNewTempsAvailable == true) {
+      double changes;
       CurrentSetPointTemp = SetpointforATime(RoastMinutes);
       ErrTemp = CurrentSetPointTemp - TBeanAvgRoll.mean();  //negative if temp is over setpoint. Positive it temp is under setupt
       if (abs(ErrTemp) < GainTemp) {
@@ -316,14 +351,35 @@ void theloop() {
             PIDIntegralUdateTimeTemp.restart(0);
           }
         }
-        DutyTemp = ((ErrTemp + ErrITemp) / (double)GainTemp);
-
+        float tempErrorCombined = ErrTemp + ErrITemp;
+        changes = TempErrorLast - tempErrorCombined;
+        TempErrorLast = ErrTemp + ErrITemp;
+        DutyTemp = (tempErrorCombined) / (double)GainTemp;
         if (DutyTemp > 1.0) {
           DutyTemp = 1.0;
         }
-
       } else {  //clear out the integral before set point 1.
         DutyTemp = 1.0;
+      }
+      if (Debugbyte == TEMPPIDINFO_30) {
+        SERIALPRINT_DB("TempSetpoint:");
+        SERIALPRINT_DB(CurrentSetPointTemp);
+        SERIALPRINT_DB(F("Bean1:"));
+        SERIALPRINT_DB(TBean1);
+        SERIALPRINT_DB(F(",Bean2:"));
+        SERIALPRINT_DB(TBean2);
+        SERIALPRINT_DB(",AvgTemp:");
+        SERIALPRINT_DB(TBeanAvgRoll.mean());
+        SERIALPRINT_DB(",Err:");
+        SERIALPRINT_DB(ErrTemp);
+        SERIALPRINT_DB(",ErrI:");
+        SERIALPRINT_DB(ErrITemp);
+        SERIALPRINT_DB(",changes:");
+        SERIALPRINT_DB(changes);
+        SERIALPRINT_DB(",ISR:");
+        SERIALPRINT_DB(IntegralSumTemp);
+        SERIALPRINT_DB(",Duty:");
+        SERIALPRINTLN_DB(DutyTemp);
       }
     }
   } else {
@@ -371,8 +427,7 @@ void theloop() {
         TempCoilTooHotCount = 0;
       }
     }
-    SPDEBUG4("SSR1:" + String(SSR1PWM) + ",SSR2:" + String(SSRPWM));
-    SPDEBUGXCLOSE
+
     analogWrite(SSR1_p7, SSR1PWM);
     analogWrite(SSR2_p6, SSR2PWM);
   }
@@ -395,21 +450,13 @@ void theloop() {
     //Serial.println("update after reach new temp");
     UpdateProgressDisplayArea(VALUESONLY);
     UpdateOpDetailsDisplayArea(VALUESONLY);
-    if (FanLegacy) {
-      UpdateFanPWMValuesDisplay(VALUESONLY);
-    }
+
     if (SerialOutPutTempsBySecond == true) {
       SerialOutputTempsForPlotting();
     }
     if (SerialOutPutStatusBySecond == true) {
 
       SerialOutputStatus();
-    }
-    if (FanLegacy == true) {
-      if (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING) {
-        SetAndSendFanPWMForATime(RoastMinutes);
-        AddLinebyTimeAndFan(RoastMinutes);
-      }
     }
   }
   if (4 == 4 & (State == STATEROASTING || State == DEBUGDUTY || State == STATECOOLING || State == STATEFANONLY)) {
@@ -431,12 +478,22 @@ void theloop() {
         float coiloffsetted = (dummycoil + CoilTempOffSet);
         if (coiloffsetted < 0) { coiloffsetted = 0; }
         AddPointbyTimeAndTemp(RoastMinutes, coiloffsetted, COILLINEID, 2);
-
       } else {
-        RoastAcumHeat = RoastAcumHeat + TBeanAvgRoll.mean();
-        AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
-        int coiloffsetted = (TCoilAvgRoll.mean() - CoilTempOffSet);
-        if (coiloffsetted < 0) { coiloffsetted = 0; }
+        if (State == STATEROASTING) {
+          RoastAcumHeat = RoastAcumHeat + TBeanAvgRoll.mean();
+        }
+        //compress time when cooling after ending at expected roast roast time
+        if (RoastMinutes > RoastLength) {
+          double RoastMinutesAdjustedDuringCooling = RoastMinutes + (RoastMinutes - (double)RoastLength)/_CoolingTimeCompression ;    
+          AddLinebyTimeAndTemp(RoastMinutesAdjustedDuringCooling, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+        
+        }
+        else
+        {
+
+          AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.mean(), ROLLAVGLINEID);
+        }
+        int coiloffsetted = TCoilAvgRoll.mean() / 2;
         AddPointbyTimeAndTemp(RoastMinutes, coiloffsetted, COILLINEID, 2);
       }
       //AddLinebyTimeAndTemp(RoastMinutes, TBeanAvgRoll.maximum(), ROLLMAXLINEID);
@@ -451,9 +508,7 @@ void theloop() {
     if (SerialOutPutStatusBy3Seconds == true) {
       SerialOutputStatus();
     }
-    if (State == STATECOOLING) {
-      SetAndSendFanPWMForATime(RoastMinutes);
-    }
+
     if (6 == 6 & State == STATEROASTING) {
       //Serial.println('b');
 
