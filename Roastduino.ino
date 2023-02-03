@@ -144,6 +144,7 @@ const byte Flowsetpoints_int_EP[] = { 50, 55, 60, 65 };  //these are EEprom memo
 #define DEBUGDUTY 9
 #define DEBUGCOIL 10
 #define STATERESTARTROASTING 11
+
 #define PROFILELINEID 0
 #define ROLLAVGLINEID 1
 #define ROLLMAXLINEID 2
@@ -151,6 +152,7 @@ const byte Flowsetpoints_int_EP[] = { 50, 55, 60, 65 };  //these are EEprom memo
 #define FANSPEEDLINEID 4
 #define ROLLMINLINEID 5
 #define GRAPHLINECOUNT 6
+
 error_status ErrorStatus;
 const char ErrDisplay[6] = "ERROR";
 const int NoError = -1;
@@ -482,19 +484,20 @@ long TimeOpticalFlowNext = 0;
 long TimeOpticalFlowDuration = _TimeOpticalFlowDuration;
 long TimeReadThermoNext = 0;
 long TimeReadThermoDuration = _TimeReadThermoDuration;
-Chrono SerialInputTimer(Chrono::MILLIS);
-Chrono Serial1InputTimer(Chrono::MILLIS);
-Chrono ThreeSecondTimer(Chrono::MILLIS);
 Chrono PIDIntegralUdateTimeTemp(Chrono::MILLIS);
 Chrono PIDIntegralUdateTimeFlow(Chrono::MILLIS);
 Chrono MeasureTempTimer(Chrono::MILLIS);
-//temps are read once per second
+
 Average<int> TBeanAvgRoll(_BeanYflow_avg_sizemax);
 Average<int> TCoilAvgRoll(_TCoilAvgRoll_sizemax);
-Average<int> CoilCurrentAvgRoll(_CurrentsAvgRoll_sizemax);
-Average<int> FanCurrentAvgRoll(_CurrentsAvgRoll_sizemax);
+Average<int> CoilCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
+Average<int> FanCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
 Average<float> BeanYflow_avg(_BeanYflow_avg_sizemax);
 
+Average<float> BeanYflowX_avg[2] = {(_BeanYflowX_avg_sizemax),(_BeanYflowX_avg_sizemax)};
+
+byte SSR1PWMLast;
+byte SSR2PWMLast;
 int TempCoilTooHotCount;
 int TempCoilTooHot;
 int TempReachedCount;
@@ -530,8 +533,7 @@ int TCoil;
 int TBean1;
 int TBean2;
 float FanCoolingBoostPercent = _FanCoolingBoostPercent;
-bool ReadCoilCurrentFlag = false;
-bool ReadBeanOpticalFlowRateFlag = false;
+
 
 bool FanManual = false;
 bool TimeManual = false;

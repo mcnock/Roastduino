@@ -244,8 +244,7 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   myGLCD_printNumF(FanCoolingBoostPercent, col2, row, 5, 1);
   row = row + rowheight;
   myGLCD.print(F("Mem:"), col, row);
-  myGLCD.printNumI(FreeMemory, col2, row, 5, ' ');
-
+  myGLCD.printNumI(freeMemory(), col2, row, 5, ' ');
 }
 
 void UpdateProgressDisplayArea(boolean bVALUESONLY) {
@@ -306,7 +305,7 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     myGLCD.print(F("Fan%:"), col, row);
     myGLCD_printNumF(FanPercent, col2, row, 5, 1);
     if (FanManual == true) {
-        myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
+      myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
     }
     row = row + rowheight;
     myGLCD.print(F("F SP:"), col, row);
@@ -337,7 +336,7 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     //myGLCD.print(F("Fan%:"), col, row);
     myGLCD_printNumF(FanPercent, col2, row, 5, 1);
     if (FanManual == true) {
-        myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
+      myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
     }
     row = row + rowheight;
     //myGLCD.print(F("F SP:"), col, row);
@@ -397,21 +396,59 @@ void UpdateErrorDisplayArea(boolean bVALUESONLY) {
   }
 }
 
+void calcDisplayBox(displaybox* db, byte rowmax, byte Col0Chars, byte Col1Chars, byte Col2Chars, byte Col3Chars) {
+  db->rowmax = rowmax;
+  db->colmax = 4;
+  db->cols[0] = db->Rect.x + 4;
+  db->cols[1] = db->cols[0] + (myGLCD.getFontXsize() * Col0Chars);
+  db->cols[2] = db->cols[1] + (myGLCD.getFontXsize() * Col1Chars);
+  db->cols[3] = db->cols[2] + (myGLCD.getFontXsize() * Col2Chars);
+  db->cols[4] = db->cols[3] + (myGLCD.getFontXsize() * Col3Chars);
+  int rowheight = myGLCD.getFontYsize() * 1.1;
+  for (int i = 0; i < db->rowmax + 2; i++) {
+    db->rows[i] = db->Rect.y + 2 + (rowheight * (i ));
+  }
+  db->Rect.xmax = db->cols[db->colmax] + 2;
+  db->Rect.ymax = db->rows[db->rowmax+ 1] + 2;
+  db->recalc = true;
+}
+
 void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
 
   if (TouchStatus.objectpressID == PressOpDetailBox) {
     return;
   }
+
+  displaybox* db = &DisplayBoxes[OpDetailDisplay];
   myGLCD.setFont(SmallFont);
-  int rowheight = myGLCD.getFontYsize() * 1.1;
-  int col = DisplayBoxes[OpDetailDisplay].Rect.x + 4;
-  int row = DisplayBoxes[OpDetailDisplay].Rect.y + 2;
-  int col2 = col + (myGLCD.getFontXsize() * 9);  //number
-  if (DisplayBoxes[OpDetailDisplay].Rect.xmax == 0) {
-    DisplayBoxes[OpDetailDisplay].Rect.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    DisplayBoxes[OpDetailDisplay].Rect.ymax = row + (rowheight * 12) + 2;
+  if (db->recalc == false) {
+     //calcDisplayBox(db, 14, 7, 9, 11, 15);
+     calcDisplayBox(db, 14, 7, 2, 2, 3);
+
+    if (1 == 1) {
+      SERIALPRINT_DB("Rect.x");
+      SERIALPRINT_DB(db->Rect.x);
+      SERIALPRINT_DB(" Rect.y");
+      SERIALPRINT_DB(db->Rect.y);
+      SERIALPRINT_DB(" Rect.xmax");
+      SERIALPRINT_DB(db->Rect.xmax);
+      SERIALPRINT_DB(" Rect.ymax");
+      SERIALPRINTLN_DB(db->Rect.ymax);
+      for (int i = 0; i < db->colmax + 1; i++) {
+        SERIALPRINT_DB("col");
+        SERIALPRINT_DB(i);
+        SERIALPRINT_DB("start:");
+        SERIALPRINTLN_DB(db->cols[i]);
+      }
+      for (int i = 0; i < db->rowmax + 1; i++) {
+        SERIALPRINT_DB("row");
+        SERIALPRINT_DB(i);
+        SERIALPRINT_DB(":");
+        SERIALPRINTLN_DB(db->rows[i]);
+      }
+    }
   }
-  FreeMemory = freeMemory();
+
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bVALUESONLY == false) {
@@ -419,99 +456,55 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
     myGLCD_fillRect(DisplayBoxes[OpDetailDisplay].Rect);
     myGLCD.setColor(PALEYELLOW);
     myGLCD_drawRect(DisplayBoxes[OpDetailDisplay].Rect);
-    myGLCD.print(F("Oper Detail"), col, row);
-   
-    row = row + rowheight; 
-    myGLCD.print(F("Tavg:"), col, row);
-    myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 5);
-    row = row + rowheight;
-    myGLCD.print(F("Temp1"), col, row);
-    myGLCD.printNumI(TBean1, col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("Temp2"), col, row);
-    myGLCD.printNumI(TBean2, col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("Coil "), col, row);
-    myGLCD.printNumI(TCoil, col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("CAvg "), col, row);
-    myGLCD.printNumI(TCoilAvgRoll.mean(), col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("Terrs:"), col, row);
-    int R = thermocouples[0].Readingskipped + thermocouples[1].Readingskipped + thermocouples[2].Readingskipped;
-    myGLCD.printNumI(R, col2, row, 5, ' ');
-    row = row + rowheight;
-    row = row + rowheight;
-    
-    myGLCD.print(F("Favg"), col, row);
-    myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
-    row = row + rowheight;
-    myGLCD.print(F("Flow0"), col, row);
-    myGLCD_printNumF(BeanYflowsqrt[0], col2, row, 5, 1);
-    row = row + rowheight;
-    myGLCD.print(F("Flow1"), col, row);
-    myGLCD_printNumF(BeanYflowsqrt[1], col2, row, 5, 1);
-    row = row + rowheight;
-    row = row + rowheight;
-   
-    myGLCD.print(F("lp/sec:"), col, row);
-    myGLCD.printNumI(LoopsPerSecond, col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("T&F/s:"), col, row);
-    myGLCD.printNumI(TempSensorReadsPerSecond, col2 - (myGLCD.getFontXsize() * 2), row, 3, ' ');
-    myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, col2 + (myGLCD.getFontXsize() * 2), row, 3, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("SSRs"), col, row);
-    myGLCD.print(SSRStatus[SSR1Status].status, col2 - (myGLCD.getFontXsize() * 2), row);
-    myGLCD.print(SSRStatus[SSR2Status].status, col2 + (myGLCD.getFontXsize() * 2), row);
-
-  } else {  //this is copy of above with myLCD commented out
-    row = row + rowheight; 
-    //myGLCD.print(F("Tavg:"), col, row);
-    myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 5);
-    row = row + rowheight;
-    //myGLCD.print(F("Temp1"), col, row);
-    myGLCD.printNumI(TBean1, col2, row, 5, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("Temp2"), col, row);
-    myGLCD.printNumI(TBean2, col2, row, 5, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("Coil "), col, row);
-    myGLCD.printNumI(TCoil, col2, row, 5, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("CAvg "), col, row);
-    myGLCD.printNumI(TCoilAvgRoll.mean(), col2, row, 5, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("Terrs:"), col, row);
-    int R = thermocouples[0].Readingskipped + thermocouples[1].Readingskipped + thermocouples[2].Readingskipped;
-    myGLCD.printNumI(R, col2, row, 5, ' ');
-    row = row + rowheight;
-    row = row + rowheight;
-    
-    //myGLCD.print(F("Favg"), col, row);
-    myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
-    row = row + rowheight;
-    //myGLCD.print(F("Flow0"), col, row);
-    myGLCD_printNumF(BeanYflowsqrt[0], col2, row, 5, 1);
-    row = row + rowheight;
-    //myGLCD.print(F("Flow1"), col, row);
-    myGLCD_printNumF(BeanYflowsqrt[1], col2, row, 5, 1);
-    row = row + rowheight;
-    row = row + rowheight;
-   
-    //myGLCD.print(F("lp/sec:"), col, row);
-    myGLCD.printNumI(LoopsPerSecond, col2, row, 5, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("T&F/s:"), col, row);
-    myGLCD.printNumI(TempSensorReadsPerSecond, col2 - (myGLCD.getFontXsize() * 2), row, 3, ' ');
-    myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, col2 + (myGLCD.getFontXsize() * 2), row, 3, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("SSRs"), col, row);
-    myGLCD.print(SSRStatus[SSR1Status].status, col2 - (myGLCD.getFontXsize() * 2), row);
-    myGLCD.print(SSRStatus[SSR2Status].status, col2 + (myGLCD.getFontXsize() * 2), row);
   }
+  byte r = 0;
+  if (bVALUESONLY == false) { myGLCD.print(F("Oper Detail"), db->cols[0], db->rows[r]); }
+  r = 1;
+  if (bVALUESONLY == false) { myGLCD.print(F("Tavg:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(TBeanAvgRoll.mean(), db->cols[2], db->rows[r], 5);
+  r = 2;
+  if (bVALUESONLY == false) { myGLCD.print(F("T 1/2"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(TBean1, db->cols[1], db->rows[r], 3, ' ');
+  myGLCD.printNumI(TBean2, db->cols[3], db->rows[r], 3, ' ');
+  r = 3;
+  if (bVALUESONLY == false) { myGLCD.print(F("Coil/Av"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(TCoil, db->cols[1], db->rows[r], 3, ' ');
+  myGLCD.printNumI(TCoilAvgRoll.mean(), db->cols[3], db->rows[r], 3, ' ');
+  r = 4;
+  if (bVALUESONLY == false) { myGLCD.print(F("Terrs:"), db->cols[0], db->rows[r]); }
+  int R = thermocouples[0].Readingskipped + thermocouples[1].Readingskipped + thermocouples[2].Readingskipped;
+  myGLCD.printNumI(R, db->cols[2], db->rows[r], 5, ' ');
+  r = 6;
+  if (bVALUESONLY == false) { myGLCD.print(F("Flowavg"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF(Lastflowvalueforpid, db->cols[2], db->rows[r], 5, 1);
+  r = 7;
+  if (bVALUESONLY == false) { myGLCD.print(F("Flow0Avg"), db->cols[0], db->rows[r]); }
+  //myGLCD_printNumF(BeanYflowsqrt[0], db->cols[1], db->rows[r], 4, 1);
+  myGLCD_printNumF(sq(BeanYflowX_avg[0].mean()), db->cols[2], db->rows[r], 5, 1);
+  r = 8;
+  if (bVALUESONLY == false) { myGLCD.print(F("Flow1Avg"), db->cols[0], db->rows[r]); }
+ // myGLCD_printNumF(BeanYflowsqrt[1], db->cols[1], db->rows[r], 4, 1);
+  myGLCD_printNumF(sq(BeanYflowX_avg[1].mean()), db->cols[2], db->rows[r], 5, 1);
+ 
+  
+  r = 10;
+  if (bVALUESONLY == false) { myGLCD.print(F("FanAmps:"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF((FanCurrentAvgRollx10.mean()/10), db->cols[2], db->rows[r], 5, 1);
+  r = 11;
+  if (bVALUESONLY == false) { myGLCD.print(F("CoilAmps:"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF((CoilCurrentAvgRollx10.mean()/10), db->cols[2], db->rows[r], 5, 1);
+  r = 12;
+  if (bVALUESONLY == false) { myGLCD.print(F("lp/sec:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(LoopsPerSecond, db->cols[2], db->rows[r], 5, ' ');
+  r = 13;
+  if (bVALUESONLY == false) { myGLCD.print(F("T&F/s:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(TempSensorReadsPerSecond, db->cols[1], db->rows[r], 3, ' ');
+  myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, db->cols[1], db->rows[r], 3, ' ');
+  r = 14;
+  if (bVALUESONLY == false) { myGLCD.print(F("SSRs"), db->cols[0], db->rows[r]); }
+  myGLCD.print(SSRStatus[SSR1Status].status, db->cols[1], db->rows[r]);
+  myGLCD.print(SSRStatus[SSR2Status].status, db->cols[3], db->rows[r]);
 }
-
 
 void StartLinebyTemp(int temp, int lineID) {
 
@@ -577,9 +570,6 @@ void AddLinebyTimeAndTemp(double timemins, int temp, int lineID) {
   uint16_t newX = XforATime(timemins);
   AddLinebyXY(newX, newY, lineID);
 }
-
-
-
 
 void DrawLinebyTimeAndTemp(boolean log, double timemins1, int temp1, double timemins2, int temp2, int color) {
   if (log == true) {
@@ -749,17 +739,15 @@ void UpdateDisplayBoxLocation(byte DisplayIDBeingMoved) {
   displaybox* BoxedBeingMoved = &DisplayBoxes[DisplayIDBeingMoved];
   //blank out the prior box
   myGLCD.setColor(BLACK);
-
   myGLCD_fillRect_wBuffer(BoxedBeingMoved->Rect, 1);
   myGLCD.setColor(PALEYELLOW);
-
   int revisedDragx = TouchStatus.dragx;
   int revisedDragy = TouchStatus.dragy;
-
   BoxedBeingMoved->Rect.x = BoxedBeingMoved->Rect.x + revisedDragx;
   BoxedBeingMoved->Rect.y = BoxedBeingMoved->Rect.y + revisedDragy;
   BoxedBeingMoved->Rect.xmax = BoxedBeingMoved->Rect.xmax + revisedDragx;
   BoxedBeingMoved->Rect.ymax = BoxedBeingMoved->Rect.ymax + revisedDragy;
+  BoxedBeingMoved->recalc = false;
   if (Debugbyte == DRAWBOXESINFO_20) {
     SERIALPRINT_DB(F("Draw new box  x:"));
     SERIALPRINT_DB(BoxedBeingMoved->Rect.x);
@@ -770,25 +758,19 @@ void UpdateDisplayBoxLocation(byte DisplayIDBeingMoved) {
   switch (BoxedBeingMoved->DisplayboxID) {
     case OpProgessDisplay:
       {
-
         break;
       }
-
     case ConfigDisplay:
       {
         UpdateConfigsDisplayArea(ALL);
-
         break;
       }
-
     case OpDetailDisplay:
       {
         UpdateOpDetailsDisplayArea(ALL);
-
         break;
       }
   }
-
   EEPROM.put(BoxedBeingMoved->X_EP, BoxedBeingMoved->Rect.x);
   EEPROM.put(BoxedBeingMoved->Y_EP, BoxedBeingMoved->Rect.y);
-}
+}  //

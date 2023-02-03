@@ -141,6 +141,11 @@ byte DisplayboxID;
 rect Rect;
 byte X_EP;
 byte Y_EP;
+bool recalc ;
+int rows[20];
+int cols[5];
+byte rowmax;
+byte colmax;
 } displaybox;
 
 typedef struct menustatus {

@@ -17,7 +17,6 @@
 #define _TimeReadThermoDuration 500
 #define _TempCoilTooHot 1000
 
-
 //bean flow and flow pid related
 #define FanSetPoints_0_flow 2.1
 #define FanSetPoints_1_flow 2.1
@@ -29,6 +28,8 @@
 #define _DutyStartingFlow .8
 #define _MaxPercentChangePerSecondFlow .7   
 #define _PIDIntegralUdateTimeValueFlow 1000
+#define _BeanYflowX_avg_size 10
+#define _BeanYflowX_avg_sizemax 10
 #define _BeanYflow_avg_size 30
 #define _BeanYflow_avg_sizemax 30
 #define _FanCoolingBoostPercent 1.5
@@ -37,7 +38,8 @@
 //current related
 #define _CurrentsAvgRoll_size 30
 #define _CurrentsAvgRoll_sizemax 30
-
+#define _CurrentFan_MVPerAmp 208
+#define _CurrentCoil_MVPerAmp 153
 
 //display related
 #define _CoilTempOffSet -500

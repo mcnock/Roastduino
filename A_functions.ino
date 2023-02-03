@@ -305,6 +305,11 @@ double RangeAdouble(double Value, double L, double H) {
   }
 }
 
+void analogWriteIfDif(){
+
+  
+}
+
 int freeMemory() {
   char top;
 #ifdef __arm__
