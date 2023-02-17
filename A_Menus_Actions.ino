@@ -342,63 +342,57 @@ void ProcessAnAdjustment() {
             IntegralSumFlowBySpanBefore2 = IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1];
             IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan -1] + ChangetoIntegralSum2;
           }
-
           //the change in closing setpoint value need to be prorated as to how far we are into the section
           float IntegralSumFlowBefore = IntegralSumFlow;
           IntegralSumFlow = IntegralSumFlow + ChangetoIntegralSum + ChangetoIntegralSum2 ;
-
           float ChangeToDuty = (ChangetoIntegralSum + ChangetoIntegralSum2)/(GainFlow/IntegralFlow);
+          // Serial.print(F("Adjusting IntSumFlow RoastTime:"));
+          // Serial.print(RoastMinutes);
+          // Serial.print(",MoveAmount:");
+          // Serial.print(ActiveAdjustment.moveamount);
           
-          //IntegralSumFlow = _DutyStartingFlow * GainFlow / IntegralFlow;
-          //_DutyStartingFlow = IntegralSumFlow/ ( GainFlow / IntegralFlow);
-          
-          Serial.print(F("Adjusting IntSumFlow RoastTime:"));
-          Serial.print(RoastMinutes);
-          Serial.print(",MoveAmount:");
-          Serial.print(ActiveAdjustment.moveamount);
-          
-          Serial.print(",spSelected:");
-          Serial.print(spSelected);
+          // Serial.print(",spSelected:");
+          // Serial.print(spSelected);
 
-          Serial.print(",CurrentSetpointSpan:");
-          Serial.print(FlowCurrentSetpointSpan);
+          // Serial.print(",CurrentSetpointSpan:");
+          // Serial.print(FlowCurrentSetpointSpan);
 
-          Serial.print(",FlowSetPointSpandProgressRatio:");
-          Serial.print(FlowSetPointSpandProgressRatio);
+          // Serial.print(",FlowSetPointSpandProgressRatio:");
+          // Serial.print(FlowSetPointSpandProgressRatio);
 
-          Serial.print(",BeanYflowsetpointBefore:");
-          Serial.print(BeanYflowsetpointBefore);
+          // Serial.print(",BeanYflowsetpointBefore:");
+          // Serial.print(BeanYflowsetpointBefore);
 
-          Serial.print(",BeanYflowsetpointAfter");
-          Serial.print(BeanYflowsetpointAfter);
+          // Serial.print(",BeanYflowsetpointAfter");
+          // Serial.print(BeanYflowsetpointAfter);
 
-          Serial.print(",PercentChangeInSetpoint:");
-          Serial.print(PercentChangeInSetpoint);
+          // Serial.print(",PercentChangeInSetpoint:");
+          // Serial.print(PercentChangeInSetpoint);
    
-          Serial.print(",IntegralSumFlowBySpanBefore:");
-          Serial.print(IntegralSumFlowBySpanBefore);
+          // Serial.print(",IntegralSumFlowBySpanBefore:");
+          // Serial.print(IntegralSumFlowBySpanBefore);
 
 
-          Serial.print(",ChangetoIntegralSumForSection:");
-          Serial.print(ChangetoIntegralSum);
+          // Serial.print(",ChangetoIntegralSumForSection:");
+          // Serial.print(ChangetoIntegralSum);
           
-          Serial.print(",IntegralSumFlowBySpanBefore2:");
-          Serial.print(IntegralSumFlowBySpanBefore2);
+          // Serial.print(",IntegralSumFlowBySpanBefore2:");
+          // Serial.print(IntegralSumFlowBySpanBefore2);
 
 
-          Serial.print(",ChangetoIntegralSumForSection2:");
-          Serial.print(ChangetoIntegralSum2);
+          // Serial.print(",ChangetoIntegralSumForSection2:");
+          // Serial.print(ChangetoIntegralSum2);
 
-          Serial.print(",IntegralSumFlowBefore:");
-          Serial.print(IntegralSumFlowBefore);
+          // Serial.print(",IntegralSumFlowBefore:");
+          // Serial.print(IntegralSumFlowBefore);
 
-          Serial.print(",IntegralSumFlowAfter:");
-          Serial.print(IntegralSumFlow);
+          // Serial.print(",IntegralSumFlowAfter:");
+          // Serial.print(IntegralSumFlow);
           
-          Serial.print(",ChangeToDuty:");
-          Serial.print(ChangeToDuty);
+          // Serial.print(",ChangeToDuty:");
+          // Serial.print(ChangeToDuty);
           
-          Serial.println("");
+          // Serial.println("");
 
         } else {
           FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;

@@ -159,30 +159,31 @@ void theloop() {
     if (upraw != FLOWREADINGERROR) {
       BeanYflowup_avg.push(upraw);
     }
-    if (Debugbyte == FLOWSENSORDATARAW_11) {
-      SERIALPRINT_DB(F(",AvgSqrt0:"));
-      SERIALPRINT_DB(BeanYflowX_avg[0].mean());
-      SERIALPRINT_DB(F(",AvgSqrt1:"));
-      SERIALPRINT_DB(BeanYflowX_avg[1].mean());
-      SERIALPRINT_DB(F(",up:"));
-      SERIALPRINT_DB(upraw);
-      SERIALPRINT_DB(F(",down:"));
-      SERIALPRINT_DB(downraw);
-      SERIALPRINT_DB(F(",AvgSqrt:"));
+    if (Debugbyte == FLOWSENSORDATARAW_11) {//6 taken in function 
+      SERIALPRINT_DB(F(",AvgSqrtDown:"));  //7  
       SERIALPRINT_DB(BeanYflow_avg.mean());
-      //SERIALPRINT_DB(F(",AvgSqrtup:"));
-      //SERIALPRINT_DB(BeanYflowup_avg.mean());
-      //SERIALPRINT_DB(F(",AvgSqrtdown:"));
-      //SERIALPRINT_DB(BeanYflowdown_avg.mean());
-
-
-      //SERIALPRINT_DB(F(",Avg:"));
-      //SERIALPRINT_DB(sq(BeanYflow_avg.mean()));
-      //SERIALPRINT_DB(F(",AvgSz:"));
-      //SERIALPRINT_DB(BeanYflow_avg._size);
-
-      SERIALPRINT_DB(F(",spqrt:"));
-      SERIALPRINTLN_DB(sqrt(BeanYflowsetpointsqrt));
+      SERIALPRINT_DB(F(",spqrt:"));  //8
+      SERIALPRINT_DB(sqrt(BeanYflowsetpointsqrt));
+      SERIALPRINTLN_DB("");
+    }
+     if (Debugbyte == FLOWSENSORDATASQRT_12) { 
+      SERIALPRINT_DB(F("BeanYflowsqrt[0]:")); //1
+      SERIALPRINT_DB(BeanYflowsqrt[0]);
+      SERIALPRINT_DB(F(",BeanYflowsqrt[1]")); //2
+      SERIALPRINT_DB(BeanYflowsqrt[1]);
+      SERIALPRINT_DB(F(",upsqrt:")); //3
+      SERIALPRINT_DB(upraw);
+      SERIALPRINT_DB(F(",downsqrt:")); //4
+      SERIALPRINT_DB(downraw);
+      SERIALPRINT_DB(F(",AvgSqrtDown:")); //5
+      SERIALPRINT_DB(BeanYflow_avg.mean());
+      SERIALPRINT_DB(F(",AvgSqrtUp:")); //6
+      SERIALPRINT_DB(BeanYflowup_avg.mean());
+      SERIALPRINT_DB(F(",ErrFlowsqrt:")); //7
+      SERIALPRINT_DB(ErrFlowsqrt);
+      SERIALPRINT_DB(F(",SPtsqrt:")); //8
+      SERIALPRINT_DB(BeanYflowsetpointsqrt);
+      SERIALPRINTLN_DB("");
     }
   }
   if (ReadCurrents == true) {
@@ -194,19 +195,19 @@ void theloop() {
     double cc = ((ccraw - _Coil_0) * _AnalogReadRefVoltage) / 102.40 / _CurrentCoil_MVPerAmp;
     CoilCurrentAvgRollx10.push((int)cc);
     if (Debugbyte == CURRENTDATA_40) {
-      SERIALPRINT_DB(F(",Fanraw:"));
+      SERIALPRINT_DB(F(",Fanraw:"));//1
       SERIALPRINT_DB(fcraw);
-      SERIALPRINT_DB(F(",FanAmps:"));
+      SERIALPRINT_DB(F(",FanAmps:"));//2
       SERIALPRINT_DB((cc / 10));
-      SERIALPRINT_DB(F(",FanAvg"));
+      SERIALPRINT_DB(F(",FanAvg")); //3
       SERIALPRINT_DB((FanCurrentAvgRollx10.mean() / 10));
-      SERIALPRINT_DB(F(",Coilraw:"));
+      SERIALPRINT_DB(F(",Coilraw:")); //4
       SERIALPRINT_DB(ccraw);
-      SERIALPRINT_DB(F(",CoilAmps:"));
+      SERIALPRINT_DB(F(",CoilAmps:")); //5
       SERIALPRINT_DB(cc / 10);
-      SERIALPRINT_DB(F(",CoilAvg:"));
+      SERIALPRINT_DB(F(",CoilAvg:")); //6
       SERIALPRINT_DB((CoilCurrentAvgRollx10.mean() / 10));
-      SERIALPRINT_DB(F(",RefVoltage:"));
+      SERIALPRINT_DB(F(",RefVoltage:")); //7
       SERIALPRINT_DB(_AnalogReadRefVoltage);
 
       SERIALPRINTLN_DB();

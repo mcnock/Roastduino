@@ -154,16 +154,18 @@ void processSerial(Stream &Serial) {
           switch (incomingByte2) {
             case 63:  // ?
               {
-                Serial.println(F("FLOWPIDINFO_10 - show flow pid information real time"));
-                Serial.println(F("FLOWSENSORDATARAW_11 - show flow data real time"));
-                Serial.println(F("DRAWBOXESINFO_20 - show box redrawing information"));
-                Serial.println(F("TEMPPIDINFO_30 - show temp pid information real time"));
-                Serial.println(F("TEMPDATARAW_31 - show temp data real time"));
-                Serial.println(F("CURRENTDATA_40 - show amperage data real time"));
+                Serial.println(F("FLOWPIDINFO_10 - show flow pid information per pid calculation"));
+                Serial.println(F("FLOWSENSORDATARAW_11 - show flow data real time per reading"));
+                Serial.println(F("FLOWSENSORDATASQRT_12 - show sqrt data real time per reading"));
+                Serial.println(F("DRAWBOXESINFO_20 - show box redrawing information during a move"));
+                Serial.println(F("TEMPPIDINFO_30 - show temp pid information per pid calculation"));
+                Serial.println(F("TEMPDATARAW_31 - show temp data real time per reading"));
+                Serial.println(F("CURRENTDATA_40 - show amperage data real time per reading"));
                 break;
               }
             case 10:
             case 11:
+            case 12:
             case 20:
             case 30:
             case 31:
@@ -185,7 +187,7 @@ void processSerial(Stream &Serial) {
           }
           break;
         }
-         case 1080:  //P
+      case 1080:  //P
         {
           Serial.print(F("Profile before:"));
           for (int x = 0; x < SetPointCount; x++) {

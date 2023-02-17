@@ -60,6 +60,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 byte Debugbyte = 0;
 #define FLOWPIDINFO_10 10
 #define FLOWSENSORDATARAW_11 11
+#define FLOWSENSORDATASQRT_12 12
 #define DRAWBOXESINFO_20 20
 #define TEMPPIDINFO_30 30
 #define TEMPDATARAW_31 31
@@ -218,6 +219,7 @@ const char* StateName[] = {
 float BeanYflowsqrt[2];
 float BeanYflowsetpoint;
 float BeanYflowsetpointsqrt;
+float ErrFlowsqrt;
 
 const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
@@ -227,30 +229,28 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define ALL false
 #define BEINGMOVED true
 #define REGULAR false
-#define VALUESD01_D03_D05 0
-#define VALUES1_3_5 1
-#define VALUES1_3_10 2
-#define VALUES1_0_0 3
-#define VALUES5_10_20 4
-#define VALUESD5_D1_D01 5
-#define VALUESD1_D05_D01 6
+
+#define VALUES_D01_D03_D05 0
+#define VALUES_1_3_5 1
+#define VALUES_1_3_10 2
+#define VALUES_5_10_20 3
+#define VALUES_D5_D1_D01 4
+#define VALUES_1_D5_D1 5
 const adjustmentlabels AdustmentValuesLabels[][3]{
   { ".05", ".03", ".01" },
   { "5", "3", "1" },
   { "10", "5", "1" },
-  { "1", "1", "1" },
   { "20", "5", "1" },
   { ".5", ".1", ".01" },
-  { "0.1", ".05", ".01" }
+  { "1.0", ".5", ".1" }
 };
 const float AdustmentValues[][3] = {
   { .05, .03, .01 },
   { 5, 3, 1 },
   { 10, 5, 1 },
-  { 1, 1, 1 },
   { 20, 5, 1 },
   { .5, .1, .01 },
-  { .1, .05, .01 }
+  { 1, .5, .1 }
 };
 activeadjustment ActiveAdjustment;
 #define ACTIONSHOWSETPOINTSELECTMENU 30
@@ -301,30 +301,30 @@ byte GetLablesFromPrior = 41;
 const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
   { { VMENUBASE0, ">>", "Show", "debug", "menu", GREEN, VMENUDEBUG },
     { 1, "T Sps", "Show", "Temp", "menu", YELLOW, ACTIONSHOWSETPOINTSELECTMENU },
-    { 2, "GainT", "Adjust", "T PID", "Gain", YELLOW, ACTIONADJUSTGAINTEMP, VALUES1_3_5 },
-    { 3, "IntT", "Adjust", "T PID", "Interg", YELLOW, ACTIONADJUSTINTEGRALTEMP, VALUESD01_D03_D05 },
+    { 2, "GainT", "Adjust", "T PID", "Gain", YELLOW, ACTIONADJUSTGAINTEMP, VALUES_1_3_5 },
+    { 3, "IntT", "Adjust", "T PID", "Interg", YELLOW, ACTIONADJUSTINTEGRALTEMP, VALUES_D01_D03_D05 },
     { 4, "Fan", "Show", "Fan", "menu", YELLOW, ACTIONSHOWSETPOINTFANMENU },
-    { 5, "ThT", "Adjust", "TooHot", "Temp", YELLOW, ACTIONADJUSTTEMPTOHOT, VALUES1_3_10 },
-    { 6, "CdT", "Adjust", "CoolDwn", "Temp", YELLOW, ACTIONADJUSTCOOLDOWNTEMP, VALUES1_3_10 },
-    { 7, "Coil", "Adjust", "CoilTmp", "Offset", YELLOW, ActionAdjustCoilGraphTempOffset, VALUES1_3_10 },
+    { 5, "ThT", "Adjust", "TooHot", "Temp", YELLOW, ACTIONADJUSTTEMPTOHOT, VALUES_1_3_10 },
+    { 6, "CdT", "Adjust", "CoolDwn", "Temp", YELLOW, ACTIONADJUSTCOOLDOWNTEMP, VALUES_1_3_10 },
+    { 7, "Coil", "Adjust", "CoilTmp", "Offset", YELLOW, ActionAdjustCoilGraphTempOffset, VALUES_1_3_10 },
     { 8, "Reset", "Load", "Default", "Configs", RED, ACTIONRESETTODEFAULTONNEXTSTART } },
   { { VMENUSETPOINTSELECT0, "<<", "back", "to prior", "menu", GREEN, VMENUBASE },
-    { 11, "T sp0", "Adjust", "point", "#0", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
-    { 12, "T sp1", "Adjust", "point", "#1", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
-    { 13, "T sp2", "Adjust", "point", "#2", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
-    { 14, "T sp3", "Adjust", "point", "#3", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
-    { 15, "T sp4", "Adjust", "point", "#4", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
-    { 16, "Last 2", "Adjust", "last 2", "points", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
-    { 17, "Last 3", "Adjust", "last 3", "points", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES1_3_5 },
+    { 11, "T sp0", "Adjust", "point", "#0", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
+    { 12, "T sp1", "Adjust", "point", "#1", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
+    { 13, "T sp2", "Adjust", "point", "#2", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
+    { 14, "T sp3", "Adjust", "point", "#3", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
+    { 15, "T sp4", "Adjust", "point", "#4", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
+    { 16, "Last 2", "Adjust", "last 2", "points", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
+    { 17, "Last 3", "Adjust", "last 3", "points", YELLOW, ACTIONADJUSTSETPOINTTEMP, VALUES_1_3_5 },
     { 18, "", "", "", "", BLACK } },
   { { VMENUDEBUG0, ">>", "show", "empty", "menu", GREEN, VMENUEMPTY },
-    { 21, "SetDut", "Set", "TDuty", "Manua", GREEN, ACTIONADJUSTTEMPDUTY, VALUESD5_D1_D01 },
-    { 22, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUESD01_D03_D05 },
-    { 23, "TimeM", "Set", "Time", "Manual", YELLOW, ACTIONADJUSTTIMEMANUAL, VALUES1_3_5 },
+    { 21, "SetDut", "Set", "TDuty", "Manua", GREEN, ACTIONADJUSTTEMPDUTY, VALUES_D5_D1_D01 },
+    { 22, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUES_D01_D03_D05 },
+    { 23, "TimeM", "Set", "Time", "Manual", YELLOW, ACTIONADJUSTTIMEMANUAL, VALUES_1_3_5 },
     { 24, "", "toggle", "coil 2 SSR", "on and off", YELLOW },
-    { 25, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5 },
-    { 26, "FanI", "Adjust", "F PID", "Interg", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUESD01_D03_D05 },
-    { 27, "FanSP", "Adjust", "F", "Setpnt", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUESD5_D1_D01 },
+    { 25, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES_1_3_5 },
+    { 26, "FanI", "Adjust", "F PID", "Interg", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUES_D01_D03_D05 },
+    { 27, "FanSP", "Adjust", "F", "Setpnt", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES_D5_D1_D01 },
     { 28, "", "go back", "to", "prior", YELLOW } },
   { { VMENUONOFF0, "<<", "go to", "prior", "menu", GREEN, VMENUFINDPRIOR },
     { 31, "", "selected", "device", "to debug", GREEN },
@@ -345,15 +345,15 @@ const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
     { 47, "x", "Select", "this", "amount", ORANGE, ACTIONSELECTADUSTMENTVALUE },
     { 48, "", "", "", "", BLACK } },
   { { VMENUFAN0, "<<", "go to", "prior", "menu", GREEN, VMENUBASE },
-    { 51, "0 sp", "Adjust", "0 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
-    { 52, "7 sp", "Adjust", "7 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
-    { 53, "11 sp", "Adjust", "11min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
-    { 54, "14 sp", "Adjust", "14min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
-    { 55, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUESD01_D03_D05 },
-    { 56, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5 },
-    { 57, "FanI", "Adjust", "F PID", "Int", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUESD01_D03_D05 },
-    { 58, "FanD", "Adjust", "F PID", "Rate", AQUA, ACTIONADJUSTMAXPERCENTCHANGEPERSECONDFLOW, VALUESD5_D1_D01 }},
-  //  { 58, "CBST", "Set", "Cool", "BurST", AQUA, ACTIONADJUSTCOOLBURST, VALUESD5_D1_D01 } },
+    { 51, "0 sp", "Adjust", "0 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES_1_D5_D1 },
+    { 52, "7 sp", "Adjust", "7 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES_1_D5_D1 },
+    { 53, "11 sp", "Adjust", "11min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES_1_D5_D1 },
+    { 54, "14 sp", "Adjust", "14min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES_1_D5_D1 },
+    { 55, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUES_D01_D03_D05 },
+    { 56, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES_1_3_5 },
+    { 57, "FanI", "Adjust", "F PID", "Int", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUES_D01_D03_D05 },
+    { 58, "FanD", "Adjust", "F PID", "Rate", AQUA, ACTIONADJUSTMAXPERCENTCHANGEPERSECONDFLOW, VALUES_D5_D1_D01 }},
+  //  { 58, "CBST", "Set", "Cool", "BurST", AQUA, ACTIONADJUSTCOOLBURST, VALUES_D5_D1_D01 } },
   { { VMENUEMPTY0, ">>", "go to", "next", "menu", GREEN, VMENUBASE },
     { -61, "", "go back", "to", "prior", AQUA },
     { -62, "", "go", "to", "prior", AQUA },
@@ -414,13 +414,12 @@ thermocouple thermocouples[] = { { Thermocouple1, 0 }, { Thermocouple2, 0 }, { T
 flowsetpoint FlowSetPoints[4];
 float FlowSetPointSpandProgressRatio;
 point_byte TempPixelHistory[160];
-point_byte FanPixelHistory[160];
+//point_byte FanPixelHistory[160];
 point_byte CoilPixelHistory[160];
 //800/160 = 5
-const byte GraphHistorySize = 3;
+const byte GraphHistorySize = 2;
 graphhistory GraphHistory[] = {
   { ROLLAVGLINEID, 5, 0, 160, TempPixelHistory },
-  { FANSPEEDLINEID, 5, 0, 160, FanPixelHistory },
   { COILLINEID, 5, 0, 160, CoilPixelHistory }
 };
 //used when drawing lines. We support up to 3 lines (see line ID constants)
@@ -576,9 +575,10 @@ boolean HasDisplay = true;
 // SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP            SETUP
 // =====================================================================================================================================================================
 void setup() {
-  SERIALPRINTLN_OP("setup starting");
   //Serial.begin(19200);
   Serial.begin(115200);
+  SERIALPRINTLN_OP("setup starting");
+ 
   //set pmw for  pins 5 and 6 36 hrz
   TCCR4B = TCCR4B & B11111000 | B00000101;
   pinMode(SSR1_p7, OUTPUT);
