@@ -2,7 +2,6 @@
 #include "PMW3901.h"
 
 #include <SPI.h>
-
 #define CHIP_ID 0x49          // 01001001
 #define CHIP_ID_INVERSE 0xB6  // 10110110
 
@@ -66,9 +65,18 @@ void PMW3901::readMotionCount(int16_t *deltaX, int16_t *deltaY) {
 void PMW3901::readMotionCountY(int16_t *deltaY) {
   SPI.begin();
   digitalWrite(_cs, LOW);
+  //  registerRead(0x02);
 
-  registerRead(0x02);
-  *deltaY = ((int16_t)registerRead(0x06) << 8) | registerRead(0x05);
+  uint8_t r = registerRead(0x02);
+  if(r != 48 && r != 176)
+  {
+    //Serial.print("read motion count read 0x02 failure r:");
+    //Serial.println(r);
+    *deltaY = FLOWREADINGERROR;
+  }
+  else {
+    *deltaY = ((int16_t)registerRead(0x06) << 8) | registerRead(0x05);
+  }
   digitalWrite(_cs, HIGH);
   SPI.end();
 

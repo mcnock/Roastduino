@@ -22,7 +22,7 @@ void processSerial(Stream &Serial) {
           Serial.println(F("Sx-set by code x. S? shows option and current values."));
           break;
         }
-      case 83:  //S first char
+      case 83:  //S first char for Setting values
         {
           incomingByte2 = Serial.read();
           if (incomingByte2 == 63) {
@@ -40,16 +40,14 @@ void processSerial(Stream &Serial) {
             Serial.println(BeanYflow_avg._sizemax);
             Serial.print(F("Sfxxx TimeReadThermoDuration:"));  //f
             Serial.println(TimeReadThermoDuration);
-            Serial.print(F("Sgxxx MaxPercentChangePerSecondFlow:"));  //g
-            Serial.println(MaxPercentChangePerSecondFlow);
             Serial.print(F("Shxxx TBeanAvgRoll._size:"));  //h
             Serial.print(TBeanAvgRoll._size);
             Serial.print(F(" of "));
             Serial.println(TBeanAvgRoll._sizemax);
             Serial.print(F("Sixxx Debugbyte (1 to 4):"));  //i
             Serial.println(Debugbyte);
-            Serial.print(F("jxxx FanCoolingBoostPercent:"));  //j
-            Serial.println(FanCoolingBoostPercent);
+            Serial.print(F("Sjxxx FlowSensorMode (0,1,2):"));  //j
+            Serial.println(FlowSensorMode);
           } else {
             delay(100);
             if (Serial.available() > 0) {
@@ -82,7 +80,6 @@ void processSerial(Stream &Serial) {
                     Serial.println(PIDIntegralUdateTimeValueFlow);  //Serial.println();
                     break;
                   }
-
                 case 101:  //e BeanYflow_avg._size
                   {
                     Serial.print(F("Set flowAveraging._size from"));
@@ -102,13 +99,13 @@ void processSerial(Stream &Serial) {
                     Serial.println(TimeReadThermoDuration);  //Serial.println();
                     break;
                   }
-                case 103:  //g MaxPercentChangePerSecondFlow
+                case 103:  //g                   {
                   {
-                    Serial.print(F("Set MaxPercentChangePerSecondFlow from"));
-                    Serial.print(MaxPercentChangePerSecondFlow);  //Serial.println();
-                    MaxPercentChangePerSecondFlow = n;
-                    Serial.print(F(" to:"));
-                    Serial.println(MaxPercentChangePerSecondFlow);  //Serial.println();
+                    //Serial.print(F("Set MaxPercentChangePerSecondFlow from"));
+                    //Serial.print(MaxPercentChangePerSecondFlow);  //Serial.println();
+                    //MaxPercentChangePerSecondFlow = n;
+                    //Serial.print(F(" to:"));
+                    //Serial.println(MaxPercentChangePerSecondFlow);  //Serial.println();
                     break;
                   }
                 case 104:  //h TBeanAvgRoll._size
@@ -130,13 +127,13 @@ void processSerial(Stream &Serial) {
                     Serial.println(Debugbyte);  //Serial.println();
                     break;
                   }
-                case 106:  // FanCoolingBoostPercent
+                case (byte('j')):  //j FlowSensorMode
                   {
-                    Serial.print(F("Set FanCoolingBoostPercent from"));
-                    Serial.print(FanCoolingBoostPercent);  //Serial.println();
+                    Serial.print(F("Set FlowSensorMode (0,1,2) from"));
+                    Serial.print(FlowSensorMode);  //Serial.println();
                     FanCoolingBoostPercent = n;
                     Serial.print(F(" to:"));
-                    Serial.println(FanCoolingBoostPercent);  //Serial.println();
+                    Serial.println(FlowSensorMode);  //Serial.println();
                     break;
                   }
               }
@@ -162,6 +159,7 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("DRAWBOXESINFO_20 - show box redrawing information"));
                 Serial.println(F("TEMPPIDINFO_30 - show temp pid information real time"));
                 Serial.println(F("TEMPDATARAW_31 - show temp data real time"));
+                Serial.println(F("CURRENTDATA_40 - show amperage data real time"));
                 break;
               }
             case 10:
@@ -169,6 +167,7 @@ void processSerial(Stream &Serial) {
             case 20:
             case 30:
             case 31:
+            case 40:
               {
                 if (Debugbyte != incomingByte2) {
                   Debugbyte = incomingByte2;

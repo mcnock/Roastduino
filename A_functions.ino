@@ -25,29 +25,42 @@ int round5(int n) {
 float CalcflowsetpointForATime(double minutes) {
   //SPDEBUG("Starting CalcFanPWM");
   double calcedflowsetpoint;
-  float ratio;
+  int flowspan = -1;
   if (minutes <= FlowSetPoints[1].Minutes) {
-    ratio = (float)(minutes) / (float)(FlowSetPoints[1].Minutes);
-    calcedflowsetpoint = FlowSetPoints[0].flow + (ratio * (FlowSetPoints[1].flow - FlowSetPoints[0].flow));
+    flowspan = 0;
+    FlowSetPointSpandProgressRatio = (float)(minutes) / (float)(FlowSetPoints[1].Minutes);
+    calcedflowsetpoint = FlowSetPoints[0].flow + (FlowSetPointSpandProgressRatio * (FlowSetPoints[1].flow - FlowSetPoints[0].flow));
     //SPDEBUG("CaclPMW < sp1 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
   } else if (minutes < FlowSetPoints[2].Minutes) {
-    ratio = (float)(minutes - FlowSetPoints[1].Minutes) / (float)(FlowSetPoints[2].Minutes - FlowSetPoints[1].Minutes);
-    calcedflowsetpoint = FlowSetPoints[1].flow + (ratio * (FlowSetPoints[2].flow - FlowSetPoints[1].flow));
+    flowspan = 1;
+    FlowSetPointSpandProgressRatio = (float)(minutes - FlowSetPoints[1].Minutes) / (float)(FlowSetPoints[2].Minutes - FlowSetPoints[1].Minutes);
+    calcedflowsetpoint = FlowSetPoints[1].flow + (FlowSetPointSpandProgressRatio * (FlowSetPoints[2].flow - FlowSetPoints[1].flow));
     //SPDEBUG("CaclPMW < sp2 mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
   } else if (minutes <= FlowSetPoints[3].Minutes)  //this should roast end
   {
-    ratio = (float)(minutes - FlowSetPoints[2].Minutes) / (float)(FlowSetPoints[3].Minutes - FlowSetPoints[2].Minutes);
-    calcedflowsetpoint = FlowSetPoints[2].flow + (ratio * (FlowSetPoints[3].flow - FlowSetPoints[2].flow));
+    flowspan = 2;
+    FlowSetPointSpandProgressRatio = (float)(minutes - FlowSetPoints[2].Minutes) / (float)(FlowSetPoints[3].Minutes - FlowSetPoints[2].Minutes);
+    calcedflowsetpoint = FlowSetPoints[2].flow + (FlowSetPointSpandProgressRatio * (FlowSetPoints[3].flow - FlowSetPoints[2].flow));
     //SPDEBUG("CaclPMW < sp3  mins: " + String(minutes) + " ratio:" + String(ratio) +  " pwm:" + String(calcedFanSpeed));
   } else {
     //this should be paste roaste - ie cooling
-    if (State = STATECOOLING) {
+    if (State == STATECOOLING) {
       calcedflowsetpoint = FlowSetPoints[3].flow * FanCoolingBoostPercent;
+
+
+
     } else {
+      flowspan = 3;
       calcedflowsetpoint = FlowSetPoints[3].flow;
     }
     //SPDEBUG("CaclPMW > 3   mins: " + String(minutes) +  " pwm:" + String(calcedFanSpeed));
   }
+  //if (State == STATEROASTING) { //we initialize the span section while roasting to allow changing setpoint
+  if (FlowCurrentSetpointSpan != flowspan) {
+    FlowCurrentSetpointSpan = flowspan;
+    IntegralSumFlowBySpan[FlowCurrentSetpointSpan] = IntegralSumFlow;
+  }
+  //}
   return calcedflowsetpoint;
 }
 
@@ -82,12 +95,15 @@ void CalcStartingIntegralSumFlow() {
 void SetFanFromOpticalSensorPID() {
   Lastflowvalueforpid = sq(BeanYflow_avg.mean());
   BeanYflowsetpoint = CalcflowsetpointForATime(RoastMinutes);
+  if (Debugbyte == FLOWSENSORDATARAW_11) {
+    
+        BeanYflowsetpointsqrt = sqrt(BeanYflowsetpoint);
+  }
+  
   ErrFlow = BeanYflowsetpoint - Lastflowvalueforpid;
   if (PIDIntegralUdateTimeFlow.elapsed() > PIDIntegralUdateTimeValueFlow) {  //every x seconds we add the err to be a sum of err scaled by integral flow factor                                                                          //if (ErrIFlow < GainFlow) {
     IntegralSumFlow = IntegralSumFlow + ErrFlow;
-    if (IntegralSumFlow < 0) {
-      //IntegralSumFlow = 0;
-    }
+    IntegralSumFlowBySpan[FlowCurrentSetpointSpan] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] + ErrFlow;
     ErrIFlow = (IntegralSumFlow * IntegralFlow);  //duty is proportion of PIDWindow pid heater should be high before we turn it off.  If duty drops during window - we kill it.  If duty raise during window we may miss the turn on.
     PIDIntegralUdateTimeFlow.restart(0);
   }
@@ -219,32 +235,49 @@ float getCleanOpticaFlow(int mySensorID) {
     }
   }
   BeanOpticalFlowSensors[mySensorID].sensor.readMotionCountY(&r);
-  if (r < 1000) {
+  if (r != -999 ) {
+    BeanOpticalFlowSensors[mySensorID].error = 0;
+    
     if (r > 0) {
+      if (r > _MixMax){
+          r = _MixMax;
+          BeanOpticalFlowSensors[mySensorID].YflowReadingskipped++;
+      }
       root = sqrt(float(r));
     } else {
-      root = -sqrt(float(abs(r)));
+      r = -r;
+      if (r > _MixMax){
+          r = _MixMax;
+          BeanOpticalFlowSensors[mySensorID].YflowReadingskipped++;
+      }
+      root = -sqrt(float(r));
     }
   } else {
-    root = -999;
+    BeanOpticalFlowSensors[mySensorID].error = r;
     BeanOpticalFlowSensors[mySensorID].YflowReadingskipped++;
   }
   if (Debugbyte == FLOWSENSORDATARAW_11) {
-    SERIALPRINT_DB(F(",F"));
-    SERIALPRINT_DB(mySensorID);
-    SERIALPRINT_DB(F("raw:"));
-    SERIALPRINT_DB(r);
+    //SERIALPRINT_DB(F(",F"));
+    //SERIALPRINT_DB(mySensorID);
+    //SERIALPRINT_DB(F("raw:"));
+    //SERIALPRINT_DB(r);
+    
     SERIALPRINT_DB(F(",F"));
     SERIALPRINT_DB(mySensorID);
     SERIALPRINT_DB(F("sqrt:"));
     SERIALPRINT_DB(root);
-    if (root < UpFlowThreshold) {
-      SERIALPRINT_DB(F("upflow:0"));
-    } else {
-      SERIALPRINT_DB(F("upflow:1"));
-    }
+
+    //SERIALPRINT_DB(F(",F"));
+    //SERIALPRINT_DB(mySensorID);
+    //SERIALPRINT_DB(F("skipped:"));  
+    //SERIALPRINT_DB(BeanOpticalFlowSensors[mySensorID].YflowReadingskipped);
+   
+   
 
   }  // note the println comes in AA_LOOP
+  if (root != FLOWREADINGERROR){
+      BeanYflowX_avg[mySensorID].push(root);
+  }
   return root;
 }
 
@@ -303,11 +336,6 @@ double RangeAdouble(double Value, double L, double H) {
   } else {
     return Value;
   }
-}
-
-void analogWriteIfDif(){
-
-  
 }
 
 int freeMemory() {

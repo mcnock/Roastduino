@@ -31,7 +31,6 @@ void intializeMenus() {
   HorControlMenuDef.colstart = (800 - vButWidth - (hButWidth * HorControlMenuDef.ButtonCount));
 
   SetMenuBoundingRect(HorControlMenuDef);
-
 }
 void DrawHorControlMenu() {
   DrawMenuButtons(HorControlMenuDef);
@@ -65,6 +64,7 @@ void ProcessHorControlMenu(int i) {
       break;
     case 2:
       if (State == STATESTOPPED) {
+        SERIALPRINTLN_OP(F("State Fan Only Called"));
         NewState = STATEFANONLY;
       }
 
@@ -139,7 +139,6 @@ void DrawVMenu(int iMenu) {
         myGLCD.setColor(GRAY);
         myGLCD.printNumI(HorScaleLineYValue[i], 800 - 30, HorScaleLineY[i] - 5);
       }
-     
     }
   }
 
@@ -317,9 +316,95 @@ void ProcessAnAdjustment() {
     case ACTIONADJUSTSETPOINTFLOW:
       if ((ActiveAdjustment.ButtonWhenCalled >= 0) & (ActiveAdjustment.ButtonWhenCalled <= 4)) {
         spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
-        FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
-        EEPROM.put(Flowsetpoints_int_EP[spSelected], FlowSetPoints[spSelected]);
+        if (State == STATEROASTING || State == STATEFANONLY || State == STATECOOLING) {  //if we are changing during an active run we need to also adjust the integral sum
+          //calculate how the setpoint will be changing
+          float BeanYflowsetpointBefore = CalcflowsetpointForATime(RoastMinutes);
+          FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
+          float BeanYflowsetpointAfter = CalcflowsetpointForATime(RoastMinutes);
+          float PercentChangeInSetpoint = (BeanYflowsetpointAfter - BeanYflowsetpointBefore)/BeanYflowsetpointBefore;
 
+          float IntegralSumFlowBySpanBefore = 0.0;
+          float IntegralSumFlowBySpanBefore2 = 0.0;
+          float ChangetoIntegralSum = 0.0;
+          float ChangetoIntegralSum2 = 0.0;
+          if (spSelected == (FlowCurrentSetpointSpan + 1)) {  //case we are ajusting current spans ending setpoint
+            //prorate the percent change with how far into span we are and divide by 2
+            ChangetoIntegralSum = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] * PercentChangeInSetpoint * FlowSetPointSpandProgressRatio / 2;
+            IntegralSumFlowBySpanBefore = IntegralSumFlowBySpan[FlowCurrentSetpointSpan];
+            IntegralSumFlowBySpan[FlowCurrentSetpointSpan] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] + ChangetoIntegralSum;
+          } else if (spSelected == (FlowCurrentSetpointSpan )) {  //case we are ajusting current spans starting setpoint
+            //same as above but prorate with (1 - the percent progress)
+            ChangetoIntegralSum = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] * (1 - PercentChangeInSetpoint) * FlowSetPointSpandProgressRatio/2;
+            IntegralSumFlowBySpanBefore = IntegralSumFlowBySpan[FlowCurrentSetpointSpan];
+            IntegralSumFlowBySpan[FlowCurrentSetpointSpan] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] + ChangetoIntegralSum;
+            //also add in the change on the prior span this would imply
+            ChangetoIntegralSum2 = IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1] * PercentChangeInSetpoint / 2;
+            IntegralSumFlowBySpanBefore2 = IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1];
+            IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan -1] + ChangetoIntegralSum2;
+          }
+
+          //the change in closing setpoint value need to be prorated as to how far we are into the section
+          float IntegralSumFlowBefore = IntegralSumFlow;
+          IntegralSumFlow = IntegralSumFlow + ChangetoIntegralSum + ChangetoIntegralSum2 ;
+
+          float ChangeToDuty = (ChangetoIntegralSum + ChangetoIntegralSum2)/(GainFlow/IntegralFlow);
+          
+          //IntegralSumFlow = _DutyStartingFlow * GainFlow / IntegralFlow;
+          //_DutyStartingFlow = IntegralSumFlow/ ( GainFlow / IntegralFlow);
+          
+          Serial.print(F("Adjusting IntSumFlow RoastTime:"));
+          Serial.print(RoastMinutes);
+          Serial.print(",MoveAmount:");
+          Serial.print(ActiveAdjustment.moveamount);
+          
+          Serial.print(",spSelected:");
+          Serial.print(spSelected);
+
+          Serial.print(",CurrentSetpointSpan:");
+          Serial.print(FlowCurrentSetpointSpan);
+
+          Serial.print(",FlowSetPointSpandProgressRatio:");
+          Serial.print(FlowSetPointSpandProgressRatio);
+
+          Serial.print(",BeanYflowsetpointBefore:");
+          Serial.print(BeanYflowsetpointBefore);
+
+          Serial.print(",BeanYflowsetpointAfter");
+          Serial.print(BeanYflowsetpointAfter);
+
+          Serial.print(",PercentChangeInSetpoint:");
+          Serial.print(PercentChangeInSetpoint);
+   
+          Serial.print(",IntegralSumFlowBySpanBefore:");
+          Serial.print(IntegralSumFlowBySpanBefore);
+
+
+          Serial.print(",ChangetoIntegralSumForSection:");
+          Serial.print(ChangetoIntegralSum);
+          
+          Serial.print(",IntegralSumFlowBySpanBefore2:");
+          Serial.print(IntegralSumFlowBySpanBefore2);
+
+
+          Serial.print(",ChangetoIntegralSumForSection2:");
+          Serial.print(ChangetoIntegralSum2);
+
+          Serial.print(",IntegralSumFlowBefore:");
+          Serial.print(IntegralSumFlowBefore);
+
+          Serial.print(",IntegralSumFlowAfter:");
+          Serial.print(IntegralSumFlow);
+          
+          Serial.print(",ChangeToDuty:");
+          Serial.print(ChangeToDuty);
+          
+          Serial.println("");
+
+        } else {
+          FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
+        }
+
+        EEPROM.put(Flowsetpoints_int_EP[spSelected], FlowSetPoints[spSelected]);
         if (ActiveAdjustment.moveamount > 0) {
           if (spSelected < 3) {
             for (byte i = spSelected + 1; i <= 3; i++) {
@@ -482,8 +567,8 @@ void DrawMenuButton(buttonsetdef& butdefset, int i, boolean toggletooltip) {
 
   if (butdefset.buttondefs[i].butID != butIDCalced) {
     SERIALPRINT_ERR(F("Error DrawMenuButton butID "));
-    SERIALPRINT_ERR(butdefset.buttondefs[i].butID); 
-    SERIALPRINT_ERR(F( " does not matched calced butID "));
+    SERIALPRINT_ERR(butdefset.buttondefs[i].butID);
+    SERIALPRINT_ERR(F(" does not matched calced butID "));
     SERIALPRINTLN_ERR(butIDCalced);
   }
 

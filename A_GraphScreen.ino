@@ -189,62 +189,93 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
     return;
   }
   myGLCD.setFont(SmallFont);
-  int rowheight = myGLCD.getFontYsize() * 1.1;
-  int col = DisplayBoxes[ConfigDisplay].Rect.x + 4;
-  int row = DisplayBoxes[ConfigDisplay].Rect.y + 2;
-  int col2 = col + (myGLCD.getFontXsize() * 9);  //number
-  if (DisplayBoxes[ConfigDisplay].Rect.xmax == 0) {
-    DisplayBoxes[ConfigDisplay].Rect.xmax = col2 + (myGLCD.getFontXsize() * 6);
-    DisplayBoxes[ConfigDisplay].Rect.ymax = row + (rowheight * 13) + 2;
+  displaybox* db = &DisplayBoxes[ConfigDisplay];
+  myGLCD.setFont(SmallFont);
+  if (db->calcsdone == false || bVALUESONLY == false) {
+    calcDisplayBox(db, 10, 2, 2, 3);
+    if (1 == 2) {
+      SERIALPRINT_DB("Rect.x");
+      SERIALPRINT_DB(db->Rect.x);
+      SERIALPRINT_DB(" Rect.y");
+      SERIALPRINT_DB(db->Rect.y);
+      SERIALPRINT_DB(" Rect.xmax");
+      SERIALPRINT_DB(db->Rect.xmax);
+      SERIALPRINT_DB(" Rect.ymax");
+      SERIALPRINTLN_DB(db->Rect.ymax);
+      for (int i = 0; i < db->colmax + 1; i++) {
+        SERIALPRINT_DB("col");
+        SERIALPRINT_DB(i);
+        SERIALPRINT_DB("start:");
+        SERIALPRINTLN_DB(db->cols[i]);
+      }
+      for (int i = 0; i < db->rowmax + 1; i++) {
+        SERIALPRINT_DB("row");
+        SERIALPRINT_DB(i);
+        SERIALPRINT_DB(":");
+        SERIALPRINTLN_DB(db->rows[i]);
+      }
+    }
   }
+
+
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bVALUESONLY == false) {
     myGLCD.setColor(BLACK);
-    myGLCD_fillRect(DisplayBoxes[ConfigDisplay].Rect);
+    myGLCD_fillRect(db->Rect);
+    myGLCD.setColor(ORANGE);
+    myGLCD_fillRect(db->RectHeader);
+    myGLCD.setColor(BLACK);
     myGLCD.setColor(PALEYELLOW);
-    myGLCD_drawRect(DisplayBoxes[ConfigDisplay].Rect);
+    myGLCD_drawRect(db->Rect);
   }
-  myGLCD.print(F("Configurations"), col, row);
-  row = row + rowheight;
-  myGLCD.print(F("T Gain   :"), col, row);
-  myGLCD.printNumI(GainTemp, col2, row, 6, ' ');
-  row = row + rowheight;
-  myGLCD.print(F("T Intergal:"), col, row);
-  myGLCD_printNumF(IntegralTemp, col2, row, 6, 2);
-  row = row + rowheight;
-  myGLCD.print(F("Fsp  0m:"), col, row);
-  myGLCD_printNumF(FlowSetPoints[0].flow, col2, row, 6, 1);
-  row = row + rowheight;
-  myGLCD.print(F("Fsp  7m:"), col, row);
-  myGLCD_printNumF(FlowSetPoints[1].flow, col2, row, 6, 1);
-  row = row + rowheight;
-  myGLCD.print(F("Fsp 11m:"), col, row);
-  myGLCD_printNumF(FlowSetPoints[2].flow, col2, row, 6, 1);
-  row = row + rowheight;
-  myGLCD.print(F("Fsp 14m:"), col, row);
-  myGLCD_printNumF(FlowSetPoints[3].flow, col2, row, 6, 1);
-  row = row + rowheight;
-  myGLCD.print(F("F Gain   :"), col, row);
-  myGLCD.printNumI(GainFlow, col2, row, 6, ' ');
-  row = row + rowheight;
-  myGLCD.print(F("F Intergal:"), col, row);
-  myGLCD_printNumF(IntegralFlow, col2, row, 6, 2);
-  row = row + rowheight;
-  myGLCD.print(F("F Der:"), col, row);
-  myGLCD_printNumF(MaxPercentChangePerSecondFlow, col2, row, 6, 2);
-  row = row + rowheight;
-  myGLCD.print(F("TooHotTemp:"), col, row);
-  myGLCD.printNumI(TempCoilTooHot, col2, row, 6, ' ');
-  row = row + rowheight;
-  myGLCD.print(F("CooldwnT :"), col, row);
-  myGLCD.printNumI(TempCoolingDone, col2, row, 6, ' ');
-  row = row + rowheight;
-  myGLCD.print(F("CoolBurst:"), col, row);
-  myGLCD_printNumF(FanCoolingBoostPercent, col2, row, 5, 1);
-  row = row + rowheight;
-  myGLCD.print(F("Mem:"), col, row);
-  myGLCD.printNumI(freeMemory(), col2, row, 5, ' ');
+  byte r = 0;
+
+  myGLCD.setBackColor(ORANGE);
+
+  myGLCD.print(F("Configurations"), db->cols[0], db->rows[r]);
+  r = 1;
+  myGLCD.setBackColor(BLACK);
+
+  myGLCD.print(F("T Gain   :"), db->cols[0], db->rows[r]);
+  myGLCD.printNumI(GainTemp, db->cols[2], db->rows[r], 5, ' ');
+  r = 2;
+  myGLCD.print(F("T Intergal:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(IntegralTemp, db->cols[2], db->rows[r], 5, 2);
+  r = 3;
+  myGLCD.print(F("Fsp  0m:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(FlowSetPoints[0].flow, db->cols[2], db->rows[r], 5, 1);
+  r = 4;
+  myGLCD.print(F("Fsp  7m:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(FlowSetPoints[1].flow, db->cols[2], db->rows[r], 5, 1);
+  r = 5;
+  myGLCD.print(F("Fsp 11m:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(FlowSetPoints[2].flow, db->cols[2], db->rows[r], 5, 1);
+  r = 6;
+  myGLCD.print(F("Fsp 14m:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(FlowSetPoints[3].flow, db->cols[2], db->rows[r], 5, 1);
+  r = 7;
+  myGLCD.print(F("F Gain   :"), db->cols[0], db->rows[r]);
+  myGLCD.printNumI(GainFlow, db->cols[2], db->rows[r], 5, ' ');
+  r = 8;
+  myGLCD.print(F("F Intergal:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(IntegralFlow, db->cols[2], db->rows[r], 5, 2);
+  r = 9;
+  myGLCD.print(F("F Der:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(MaxPercentChangePerSecondFlow, db->cols[2], db->rows[r], 5, 2);
+  r = 10;
+  myGLCD.print(F("TooHotTemp:"), db->cols[0], db->rows[r]);
+  myGLCD.printNumI(TempCoilTooHot, db->cols[2], db->rows[r], 5, ' ');
+  r = 11;
+  myGLCD.print(F("CooldwnT :"), db->cols[0], db->rows[r]);
+  myGLCD.printNumI(TempCoolingDone, db->cols[2], db->rows[r], 5, ' ');
+  r = 12;
+  myGLCD.print(F("CoolBurst:"), db->cols[0], db->rows[r]);
+  myGLCD_printNumF(FanCoolingBoostPercent, db->cols[2], db->rows[r], 5, 1);
+  r = 13;
+  myGLCD.print(F("Mem:"), db->cols[0], db->rows[r]);
+  myGLCD.printNumI(freeMemory(), db->cols[2], db->rows[r], 5, ' ');
+  db->rowmax = 13; //enter this value in DefaultValue.h so it is correct the first time it is drawn
 }
 
 void UpdateProgressDisplayArea(boolean bVALUESONLY) {
@@ -266,7 +297,7 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
 
   if (DisplayBoxes[OpProgessDisplay].Rect.xmax == 0) {
     DisplayBoxes[OpProgessDisplay].Rect.xmax = colend + 2;
-    DisplayBoxes[OpProgessDisplay].Rect.ymax = rowstart + (rowheight * 10) + 2;
+    DisplayBoxes[OpProgessDisplay].Rect.ymax = rowstart + (rowheight * 11) + 2;
   }
   //myGLCD_drawRect(col, rowstart - 1, colend, row + rowheight + 1);
   if (bVALUESONLY == ALL || LastStateUpdated != State) {
@@ -284,6 +315,9 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
 
   if (bVALUESONLY == false) {
     myGLCD.print(F("Time:"), col, row);
+    myGLCD_printNumF(RoastMinutes, col2, row, 5, 1);
+    row = row + rowheight;
+    myGLCD.print(F("TimeR:"), col, row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
     row = row + rowheight;
     myGLCD.print(F("Temp:"), col, row);
@@ -314,7 +348,10 @@ void UpdateProgressDisplayArea(boolean bVALUESONLY) {
     myGLCD.print(F("Flow:"), col, row);
     myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
   } else {
-    //myGLCD.print(F("Time:"), col , row);
+  //  myGLCD.print(F("Time:"), col, row);
+    myGLCD_printNumF(RoastMinutes, col2, row, 5, 1);
+    row = row + rowheight;
+  //  myGLCD.print(F("TimeR:"), col, row);
     myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
     row = row + rowheight;
     //myGLCD.print(F("Temp:"), col , row);
@@ -396,8 +433,7 @@ void UpdateErrorDisplayArea(boolean bVALUESONLY) {
   }
 }
 
-void calcDisplayBox(displaybox* db, byte rowmax, byte Col0Chars, byte Col1Chars, byte Col2Chars, byte Col3Chars) {
-  db->rowmax = rowmax;
+void calcDisplayBox(displaybox* db, byte Col0Chars, byte Col1Chars, byte Col2Chars, byte Col3Chars) {
   db->colmax = 4;
   db->cols[0] = db->Rect.x + 4;
   db->cols[1] = db->cols[0] + (myGLCD.getFontXsize() * Col0Chars);
@@ -405,12 +441,16 @@ void calcDisplayBox(displaybox* db, byte rowmax, byte Col0Chars, byte Col1Chars,
   db->cols[3] = db->cols[2] + (myGLCD.getFontXsize() * Col2Chars);
   db->cols[4] = db->cols[3] + (myGLCD.getFontXsize() * Col3Chars);
   int rowheight = myGLCD.getFontYsize() * 1.1;
-  for (int i = 0; i < db->rowmax + 2; i++) {
-    db->rows[i] = db->Rect.y + 2 + (rowheight * (i ));
+  for (int i = 0; i < 20; i++) {
+    db->rows[i] = db->Rect.y + 2 + (rowheight * (i));
   }
   db->Rect.xmax = db->cols[db->colmax] + 2;
-  db->Rect.ymax = db->rows[db->rowmax+ 1] + 2;
-  db->recalc = true;
+  db->Rect.ymax = db->rows[db->rowmax + 1] + 2;
+  db->RectHeader.x = db->Rect.x + 1;
+  db->RectHeader.y = db->Rect.y + 1;
+  db->RectHeader.xmax = db->Rect.xmax - 1;
+  db->RectHeader.ymax = db->Rect.y + 2 + rowheight;
+  db->calcsdone = true;
 }
 
 void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
@@ -421,11 +461,11 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
 
   displaybox* db = &DisplayBoxes[OpDetailDisplay];
   myGLCD.setFont(SmallFont);
-  if (db->recalc == false) {
-     //calcDisplayBox(db, 14, 7, 9, 11, 15);
-     calcDisplayBox(db, 14, 7, 2, 2, 3);
+  if (db->calcsdone == false) {
+    //calcDisplayBox(db, 14, 7, 9, 11, 15);
+    calcDisplayBox(db, 10, 2, 2, 3);
 
-    if (1 == 1) {
+    if (1 == 2) {
       SERIALPRINT_DB("Rect.x");
       SERIALPRINT_DB(db->Rect.x);
       SERIALPRINT_DB(" Rect.y");
@@ -453,12 +493,19 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   myGLCD.setColor(PALEYELLOW);
   if (bVALUESONLY == false) {
     myGLCD.setColor(BLACK);
-    myGLCD_fillRect(DisplayBoxes[OpDetailDisplay].Rect);
+    myGLCD_fillRect(db->Rect);
+    myGLCD.setColor(RED);
+    myGLCD_fillRect(db->RectHeader);
+    myGLCD.setColor(BLACK);
     myGLCD.setColor(PALEYELLOW);
-    myGLCD_drawRect(DisplayBoxes[OpDetailDisplay].Rect);
+    myGLCD_drawRect(db->Rect);
   }
   byte r = 0;
+  myGLCD.setBackColor(RED);
+
   if (bVALUESONLY == false) { myGLCD.print(F("Oper Detail"), db->cols[0], db->rows[r]); }
+  myGLCD.setBackColor(BLACK);
+
   r = 1;
   if (bVALUESONLY == false) { myGLCD.print(F("Tavg:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(TBeanAvgRoll.mean(), db->cols[2], db->rows[r], 5);
@@ -475,35 +522,53 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   int R = thermocouples[0].Readingskipped + thermocouples[1].Readingskipped + thermocouples[2].Readingskipped;
   myGLCD.printNumI(R, db->cols[2], db->rows[r], 5, ' ');
   r = 6;
-  if (bVALUESONLY == false) { myGLCD.print(F("Flowavg"), db->cols[0], db->rows[r]); }
+  if (bVALUESONLY == false) { myGLCD.print(F("FlowDown"), db->cols[0], db->rows[r]); }
   myGLCD_printNumF(Lastflowvalueforpid, db->cols[2], db->rows[r], 5, 1);
   r = 7;
-  if (bVALUESONLY == false) { myGLCD.print(F("Flow0Avg"), db->cols[0], db->rows[r]); }
-  //myGLCD_printNumF(BeanYflowsqrt[0], db->cols[1], db->rows[r], 4, 1);
-  myGLCD_printNumF(sq(BeanYflowX_avg[0].mean()), db->cols[2], db->rows[r], 5, 1);
+  if (bVALUESONLY == false) { myGLCD.print(F("Flow 0/1"), db->cols[0], db->rows[r]); }
+  if (BeanOpticalFlowSensors[0].error == 0) {
+    myGLCD_printNumF(sq(BeanYflowX_avg[0].mean()), db->cols[1], db->rows[r], 5, 1);
+  } else {
+    myGLCD.print(F("err"), db->cols[1], db->rows[r]);
+  }
+  if (BeanOpticalFlowSensors[1].error == 0) {
+    myGLCD_printNumF(sq(BeanYflowX_avg[1].mean()), db->cols[3], db->rows[r], 5, 1);
+  } else {
+    myGLCD.print(F("err"), db->cols[3], db->rows[r]);
+  }
   r = 8;
-  if (bVALUESONLY == false) { myGLCD.print(F("Flow1Avg"), db->cols[0], db->rows[r]); }
- // myGLCD_printNumF(BeanYflowsqrt[1], db->cols[1], db->rows[r], 4, 1);
-  myGLCD_printNumF(sq(BeanYflowX_avg[1].mean()), db->cols[2], db->rows[r], 5, 1);
- 
-  
+  if (bVALUESONLY == false) { myGLCD.print(F("FlowUp"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF(sq(BeanYflowup_avg.mean()), db->cols[2], db->rows[r], 5, 1);
+  r = 9;
+  if (bVALUESONLY == false) { myGLCD.print(F("Err 0/1:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(BeanOpticalFlowSensors[0].YflowReadingskipped, db->cols[1], db->rows[r], 3, ' ');
+  myGLCD.printNumI(BeanOpticalFlowSensors[1].YflowReadingskipped, db->cols[3], db->rows[r], 3, ' ');
   r = 10;
-  if (bVALUESONLY == false) { myGLCD.print(F("FanAmps:"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF((FanCurrentAvgRollx10.mean()/10), db->cols[2], db->rows[r], 5, 1);
-  r = 11;
-  if (bVALUESONLY == false) { myGLCD.print(F("CoilAmps:"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF((CoilCurrentAvgRollx10.mean()/10), db->cols[2], db->rows[r], 5, 1);
+  if (bVALUESONLY == false) { myGLCD.print(F("Ct 0/1:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(BeanOpticalFlowSensors[0].BeanReadingPerSensor, db->cols[1], db->rows[r], 3, ' ');
+  myGLCD.printNumI(BeanOpticalFlowSensors[1].BeanReadingPerSensor, db->cols[3], db->rows[r], 3, ' ');
+
+
+
   r = 12;
+  if (bVALUESONLY == false) { myGLCD.print(F("FanAmps:"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF((FanCurrentAvgRollx10.mean() / 10), db->cols[2], db->rows[r], 5, 1);
+  r = 13;
+  if (bVALUESONLY == false) { myGLCD.print(F("CoilAmps:"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF((CoilCurrentAvgRollx10.mean() / 10), db->cols[2], db->rows[r], 5, 1);
+  r = 14;
   if (bVALUESONLY == false) { myGLCD.print(F("lp/sec:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(LoopsPerSecond, db->cols[2], db->rows[r], 5, ' ');
-  r = 13;
-  if (bVALUESONLY == false) { myGLCD.print(F("T&F/s:"), db->cols[0], db->rows[r]); }
-  myGLCD.printNumI(TempSensorReadsPerSecond, db->cols[1], db->rows[r], 3, ' ');
-  myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, db->cols[1], db->rows[r], 3, ' ');
-  r = 14;
+  r = 15;
+  if (bVALUESONLY == false) { myGLCD.print(F("C&T&F/s:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(CurrentReadsPerSecond, db->cols[1] - myGLCD.getFontXsize(), db->rows[r], 2, ' ');
+  myGLCD.printNumI(TempSensorReadsPerSecond, db->cols[2], db->rows[r], 2, ' ');
+  myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, db->cols[3] + myGLCD.getFontXsize(), db->rows[r], 2, ' ');
+  r = 16;
   if (bVALUESONLY == false) { myGLCD.print(F("SSRs"), db->cols[0], db->rows[r]); }
   myGLCD.print(SSRStatus[SSR1Status].status, db->cols[1], db->rows[r]);
   myGLCD.print(SSRStatus[SSR2Status].status, db->cols[3], db->rows[r]);
+  db->rowmax = 16;  //enter this value in DefaultValue.h so it is correct the first time it is drawn
 }
 
 void StartLinebyTemp(int temp, int lineID) {
@@ -747,7 +812,7 @@ void UpdateDisplayBoxLocation(byte DisplayIDBeingMoved) {
   BoxedBeingMoved->Rect.y = BoxedBeingMoved->Rect.y + revisedDragy;
   BoxedBeingMoved->Rect.xmax = BoxedBeingMoved->Rect.xmax + revisedDragx;
   BoxedBeingMoved->Rect.ymax = BoxedBeingMoved->Rect.ymax + revisedDragy;
-  BoxedBeingMoved->recalc = false;
+  BoxedBeingMoved->calcsdone = false;
   if (Debugbyte == DRAWBOXESINFO_20) {
     SERIALPRINT_DB(F("Draw new box  x:"));
     SERIALPRINT_DB(BoxedBeingMoved->Rect.x);

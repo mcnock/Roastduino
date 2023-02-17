@@ -1,7 +1,7 @@
 
 #ifndef __PMW3901_H__
 #define __PMW3901_H__
-
+#define FLOWREADINGERROR -999
 #include "Arduino.h"
 
 #include <stdint.h>

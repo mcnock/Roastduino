@@ -26,6 +26,9 @@ typedef struct point {
 typedef struct opticalflow {
   PMW3901 sensor;
   int YflowReadingskipped;
+  int error;
+  int BeanReadingPerSensor;
+  int BeanReadingPerSensorCalc;
 } opticalflow;
 
 typedef struct thermocouple {
@@ -141,10 +144,12 @@ byte DisplayboxID;
 rect Rect;
 byte X_EP;
 byte Y_EP;
-bool recalc ;
+byte rowmax;
+rect RectHeader;
+bool calcsdone ;
+
 int rows[20];
 int cols[5];
-byte rowmax;
 byte colmax;
 } displaybox;
 

@@ -63,6 +63,7 @@ byte Debugbyte = 0;
 #define DRAWBOXESINFO_20 20
 #define TEMPPIDINFO_30 30
 #define TEMPDATARAW_31 31
+#define CURRENTDATA_40 40
 
 //AJN 5 TFT inch display shield does not use digital pins 30-34, 10 , 12,  13,  i2c pins 20,21, or miso pins 39 to 54
 #define FANRELAYVCCp_3 3
@@ -216,6 +217,8 @@ const char* StateName[] = {
 };
 float BeanYflowsqrt[2];
 float BeanYflowsetpoint;
+float BeanYflowsetpointsqrt;
+
 const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
 #define RELAYON LOW
@@ -230,6 +233,7 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define VALUES1_0_0 3
 #define VALUES5_10_20 4
 #define VALUESD5_D1_D01 5
+#define VALUESD1_D05_D01 6
 const adjustmentlabels AdustmentValuesLabels[][3]{
   { ".05", ".03", ".01" },
   { "5", "3", "1" },
@@ -237,7 +241,7 @@ const adjustmentlabels AdustmentValuesLabels[][3]{
   { "1", "1", "1" },
   { "20", "5", "1" },
   { ".5", ".1", ".01" },
-
+  { "0.1", ".05", ".01" }
 };
 const float AdustmentValues[][3] = {
   { .05, .03, .01 },
@@ -245,7 +249,8 @@ const float AdustmentValues[][3] = {
   { 10, 5, 1 },
   { 1, 1, 1 },
   { 20, 5, 1 },
-  { .5, .1, .01 }
+  { .5, .1, .01 },
+  { .1, .05, .01 }
 };
 activeadjustment ActiveAdjustment;
 #define ACTIONSHOWSETPOINTSELECTMENU 30
@@ -314,7 +319,7 @@ const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
     { 18, "", "", "", "", BLACK } },
   { { VMENUDEBUG0, ">>", "show", "empty", "menu", GREEN, VMENUEMPTY },
     { 21, "SetDut", "Set", "TDuty", "Manua", GREEN, ACTIONADJUSTTEMPDUTY, VALUESD5_D1_D01 },
-    { 22, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUESD5_D1_D01 },
+    { 22, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUESD01_D03_D05 },
     { 23, "TimeM", "Set", "Time", "Manual", YELLOW, ACTIONADJUSTTIMEMANUAL, VALUES1_3_5 },
     { 24, "", "toggle", "coil 2 SSR", "on and off", YELLOW },
     { 25, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5 },
@@ -344,10 +349,11 @@ const buttontext PROGMEM Vmenutext[][MAXBUTTONCOUNT] = {
     { 52, "7 sp", "Adjust", "7 min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
     { 53, "11 sp", "Adjust", "11min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
     { 54, "14 sp", "Adjust", "14min", "flow", AQUA, ACTIONADJUSTSETPOINTFLOW, VALUES1_3_5 },
-    { 55, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5 },
-    { 56, "FanI", "Adjust", "F PID", "Int", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUESD01_D03_D05 },
-    { 57, "FanD", "Adjust", "F PID", "Rate", AQUA, ACTIONADJUSTMAXPERCENTCHANGEPERSECONDFLOW, VALUESD5_D1_D01 },
-    { 58, "CBST", "Set", "Cool", "BurST", AQUA, ACTIONADJUSTCOOLBURST, VALUESD5_D1_D01 } },
+    { 55, "FanM", "Set", "FDuty", "Manua", AQUA, ACTIONADJUSTFANMANUAL, VALUESD01_D03_D05 },
+    { 56, "FanG", "Adjust", "F PID", "Gain", AQUA, ACTIONADJUSTGAINFLOW, VALUES1_3_5 },
+    { 57, "FanI", "Adjust", "F PID", "Int", AQUA, ACTIONADJUSTINTEGRALFLOW, VALUESD01_D03_D05 },
+    { 58, "FanD", "Adjust", "F PID", "Rate", AQUA, ACTIONADJUSTMAXPERCENTCHANGEPERSECONDFLOW, VALUESD5_D1_D01 }},
+  //  { 58, "CBST", "Set", "Cool", "BurST", AQUA, ACTIONADJUSTCOOLBURST, VALUESD5_D1_D01 } },
   { { VMENUEMPTY0, ">>", "go to", "next", "menu", GREEN, VMENUBASE },
     { -61, "", "go back", "to", "prior", AQUA },
     { -62, "", "go", "to", "prior", AQUA },
@@ -385,8 +391,8 @@ const byte ConfigDisplay = 1;
 const byte PressOpDetailBox = 2;
 const byte OpDetailDisplay = 2;
 displaybox DisplayBoxes[] = { { PressOpProgressDisplayBox, { 0, 80, 0, 0 }, OPPROGRESSDISPLAY_X_EP, OPPROGRESSDISPLAY_Y_EP },
-                              { PressConfigDisplayBox, { 205, 385, 0, 0 }, CONFIGURATIONDISPLAY_X_EP, CONFIGURATIONDISPLAY_Y_EP },
-                              { PressOpDetailBox, { 610, 200, 0, 0 }, OPERDETAILDISPLAY_X_EP, OPERDETAILDISPLAY_Y_EP } };
+                              { PressConfigDisplayBox, { 205, 385, 0, 0 }, CONFIGURATIONDISPLAY_X_EP, CONFIGURATIONDISPLAY_Y_EP, _ConfigDisplay_rowmax},
+                              { PressOpDetailBox, { 610, 200, 0, 0 }, OPERDETAILDISPLAY_X_EP, OPERDETAILDISPLAY_Y_EP, _OpDetailDisplay_rowmax } };
 
 buttontext myLocalbuttontext;
 touchstatus TouchStatus;
@@ -406,7 +412,7 @@ MAX6675 Thermocouple2(TC_SCK_A9, TC_CS2_A13, TC_SD2_A12);
 MAX6675 Thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
 thermocouple thermocouples[] = { { Thermocouple1, 0 }, { Thermocouple2, 0 }, { Thermocouple3, 0 } };
 flowsetpoint FlowSetPoints[4];
-
+float FlowSetPointSpandProgressRatio;
 point_byte TempPixelHistory[160];
 point_byte FanPixelHistory[160];
 point_byte CoilPixelHistory[160];
@@ -444,6 +450,12 @@ double IntegralFlow = 0.1;  //read from eeprom
 double MaxPercentChangePerSecondFlow = _MaxPercentChangePerSecondFlow;
 long unsigned IntegralLastTimeFlow = 0;
 float IntegralSumFlow = 0;
+float IntegralSumFlowBySpan[4];
+byte  FlowCurrentSetpointSpan;
+#define FLOWSENSORMODE_ALLPOSITIVE 0
+#define FLOWSENSORMODE_LARGESTPOSTIVE 1
+#define FLOWSENSORMODE_LARGESTAVG 2
+byte FlowSensorMode = _FlowSensorMode;
 
 unsigned long PIDWindowStartTimeFlow;
 boolean PIDNewWindowFlow;
@@ -480,6 +492,8 @@ char _debug;
 Chrono TouchTimer(Chrono::MILLIS);
 Chrono RoastTime(Chrono::SECONDS);
 Chrono SecondTimer(Chrono::MILLIS);
+long TimeReadCurrentsNext = 0;
+long TimeReadCurrentsDuration = _TimeReadCurrentsDuration;
 long TimeOpticalFlowNext = 0;
 long TimeOpticalFlowDuration = _TimeOpticalFlowDuration;
 long TimeReadThermoNext = 0;
@@ -492,7 +506,10 @@ Average<int> TBeanAvgRoll(_BeanYflow_avg_sizemax);
 Average<int> TCoilAvgRoll(_TCoilAvgRoll_sizemax);
 Average<int> CoilCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
 Average<int> FanCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
+
 Average<float> BeanYflow_avg(_BeanYflow_avg_sizemax);
+Average<float> BeanYflowup_avg(_BeanYflow_avg_sizemax);
+//Average<float> BeanYflowdown_avg(_BeanYflow_avg_sizemax);
 
 Average<float> BeanYflowX_avg[2] = {(_BeanYflowX_avg_sizemax),(_BeanYflowX_avg_sizemax)};
 
@@ -536,14 +553,18 @@ float FanCoolingBoostPercent = _FanCoolingBoostPercent;
 
 
 bool FanManual = false;
+float FanNudge = 0.0;
 bool TimeManual = false;
-
+ 
 PMW3901 BeanOpticalFlow1(BEAN_OPTICAL_FLOW_SPI_SSp48);
 PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp53);
 opticalflow BeanOpticalFlowSensors[] = { { BeanOpticalFlow1, 0 }, { BeanOpticalFlow2, 0 } };
 byte BeanOpticalFlowReadsPerSecond;
 byte BeanOpticalFlowReadsPerSecondCalcing;
 boolean ReadBeanFlowRate = false;
+
+byte CurrentReadsPerSecond;
+byte CurrentReadsPerSecondCalcing;
 
 byte TempSensorReadsPerSecond;
 byte TempSensorReadsPerSecondCalcing;
@@ -556,7 +577,8 @@ boolean HasDisplay = true;
 // =====================================================================================================================================================================
 void setup() {
   SERIALPRINTLN_OP("setup starting");
-  Serial.begin(19200);
+  //Serial.begin(19200);
+  Serial.begin(115200);
   //set pmw for  pins 5 and 6 36 hrz
   TCCR4B = TCCR4B & B11111000 | B00000101;
   pinMode(SSR1_p7, OUTPUT);
@@ -709,7 +731,7 @@ void setup() {
     SERIALPRINTLN_OP("  Initialization of the flow sensor 1 failed. Delaying 1 second");
     delay(1000);
     if (!BeanOpticalFlowSensors[1].sensor.Initialize()) {
-      SERIALPRINTLN_OP("Initialization of the flow sensor 1 failed 2nd time");
+      SERIALPRINTLN_OP("  Initialization of the flow sensor 1 failed 2nd time");
     } else {
       SERIALPRINTLN_OP("   FlowSensor 1 initialized successfully");
     }
