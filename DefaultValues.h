@@ -35,7 +35,7 @@
 #define _BeanYflow_avg_sizemax 20
 #define _FanCoolingBoostPercent 1.5
 #define _TimeOpticalFlowDuration 20
-#define _FlowSensorMode 0
+#define _FlowSensorMode 1
 //ALLPOSITIVE 0 LARGESTPOSTIVE 1 LARGESTAVG 2
 
 //current related
@@ -51,7 +51,7 @@
 #define _CoilTempOffSet -500
 #define _OpDetailDisplay_x 550
 #define _OpDetailDisplay_y 200
-#define _OpDetailDisplay_rowmax 16
+#define _OpDetailDisplay_rowmax 17
 #define _ConfigDisplay_x 300
 #define _ConfigDisplay_y 275
 #define _ConfigDisplay_rowmax 13
@@ -59,4 +59,6 @@
 #define _OpProgessDisplay_y 80
 #define _OpProgessDisplay_rowmax 13
 
+#define _CompileTime_x 5
+#define _CompileTime_y 480
 #define _InRectBuffer 10

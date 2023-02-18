@@ -96,7 +96,7 @@ void SetFanFromOpticalSensorPID() {
   Lastflowvalueforpid = sq(BeanYflow_avg.mean());
   BeanYflowsetpoint = CalcflowsetpointForATime(RoastMinutes);
   ErrFlow = BeanYflowsetpoint - Lastflowvalueforpid;
-  if (Debugbyte == FLOWSENSORDATARAW_11) {//this is to try minimize the impact when we are  in this per reading debugging mode 
+  if (Debugbyte == FLOWSENSORDATASQRT_12) {//this is to try minimize the impact when we are  in this per reading debugging mode 
     
         BeanYflowsetpointsqrt = sqrt(BeanYflowsetpoint);
         ErrFlowsqrt = sqrt(ErrFlow);
@@ -262,17 +262,17 @@ float getCleanOpticaFlow(int mySensorID) {
       BeanYflowX_avg[mySensorID].push(root);
   }
   if (Debugbyte == FLOWSENSORDATARAW_11) { 
-    SERIALPRINT_DB(F("F"));
+    SERIALPRINT_DB(F(",F")); 
     SERIALPRINT_DB(mySensorID);
     SERIALPRINT_DB(F("raw:"));
-    SERIALPRINT_DB(r2);
+    SERIALPRINT_DB(r2); //1 & 2
     SERIALPRINT_DB(F(",F"));
     SERIALPRINT_DB(mySensorID);
     SERIALPRINT_DB(F("sqrt:"));
-    SERIALPRINT_DB(root);
+    SERIALPRINT_DB(root); //3 & 4
     SERIALPRINT_DB(F(",F"));
     SERIALPRINT_DB(mySensorID);
-    SERIALPRINT_DB(F("avgsqrt:"));
+    SERIALPRINT_DB(F("avgsqrt:")); //5 & 6
     SERIALPRINT_DB(BeanYflowX_avg[mySensorID].mean());
   }  // note the println comes in AA_LOOP
   

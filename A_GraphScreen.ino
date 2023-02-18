@@ -105,13 +105,13 @@ void graphProfile() {
 
   //draw our x time axis
   myGLCD.drawLine(XforATime(3), 0, XforATime(3), myGLCD.getDisplayYSize() - 30);
-  myGLCD.print(F("3min"), XforATime(3) - 30, 460);
+  myGLCD.print(F("3min"), XforATime(3) - 30, 445);
   myGLCD.drawLine(XforATime(6), 0, XforATime(6), myGLCD.getDisplayYSize() - 30);
-  myGLCD.print(F("6min"), XforATime(6) - 30, 460);
+  myGLCD.print(F("6min"), XforATime(6) - 30, 445);
   myGLCD.drawLine(XforATime(9), 0, XforATime(9), myGLCD.getDisplayYSize() - 30);
-  myGLCD.print(F("9min"), XforATime(9) - 30, 460);
+  myGLCD.print(F("9min"), XforATime(9) - 30, 445);
   myGLCD.drawLine(XforATime(12), 0, XforATime(12), myGLCD.getDisplayYSize() - 30);
-  myGLCD.print(F("12min"), XforATime(12) - 30, 460);
+  myGLCD.print(F("12min"), XforATime(12) - 30, 445);
   if (TimeScreenLeft > 15) {
     myGLCD.drawLine(XforATime(15), 0, XforATime(15), myGLCD.getDisplayYSize() - 30);
     myGLCD.print(F("15min"), XforATime(15) - 30, 460);
@@ -170,8 +170,9 @@ void graphProfile() {
   for (int xSetPoint = 0; xSetPoint < SetPointCount; xSetPoint++) {
     DrawTempSetPoint(xSetPoint, LineColorforLineID[PROFILELINEID], REGULAR);
   }
-  DrawHorControlMenu();
 
+  DrawCompileTime();
+  DrawHorControlMenu();
   DrawVMenu(MenuStatus.VmenuShowing);
   UpdateErrorDisplayArea(ALL);
   UpdateOpDetailsDisplayArea(ALL);
@@ -180,6 +181,176 @@ void graphProfile() {
   DrawLineFromHistoryArray(ROLLAVGLINEID);
   DrawLineFromHistoryArray(COILLINEID);
   Setpointschanged = false;
+}
+
+void DrawCompileTime() {
+  myGLCD.setFont(SmallFont);
+  myGLCD.setColor(GRAY);
+  myGLCD.setBackColor(BLACK);
+
+  int col1 = _CompileTime_x;
+  int col2 = col1 + myGLCD.getFontXsize() * 5;
+  int col3 = col2 + myGLCD.getFontXsize() * 13;  //12 characters in the format
+  int row = _CompileTime_y - (myGLCD.getFontYsize());
+  myGLCD.print(F("Vers:"), col1, row);
+
+  myGLCD.print(F(__DATE__), col2, row);
+  myGLCD.print(F(__TIME__), col3, row);
+}
+
+void UpdateErrorDisplayArea(boolean bVALUESONLY) {
+
+  myGLCD.setFont(arial_bold);
+  int rowheight = myGLCD.getFontYsize();
+  int row = HorControlMenuDef.H + 1;  //- myGLCD.getFontYsize();
+  int col = 2;
+  uint16_t blankoutcolor = BLACK;
+
+  if (bVALUESONLY == true && ErrorStatus.newerrmsg == false) {
+    return;
+  }
+
+  if (ErrorStatus.error == NoError || ErrorStatus.newerrmsg == true) {
+    myGLCD.setColor(BLACK);
+    myGLCD.fillRect(col, row, 650, row + rowheight + 3);
+    ErrorStatus.newerrmsg = false;
+    //ErrorStatus.errorcleared = true;
+  }
+
+
+  if (ErrorStatus.error != NoError) {
+    //SPDEBUG("error found. ID is:" + String(ErrorList[ErrorStatus.error].errorID) + " " + String(ErrorList[ErrorStatus.error].line1) + " " + String(ErrorList[ErrorStatus.error].line2));
+    int widewidth = (strlen(ErrorList[ErrorStatus.error].line1) + 1) * myGLCD.getFontYsize();
+    if (widewidth > 650) {
+      myGLCD.setFont(Retro8x16);
+    } else {
+      myGLCD.setFont(arial_bold);
+    }
+    myGLCD.setColor(YELLOW);
+    myGLCD.print(ErrorList[ErrorStatus.error].line1, col + 1, row + 3);
+  } else {
+
+    myGLCD.setFont(Retro8x16);
+    myGLCD.setBackColor(BLACK);
+    myGLCD.setColor(GRAY);
+    switch (DisplayMessageToShow) {
+      case DisplayDefault:
+        myGLCD.print(F("Press 3 seconds on buttons for more info..."), col + 1, row + 3);
+        break;
+      case DisplayMsgAdvanced:
+        myGLCD.print(F("Roast has been shortened..."), col + 1, row + 3);
+        break;
+      case DisplayMsgRetarded:
+        myGLCD.print(F("Roast has been extended..."), col + 1, row + 3);
+        break;
+    }
+  }
+}
+
+void UpdateProgressDisplayArea(boolean bVALUESONLY) {
+  myGLCD.setBackColor(BLACK);
+  if (bVALUESONLY == ALL || LastStateUpdated != State) {
+    myGLCD.setFont(Grotesk24x48);
+    myGLCD.setColor(StateColor[State]);
+    myGLCD.print(StateName[State], 2, 2);
+    LastStateUpdated = State;
+  }
+  myGLCD.setColor(PALEYELLOW);
+  myGLCD.setFont(arial_normal);
+  int rowstart = DisplayBoxes[OpProgessDisplay].Rect.y + 2;
+  int row = rowstart;
+  int col = DisplayBoxes[OpProgessDisplay].Rect.x + 1;
+  int rowheight = myGLCD.getFontYsize() * 1.1;
+  int col2 = col + (5 * myGLCD.getFontXsize());
+  int colend = col2 + (5 * myGLCD.getFontXsize());
+
+  if (DisplayBoxes[OpProgessDisplay].Rect.xmax == 0) {
+    DisplayBoxes[OpProgessDisplay].Rect.xmax = colend + 2;
+    DisplayBoxes[OpProgessDisplay].Rect.ymax = rowstart + (rowheight * 11) + 2;
+  }
+  //myGLCD_drawRect(col, rowstart - 1, colend, row + rowheight + 1);
+  if (bVALUESONLY == ALL || LastStateUpdated != State) {
+    myGLCD.setColor(BLACK);
+    myGLCD_fillRect(DisplayBoxes[OpProgessDisplay].Rect);
+    myGLCD.setColor(PALEYELLOW);
+    myGLCD_drawRect(DisplayBoxes[OpProgessDisplay].Rect);
+  }
+  myGLCD.setBackColor(BLACK);
+  myGLCD.setColor(PALEYELLOW);
+  int DutyPercent = DutyTemp * 100;
+  double FanPercent;
+
+  FanPercent = DutyFan * 100;
+
+  if (bVALUESONLY == false) {
+    myGLCD.print(F("Time:"), col, row);
+    myGLCD_printNumF(RoastMinutes, col2, row, 5, 1);
+    row = row + rowheight;
+    myGLCD.print(F("TimeR:"), col, row);
+    myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
+    row = row + rowheight;
+    myGLCD.print(F("Temp:"), col, row);
+    myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 5);
+    row = row + rowheight;
+    myGLCD.print(F("Pwr%:"), col, row);
+    myGLCD.printNumI(DutyPercent, col2, row, 5, ' ');
+    row = row + rowheight;
+    myGLCD.print(F("sp:"), col, row);
+    myGLCD_printNumF(CurrentSetPointTemp, col2, row, 5, 1);
+    row = row + rowheight;
+    myGLCD.print(F("Err :"), col, row);
+    myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
+    row = row + rowheight;
+    myGLCD.print(F("AccTk:"), col, row);
+    myGLCD.printNumI(RoastAcumHeat / 1000, col2, row, 5, ' ');
+    row = row + rowheight;
+    row = row + rowheight;
+    myGLCD.print(F("Fan%:"), col, row);
+    myGLCD_printNumF(FanPercent, col2, row, 5, 1);
+    if (FanManual == true) {
+      myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
+    }
+    row = row + rowheight;
+    myGLCD.print(F("F SP:"), col, row);
+    myGLCD_printNumF(BeanYflowsetpoint, col2, row, 5, 1);
+    row = row + rowheight;
+    myGLCD.print(F("Flow:"), col, row);
+    myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
+  } else {
+    //  myGLCD.print(F("Time:"), col, row);
+    myGLCD_printNumF(RoastMinutes, col2, row, 5, 1);
+    row = row + rowheight;
+    //  myGLCD.print(F("TimeR:"), col, row);
+    myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
+    row = row + rowheight;
+    //myGLCD.print(F("Temp:"), col , row);
+    myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 5);
+    row = row + rowheight;
+    //myGLCD.print(F("Pwr%:"), col, row);
+    myGLCD.printNumI(DutyPercent, col2, row, 5);
+    row = row + rowheight;
+    //myGLCD.print(F("sp:"), col, row);
+    myGLCD_printNumF(CurrentSetPointTemp, col2, row, 5, 1);
+    row = row + rowheight;
+    //myGLCD.print(F("Err :"), col , row);
+    myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
+    row = row + rowheight;
+    //myGLCD.print(F("AccT:"), col  , row);
+    myGLCD.printNumI(RoastAcumHeat, col2, row, 5, ' ');
+    row = row + rowheight;
+    row = row + rowheight;
+    //myGLCD.print(F("Fan%:"), col, row);
+    myGLCD_printNumF(FanPercent, col2, row, 5, 1);
+    if (FanManual == true) {
+      myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
+    }
+    row = row + rowheight;
+    //myGLCD.print(F("F SP:"), col, row);
+    myGLCD_printNumF(BeanYflowsetpoint, col2, row, 5, 1);
+    row = row + rowheight;
+    //myGLCD.print(F("Flow:"), col, row);
+    myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
+  }
 }
 
 void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
@@ -275,182 +446,9 @@ void UpdateConfigsDisplayArea(boolean bVALUESONLY) {
   r = 13;
   myGLCD.print(F("Mem:"), db->cols[0], db->rows[r]);
   myGLCD.printNumI(freeMemory(), db->cols[2], db->rows[r], 5, ' ');
-  db->rowmax = 13; //enter this value in DefaultValue.h so it is correct the first time it is drawn
-}
-
-void UpdateProgressDisplayArea(boolean bVALUESONLY) {
-  myGLCD.setBackColor(BLACK);
-  if (bVALUESONLY == ALL || LastStateUpdated != State) {
-    myGLCD.setFont(Grotesk24x48);
-    myGLCD.setColor(StateColor[State]);
-    myGLCD.print(StateName[State], 2, 2);
-    LastStateUpdated = State;
-  }
-  myGLCD.setColor(PALEYELLOW);
-  myGLCD.setFont(arial_normal);
-  int rowstart = DisplayBoxes[OpProgessDisplay].Rect.y + 2;
-  int row = rowstart;
-  int col = DisplayBoxes[OpProgessDisplay].Rect.x + 1;
-  int rowheight = myGLCD.getFontYsize() * 1.1;
-  int col2 = col + (5 * myGLCD.getFontXsize());
-  int colend = col2 + (5 * myGLCD.getFontXsize());
-
-  if (DisplayBoxes[OpProgessDisplay].Rect.xmax == 0) {
-    DisplayBoxes[OpProgessDisplay].Rect.xmax = colend + 2;
-    DisplayBoxes[OpProgessDisplay].Rect.ymax = rowstart + (rowheight * 11) + 2;
-  }
-  //myGLCD_drawRect(col, rowstart - 1, colend, row + rowheight + 1);
-  if (bVALUESONLY == ALL || LastStateUpdated != State) {
-    myGLCD.setColor(BLACK);
-    myGLCD_fillRect(DisplayBoxes[OpProgessDisplay].Rect);
-    myGLCD.setColor(PALEYELLOW);
-    myGLCD_drawRect(DisplayBoxes[OpProgessDisplay].Rect);
-  }
-  myGLCD.setBackColor(BLACK);
-  myGLCD.setColor(PALEYELLOW);
-  int DutyPercent = DutyTemp * 100;
-  double FanPercent;
-
-  FanPercent = DutyFan * 100;
-
-  if (bVALUESONLY == false) {
-    myGLCD.print(F("Time:"), col, row);
-    myGLCD_printNumF(RoastMinutes, col2, row, 5, 1);
-    row = row + rowheight;
-    myGLCD.print(F("TimeR:"), col, row);
-    myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
-    row = row + rowheight;
-    myGLCD.print(F("Temp:"), col, row);
-    myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 5);
-    row = row + rowheight;
-    myGLCD.print(F("Pwr%:"), col, row);
-    myGLCD.printNumI(DutyPercent, col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("sp:"), col, row);
-    myGLCD_printNumF(CurrentSetPointTemp, col2, row, 5, 1);
-    row = row + rowheight;
-    myGLCD.print(F("Err :"), col, row);
-    myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
-    row = row + rowheight;
-    myGLCD.print(F("AccTk:"), col, row);
-    myGLCD.printNumI(RoastAcumHeat / 1000, col2, row, 5, ' ');
-    row = row + rowheight;
-    row = row + rowheight;
-    myGLCD.print(F("Fan%:"), col, row);
-    myGLCD_printNumF(FanPercent, col2, row, 5, 1);
-    if (FanManual == true) {
-      myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
-    }
-    row = row + rowheight;
-    myGLCD.print(F("F SP:"), col, row);
-    myGLCD_printNumF(BeanYflowsetpoint, col2, row, 5, 1);
-    row = row + rowheight;
-    myGLCD.print(F("Flow:"), col, row);
-    myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
-  } else {
-  //  myGLCD.print(F("Time:"), col, row);
-    myGLCD_printNumF(RoastMinutes, col2, row, 5, 1);
-    row = row + rowheight;
-  //  myGLCD.print(F("TimeR:"), col, row);
-    myGLCD_printNumF(MySetPoints[SetPointCount - 1].Minutes - RoastMinutes, col2, row, 5, 1);
-    row = row + rowheight;
-    //myGLCD.print(F("Temp:"), col , row);
-    myGLCD.printNumI(TBeanAvgRoll.mean(), col2, row, 5);
-    row = row + rowheight;
-    //myGLCD.print(F("Pwr%:"), col, row);
-    myGLCD.printNumI(DutyPercent, col2, row, 5);
-    row = row + rowheight;
-    //myGLCD.print(F("sp:"), col, row);
-    myGLCD_printNumF(CurrentSetPointTemp, col2, row, 5, 1);
-    row = row + rowheight;
-    //myGLCD.print(F("Err :"), col , row);
-    myGLCD.printNumI(ErrTemp, col2, row, 5, ' ');
-    row = row + rowheight;
-    //myGLCD.print(F("AccT:"), col  , row);
-    myGLCD.printNumI(RoastAcumHeat, col2, row, 5, ' ');
-    row = row + rowheight;
-    row = row + rowheight;
-    //myGLCD.print(F("Fan%:"), col, row);
-    myGLCD_printNumF(FanPercent, col2, row, 5, 1);
-    if (FanManual == true) {
-      myGLCD_printNumF(DutyFanCalced * 100, colend, row, 5, 1);
-    }
-    row = row + rowheight;
-    //myGLCD.print(F("F SP:"), col, row);
-    myGLCD_printNumF(BeanYflowsetpoint, col2, row, 5, 1);
-    row = row + rowheight;
-    //myGLCD.print(F("Flow:"), col, row);
-    myGLCD_printNumF(Lastflowvalueforpid, col2, row, 5, 1);
-  }
-}
-
-void UpdateErrorDisplayArea(boolean bVALUESONLY) {
-
-  myGLCD.setFont(arial_bold);
-  int rowheight = myGLCD.getFontYsize();
-  int row = HorControlMenuDef.H + 1;  //- myGLCD.getFontYsize();
-  int col = 2;
-  uint16_t blankoutcolor = BLACK;
-
-  if (bVALUESONLY == true && ErrorStatus.newerrmsg == false) {
-    return;
-  }
-
-  if (ErrorStatus.error == NoError || ErrorStatus.newerrmsg == true) {
-    myGLCD.setColor(BLACK);
-    myGLCD.fillRect(col, row, 650, row + rowheight + 3);
-    ErrorStatus.newerrmsg = false;
-    //ErrorStatus.errorcleared = true;
-  }
 
 
-  if (ErrorStatus.error != NoError) {
-    //SPDEBUG("error found. ID is:" + String(ErrorList[ErrorStatus.error].errorID) + " " + String(ErrorList[ErrorStatus.error].line1) + " " + String(ErrorList[ErrorStatus.error].line2));
-    int widewidth = (strlen(ErrorList[ErrorStatus.error].line1) + 1) * myGLCD.getFontYsize();
-    if (widewidth > 650) {
-      myGLCD.setFont(Retro8x16);
-    } else {
-      myGLCD.setFont(arial_bold);
-    }
-    myGLCD.setColor(YELLOW);
-    myGLCD.print(ErrorList[ErrorStatus.error].line1, col + 1, row + 3);
-  } else {
-
-    myGLCD.setFont(Retro8x16);
-    myGLCD.setBackColor(BLACK);
-    myGLCD.setColor(GRAY);
-    switch (DisplayMessageToShow) {
-      case DisplayDefault:
-        myGLCD.print(F("Press 3 seconds on buttons for more info..."), col + 1, row + 3);
-        break;
-      case DisplayMsgAdvanced:
-        myGLCD.print(F("Roast has been shortened..."), col + 1, row + 3);
-        break;
-      case DisplayMsgRetarded:
-        myGLCD.print(F("Roast has been extended..."), col + 1, row + 3);
-        break;
-    }
-  }
-}
-
-void calcDisplayBox(displaybox* db, byte Col0Chars, byte Col1Chars, byte Col2Chars, byte Col3Chars) {
-  db->colmax = 4;
-  db->cols[0] = db->Rect.x + 4;
-  db->cols[1] = db->cols[0] + (myGLCD.getFontXsize() * Col0Chars);
-  db->cols[2] = db->cols[1] + (myGLCD.getFontXsize() * Col1Chars);
-  db->cols[3] = db->cols[2] + (myGLCD.getFontXsize() * Col2Chars);
-  db->cols[4] = db->cols[3] + (myGLCD.getFontXsize() * Col3Chars);
-  int rowheight = myGLCD.getFontYsize() * 1.1;
-  for (int i = 0; i < 20; i++) {
-    db->rows[i] = db->Rect.y + 2 + (rowheight * (i));
-  }
-  db->Rect.xmax = db->cols[db->colmax] + 2;
-  db->Rect.ymax = db->rows[db->rowmax + 1] + 2;
-  db->RectHeader.x = db->Rect.x + 1;
-  db->RectHeader.y = db->Rect.y + 1;
-  db->RectHeader.xmax = db->Rect.xmax - 1;
-  db->RectHeader.ymax = db->Rect.y + 2 + rowheight;
-  db->calcsdone = true;
+  db->rowmax = 13;  //enter this value in DefaultValue.h so it is correct the first time it is drawn
 }
 
 void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
@@ -458,7 +456,6 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   if (TouchStatus.objectpressID == PressOpDetailBox) {
     return;
   }
-
   displaybox* db = &DisplayBoxes[OpDetailDisplay];
   myGLCD.setFont(SmallFont);
   if (db->calcsdone == false) {
@@ -488,7 +485,6 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
       }
     }
   }
-
   myGLCD.setBackColor(BLACK);
   myGLCD.setColor(PALEYELLOW);
   if (bVALUESONLY == false) {
@@ -502,10 +498,8 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   }
   byte r = 0;
   myGLCD.setBackColor(RED);
-
   if (bVALUESONLY == false) { myGLCD.print(F("Oper Detail"), db->cols[0], db->rows[r]); }
   myGLCD.setBackColor(BLACK);
-
   r = 1;
   if (bVALUESONLY == false) { myGLCD.print(F("Tavg:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(TBeanAvgRoll.mean(), db->cols[2], db->rows[r], 5);
@@ -523,52 +517,76 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   myGLCD.printNumI(R, db->cols[2], db->rows[r], 5, ' ');
   r = 6;
   if (bVALUESONLY == false) { myGLCD.print(F("FlowDown"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF(Lastflowvalueforpid, db->cols[2], db->rows[r], 5, 1);
+  myGLCD_printNumF(sq(BeanYflow_avg.mean()), db->cols[2], db->rows[r], 4, 1);
   r = 7;
-  if (bVALUESONLY == false) { myGLCD.print(F("Flow 0/1"), db->cols[0], db->rows[r]); }
+  if (bVALUESONLY == false) { myGLCD.print(F("FAvg 0"), db->cols[0], db->rows[r]); }
   if (BeanOpticalFlowSensors[0].error == 0) {
-    myGLCD_printNumF(sq(BeanYflowX_avg[0].mean()), db->cols[1], db->rows[r], 5, 1);
+    myGLCD_printNumF(sq(BeanYflowX_avg[0].mean()), db->cols[2], db->rows[r], 4, 1);
   } else {
-    myGLCD.print(F("err"), db->cols[1], db->rows[r]);
+    myGLCD.print(F("err"), db->cols[2], db->rows[r]);
   }
-  if (BeanOpticalFlowSensors[1].error == 0) {
-    myGLCD_printNumF(sq(BeanYflowX_avg[1].mean()), db->cols[3], db->rows[r], 5, 1);
-  } else {
-    myGLCD.print(F("err"), db->cols[3], db->rows[r]);
-  }
+  
   r = 8;
-  if (bVALUESONLY == false) { myGLCD.print(F("FlowUp"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF(sq(BeanYflowup_avg.mean()), db->cols[2], db->rows[r], 5, 1);
+  if (bVALUESONLY == false) { myGLCD.print(F("FAvg 1"), db->cols[0], db->rows[r]); }
+
+  if (BeanOpticalFlowSensors[1].error == 0) {
+    myGLCD_printNumF(sq(BeanYflowX_avg[1].mean()), db->cols[2], db->rows[r], 4, 1);
+  } else {
+    myGLCD.print(F("err"), db->cols[2], db->rows[r]);
+  }
   r = 9;
+  if (bVALUESONLY == false) { myGLCD.print(F("FlowUp"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF(sq(BeanYflowup_avg.mean()), db->cols[2], db->rows[r], 4, 1);
+  r = 10;
   if (bVALUESONLY == false) { myGLCD.print(F("Err 0/1:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(BeanOpticalFlowSensors[0].YflowReadingskipped, db->cols[1], db->rows[r], 3, ' ');
   myGLCD.printNumI(BeanOpticalFlowSensors[1].YflowReadingskipped, db->cols[3], db->rows[r], 3, ' ');
-  r = 10;
+  r = 11;
   if (bVALUESONLY == false) { myGLCD.print(F("Ct 0/1:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(BeanOpticalFlowSensors[0].BeanReadingPerSensor, db->cols[1], db->rows[r], 3, ' ');
   myGLCD.printNumI(BeanOpticalFlowSensors[1].BeanReadingPerSensor, db->cols[3], db->rows[r], 3, ' ');
 
 
 
-  r = 12;
+  r = 13;
   if (bVALUESONLY == false) { myGLCD.print(F("FanAmps:"), db->cols[0], db->rows[r]); }
   myGLCD_printNumF((FanCurrentAvgRollx10.mean() / 10), db->cols[2], db->rows[r], 5, 1);
-  r = 13;
+  r = 14;
   if (bVALUESONLY == false) { myGLCD.print(F("CoilAmps:"), db->cols[0], db->rows[r]); }
   myGLCD_printNumF((CoilCurrentAvgRollx10.mean() / 10), db->cols[2], db->rows[r], 5, 1);
-  r = 14;
+  r = 15;
   if (bVALUESONLY == false) { myGLCD.print(F("lp/sec:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(LoopsPerSecond, db->cols[2], db->rows[r], 5, ' ');
-  r = 15;
-  if (bVALUESONLY == false) { myGLCD.print(F("C&T&F/s:"), db->cols[0], db->rows[r]); }
+  r = 16;
+  if (bVALUESONLY == false) { myGLCD.print(F("Cu Tm Fl/s:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(CurrentReadsPerSecond, db->cols[1] - myGLCD.getFontXsize(), db->rows[r], 2, ' ');
   myGLCD.printNumI(TempSensorReadsPerSecond, db->cols[2], db->rows[r], 2, ' ');
   myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, db->cols[3] + myGLCD.getFontXsize(), db->rows[r], 2, ' ');
-  r = 16;
+  r = 17;
   if (bVALUESONLY == false) { myGLCD.print(F("SSRs"), db->cols[0], db->rows[r]); }
   myGLCD.print(SSRStatus[SSR1Status].status, db->cols[1], db->rows[r]);
   myGLCD.print(SSRStatus[SSR2Status].status, db->cols[3], db->rows[r]);
-  db->rowmax = 16;  //enter this value in DefaultValue.h so it is correct the first time it is drawn
+  db->rowmax = 17;  //enter this value in DefaultValue.h so it is correct the first time it is drawn
+}
+
+void calcDisplayBox(displaybox* db, byte Col0Chars, byte Col1Chars, byte Col2Chars, byte Col3Chars) {
+  db->colmax = 4;
+  db->cols[0] = db->Rect.x + 4;
+  db->cols[1] = db->cols[0] + (myGLCD.getFontXsize() * Col0Chars);
+  db->cols[2] = db->cols[1] + (myGLCD.getFontXsize() * Col1Chars);
+  db->cols[3] = db->cols[2] + (myGLCD.getFontXsize() * Col2Chars);
+  db->cols[4] = db->cols[3] + (myGLCD.getFontXsize() * Col3Chars);
+  int rowheight = myGLCD.getFontYsize() * 1.1;
+  for (int i = 0; i < 20; i++) {
+    db->rows[i] = db->Rect.y + 2 + (rowheight * (i));
+  }
+  db->Rect.xmax = db->cols[db->colmax] + 2;
+  db->Rect.ymax = db->rows[db->rowmax + 1] + 2;
+  db->RectHeader.x = db->Rect.x + 1;
+  db->RectHeader.y = db->Rect.y + 1;
+  db->RectHeader.xmax = db->Rect.xmax - 1;
+  db->RectHeader.ymax = db->Rect.y + 2 + rowheight;
+  db->calcsdone = true;
 }
 
 void StartLinebyTemp(int temp, int lineID) {
@@ -839,3 +857,4 @@ void UpdateDisplayBoxLocation(byte DisplayIDBeingMoved) {
   EEPROM.put(BoxedBeingMoved->X_EP, BoxedBeingMoved->Rect.x);
   EEPROM.put(BoxedBeingMoved->Y_EP, BoxedBeingMoved->Rect.y);
 }  //
+ 

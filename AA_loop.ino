@@ -37,9 +37,9 @@ void theloop() {
     CurrentReadsPerSecond = CurrentReadsPerSecondCalcing;
     CurrentReadsPerSecondCalcing = 0;
     BeanOpticalFlowSensors[0].BeanReadingPerSensor = BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc;
-    BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc;
+    BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc = 0;
     BeanOpticalFlowSensors[1].BeanReadingPerSensor = BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc;
-    BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc;
+    BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc = 0;
 
     SecondTimer.restart(0);
   } else {
@@ -81,15 +81,24 @@ void theloop() {
               BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
               downraw = BeanYflowsqrt[0];
             } else {
-              upraw = upraw + BeanYflowsqrt[0];
+              upraw = BeanYflowsqrt[0];
             }
           }
           if (BeanYflowsqrt[1] != FLOWREADINGERROR) {
             if (BeanYflowsqrt[1] >= 0) {
               BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
-              downraw = downraw + BeanYflowsqrt[1];
+              if (downraw != FLOWREADINGERROR) {
+                downraw = downraw + BeanYflowsqrt[1];
+              } else {
+                downraw = BeanYflowsqrt[1];
+              }
+
             } else {
-              upraw = upraw + BeanYflowsqrt[1];
+              if (upraw != FLOWREADINGERROR) {
+                upraw = upraw + BeanYflowsqrt[1];
+              } else {
+                upraw = BeanYflowsqrt[1];
+              }
             }
           }
           break;
@@ -155,33 +164,41 @@ void theloop() {
     if (downraw != FLOWREADINGERROR) {
       BeanYflow_avg.push(downraw);
       //bNewFlowAvailable = true
+    } else {
+      //this means no down flow was found so we add  a zero to dilute it
+      BeanYflow_avg.push(0);
+      downraw = 0;
     }
     if (upraw != FLOWREADINGERROR) {
       BeanYflowup_avg.push(upraw);
+    } else {
+      //this means no upflow was found so we add  a zero to dilute it
+      BeanYflow_avg.push(0);
+      upraw = 0;
     }
-    if (Debugbyte == FLOWSENSORDATARAW_11) {//6 taken in function 
-      SERIALPRINT_DB(F(",AvgSqrtDown:"));  //7  
+    if (Debugbyte == FLOWSENSORDATARAW_11) {  //6 taken in function
+      SERIALPRINT_DB(F(",AvgSqrtDown:"));     //7
       SERIALPRINT_DB(BeanYflow_avg.mean());
       SERIALPRINT_DB(F(",spqrt:"));  //8
       SERIALPRINT_DB(sqrt(BeanYflowsetpointsqrt));
       SERIALPRINTLN_DB("");
     }
-     if (Debugbyte == FLOWSENSORDATASQRT_12) { 
-      SERIALPRINT_DB(F("BeanYflowsqrt[0]:")); //1
+    if (Debugbyte == FLOWSENSORDATASQRT_12) {
+      SERIALPRINT_DB(F("BeanYflowsqrt[0]:"));  //1
       SERIALPRINT_DB(BeanYflowsqrt[0]);
-      SERIALPRINT_DB(F(",BeanYflowsqrt[1]")); //2
+      SERIALPRINT_DB(F(",BeanYflowsqrt[1]:"));  //2
       SERIALPRINT_DB(BeanYflowsqrt[1]);
-      SERIALPRINT_DB(F(",upsqrt:")); //3
+      SERIALPRINT_DB(F(",upsqrt:"));  //3
       SERIALPRINT_DB(upraw);
-      SERIALPRINT_DB(F(",downsqrt:")); //4
+      SERIALPRINT_DB(F(",downsqrt:"));  //4
       SERIALPRINT_DB(downraw);
-      SERIALPRINT_DB(F(",AvgSqrtDown:")); //5
+      SERIALPRINT_DB(F(",AvgSqrtDown:"));  //5
       SERIALPRINT_DB(BeanYflow_avg.mean());
-      SERIALPRINT_DB(F(",AvgSqrtUp:")); //6
+      SERIALPRINT_DB(F(",AvgSqrtUp:"));  //6
       SERIALPRINT_DB(BeanYflowup_avg.mean());
-      SERIALPRINT_DB(F(",ErrFlowsqrt:")); //7
+      SERIALPRINT_DB(F(",ErrFlowsqrt:"));  //7
       SERIALPRINT_DB(ErrFlowsqrt);
-      SERIALPRINT_DB(F(",SPtsqrt:")); //8
+      SERIALPRINT_DB(F(",SPtsqrt:"));  //8
       SERIALPRINT_DB(BeanYflowsetpointsqrt);
       SERIALPRINTLN_DB("");
     }
@@ -195,19 +212,19 @@ void theloop() {
     double cc = ((ccraw - _Coil_0) * _AnalogReadRefVoltage) / 102.40 / _CurrentCoil_MVPerAmp;
     CoilCurrentAvgRollx10.push((int)cc);
     if (Debugbyte == CURRENTDATA_40) {
-      SERIALPRINT_DB(F(",Fanraw:"));//1
+      SERIALPRINT_DB(F(",Fanraw:"));  //1
       SERIALPRINT_DB(fcraw);
-      SERIALPRINT_DB(F(",FanAmps:"));//2
+      SERIALPRINT_DB(F(",FanAmps:"));  //2
       SERIALPRINT_DB((cc / 10));
-      SERIALPRINT_DB(F(",FanAvg")); //3
+      SERIALPRINT_DB(F(",FanAvg"));  //3
       SERIALPRINT_DB((FanCurrentAvgRollx10.mean() / 10));
-      SERIALPRINT_DB(F(",Coilraw:")); //4
+      SERIALPRINT_DB(F(",Coilraw:"));  //4
       SERIALPRINT_DB(ccraw);
-      SERIALPRINT_DB(F(",CoilAmps:")); //5
+      SERIALPRINT_DB(F(",CoilAmps:"));  //5
       SERIALPRINT_DB(cc / 10);
-      SERIALPRINT_DB(F(",CoilAvg:")); //6
+      SERIALPRINT_DB(F(",CoilAvg:"));  //6
       SERIALPRINT_DB((CoilCurrentAvgRollx10.mean() / 10));
-      SERIALPRINT_DB(F(",RefVoltage:")); //7
+      SERIALPRINT_DB(F(",RefVoltage:"));  //7
       SERIALPRINT_DB(_AnalogReadRefVoltage);
 
       SERIALPRINTLN_DB();
@@ -437,6 +454,7 @@ void theloop() {
           CalcStartingIntegralSumFlow();
 
           BeanYflow_avg.clear();
+          BeanYflowup_avg.clear();
           SetFanFromOpticalSensorPID();
           break;
         }

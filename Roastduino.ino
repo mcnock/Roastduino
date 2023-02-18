@@ -607,6 +607,7 @@ void setup() {
   //digitalWrite(VIBRELAYp, RELAYOFF);
   delay(1000);
   RoastTime.stop();
+  BeanYflowup_avg._size == _BeanYflow_avg_size;
   BeanYflow_avg._size = _BeanYflow_avg_size;
   TBeanAvgRoll._size = _TBeanAvgRoll_size;
   TCoilAvgRoll._size = _TCoilAvgRoll_size;

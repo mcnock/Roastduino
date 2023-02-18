@@ -131,7 +131,7 @@ void processSerial(Stream &Serial) {
                   {
                     Serial.print(F("Set FlowSensorMode (0,1,2) from"));
                     Serial.print(FlowSensorMode);  //Serial.println();
-                    FanCoolingBoostPercent = n;
+                    FlowSensorMode = n;
                     Serial.print(F(" to:"));
                     Serial.println(FlowSensorMode);  //Serial.println();
                     break;
