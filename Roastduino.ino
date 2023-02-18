@@ -60,7 +60,7 @@ UTouch myTouch(43, 42, 44, 45, 46);           //byte tclk, byte tcs, byte din, b
 byte Debugbyte = 0;
 #define FLOWPIDINFO_10 10
 #define FLOWSENSORDATARAW_11 11
-#define FLOWSENSORDATASQRT_12 12
+#define FLOWSENSORDATA_12 12
 #define DRAWBOXESINFO_20 20
 #define TEMPPIDINFO_30 30
 #define TEMPDATARAW_31 31
@@ -216,10 +216,8 @@ const char* StateName[] = {
   Sname10,
   Sname11
 };
-float BeanYflowsqrt[2];
+float BeanYflow[2];
 float BeanYflowsetpoint;
-float BeanYflowsetpointsqrt;
-float ErrFlowsqrt;
 
 const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
@@ -454,7 +452,10 @@ byte  FlowCurrentSetpointSpan;
 #define FLOWSENSORMODE_ALLPOSITIVE 0
 #define FLOWSENSORMODE_LARGESTPOSTIVE 1
 #define FLOWSENSORMODE_LARGESTAVG 2
+#define FLOWSENSORMODE_SQRT 2
+
 byte FlowSensorMode = _FlowSensorMode;
+byte FlowSensorErrorUseSqrt = _FlowSensorErrorUseSqrt;
 
 unsigned long PIDWindowStartTimeFlow;
 boolean PIDNewWindowFlow;
@@ -506,9 +507,8 @@ Average<int> TCoilAvgRoll(_TCoilAvgRoll_sizemax);
 Average<int> CoilCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
 Average<int> FanCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
 
-Average<float> BeanYflow_avg(_BeanYflow_avg_sizemax);
-Average<float> BeanYflowup_avg(_BeanYflow_avg_sizemax);
-//Average<float> BeanYflowdown_avg(_BeanYflow_avg_sizemax);
+Average<int> BeanYflow_avg(_BeanYflow_avg_sizemax);
+Average<int> BeanYflowup_avg(_BeanYflow_avg_sizemax);
 
 Average<float> BeanYflowX_avg[2] = {(_BeanYflowX_avg_sizemax),(_BeanYflowX_avg_sizemax)};
 

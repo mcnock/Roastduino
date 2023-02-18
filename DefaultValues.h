@@ -37,6 +37,8 @@
 #define _TimeOpticalFlowDuration 20
 #define _FlowSensorMode 1
 //ALLPOSITIVE 0 LARGESTPOSTIVE 1 LARGESTAVG 2
+#define _FlowSensorErrorUseSqrt 1
+//False = 0 True = 1;
 
 //current related
 #define _CurrentsAvgRoll_size 3

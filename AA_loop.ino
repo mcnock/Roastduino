@@ -61,8 +61,8 @@ void theloop() {
   }
   if (ReadBeanOpticalFlowRateFlag == true) {
     BeanOpticalFlowReadsPerSecondCalcing++;
-    BeanYflowsqrt[0] = getCleanOpticaFlow(0);
-    BeanYflowsqrt[1] = getCleanOpticaFlow(1);
+    BeanYflow[0] = getCleanOpticaFlow(0);
+    BeanYflow[1] = getCleanOpticaFlow(1);
 
     //double upflowdetected0 = false;
     float upraw = FLOWREADINGERROR;
@@ -76,28 +76,28 @@ void theloop() {
       case FLOWSENSORMODE_ALLPOSITIVE:
         {
           //use all downflow (positive) and upflow (negative) values from both sensors
-          if (BeanYflowsqrt[0] != FLOWREADINGERROR) {
-            if (BeanYflowsqrt[0] >= 0) {
+          if (BeanYflow[0] != FLOWREADINGERROR) {
+            if (BeanYflow[0] >= 0) {
               BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
-              downraw = BeanYflowsqrt[0];
+              downraw = BeanYflow[0];
             } else {
-              upraw = BeanYflowsqrt[0];
+              upraw = BeanYflow[0];
             }
           }
-          if (BeanYflowsqrt[1] != FLOWREADINGERROR) {
-            if (BeanYflowsqrt[1] >= 0) {
+          if (BeanYflow[1] != FLOWREADINGERROR) {
+            if (BeanYflow[1] >= 0) {
               BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
               if (downraw != FLOWREADINGERROR) {
-                downraw = downraw + BeanYflowsqrt[1];
+                downraw = downraw + BeanYflow[1];
               } else {
-                downraw = BeanYflowsqrt[1];
+                downraw = BeanYflow[1];
               }
 
             } else {
               if (upraw != FLOWREADINGERROR) {
-                upraw = upraw + BeanYflowsqrt[1];
+                upraw = upraw + BeanYflow[1];
               } else {
-                upraw = BeanYflowsqrt[1];
+                upraw = BeanYflow[1];
               }
             }
           }
@@ -106,36 +106,36 @@ void theloop() {
       case FLOWSENSORMODE_LARGESTPOSTIVE:
         {
           //use the greatest  downflow (positive) and upflow (negative) values from either sensor
-          if (BeanYflowsqrt[0] != FLOWREADINGERROR) {
-            if (BeanYflowsqrt[0] >= 0) {
+          if (BeanYflow[0] != FLOWREADINGERROR) {
+            if (BeanYflow[0] >= 0) {
               BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
-              downraw = BeanYflowsqrt[0];
+              downraw = BeanYflow[0];
             } else {
-              upraw = upraw + BeanYflowsqrt[0];
+              upraw = upraw + BeanYflow[0];
             }
           }
 
-          if (BeanYflowsqrt[1] != FLOWREADINGERROR) {
-            if (BeanYflowsqrt[1] >= 0) {
+          if (BeanYflow[1] != FLOWREADINGERROR) {
+            if (BeanYflow[1] >= 0) {
               if (downraw != FLOWREADINGERROR) {  // this means we have data from sensor 0 to compare against
-                if (BeanYflowsqrt[1] > downraw) {
-                  downraw = BeanYflowsqrt[1];
+                if (BeanYflow[1] > downraw) {
+                  downraw = BeanYflow[1];
                   BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
                   BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc--;
                 }
                 //the else case is sensor 1 is a smaller downflow value that sensor 0 and will be ignored
               } else {
-                downraw = BeanYflowsqrt[1];
+                downraw = BeanYflow[1];
                 BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
               }
             } else {
               if (upraw != FLOWREADINGERROR) {
-                if (BeanYflowsqrt[1] < upraw) {
-                  upraw = BeanYflowsqrt[1];
+                if (BeanYflow[1] < upraw) {
+                  upraw = BeanYflow[1];
                 }
                 //the else case means sensor 1 was a smaller upflow and will be ignored
               } else {
-                upraw = BeanYflowsqrt[1];
+                upraw = BeanYflow[1];
               }
             }
           }
@@ -146,15 +146,15 @@ void theloop() {
           //use the value from the side with the largest downflow averge of the past _BeanYflowX_avg_sizemax (5) readings
           if (BeanYflowX_avg[0].mean() > BeanYflowX_avg[1].mean()) {
             BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
-            downraw = BeanYflowsqrt[0];
-            if (BeanYflowsqrt[1] < 0) {
-              upraw = BeanYflowsqrt[1];
+            downraw = BeanYflow[0];
+            if (BeanYflow[1] < 0) {
+              upraw = BeanYflow[1];
             }
           } else {
             BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
-            downraw = BeanYflowsqrt[1];
-            if (BeanYflowsqrt[0] < 0) {
-              upraw = BeanYflowsqrt[0];
+            downraw = BeanYflow[1];
+            if (BeanYflow[0] < 0) {
+              upraw = BeanYflow[0];
             }
           }
           break;
@@ -179,15 +179,15 @@ void theloop() {
     if (Debugbyte == FLOWSENSORDATARAW_11) {  //6 taken in function
       SERIALPRINT_DB(F(",AvgSqrtDown:"));     //7
       SERIALPRINT_DB(BeanYflow_avg.mean());
-      SERIALPRINT_DB(F(",spqrt:"));  //8
-      SERIALPRINT_DB(sqrt(BeanYflowsetpointsqrt));
+      SERIALPRINT_DB(F(",sp:"));  //8
+      SERIALPRINT_DB(BeanYflowsetpoint);
       SERIALPRINTLN_DB("");
     }
-    if (Debugbyte == FLOWSENSORDATASQRT_12) {
-      SERIALPRINT_DB(F("BeanYflowsqrt[0]:"));  //1
-      SERIALPRINT_DB(BeanYflowsqrt[0]);
-      SERIALPRINT_DB(F(",BeanYflowsqrt[1]:"));  //2
-      SERIALPRINT_DB(BeanYflowsqrt[1]);
+    if (Debugbyte == FLOWSENSORDATA_12) {
+      SERIALPRINT_DB(F("BeanYflow[0]:"));  //1
+      SERIALPRINT_DB(BeanYflow[0]);
+      SERIALPRINT_DB(F(",BeanYflow[1]:"));  //2
+      SERIALPRINT_DB(BeanYflow[1]);
       SERIALPRINT_DB(F(",upsqrt:"));  //3
       SERIALPRINT_DB(upraw);
       SERIALPRINT_DB(F(",downsqrt:"));  //4
@@ -196,10 +196,10 @@ void theloop() {
       SERIALPRINT_DB(BeanYflow_avg.mean());
       SERIALPRINT_DB(F(",AvgSqrtUp:"));  //6
       SERIALPRINT_DB(BeanYflowup_avg.mean());
-      SERIALPRINT_DB(F(",ErrFlowsqrt:"));  //7
-      SERIALPRINT_DB(ErrFlowsqrt);
-      SERIALPRINT_DB(F(",SPtsqrt:"));  //8
-      SERIALPRINT_DB(BeanYflowsetpointsqrt);
+      SERIALPRINT_DB(F(",ErrFlow:"));  //7
+      SERIALPRINT_DB(ErrFlow);
+      SERIALPRINT_DB(F(",Setpoint:"));  //8
+      SERIALPRINT_DB(BeanYflowsetpoint);
       SERIALPRINTLN_DB("");
     }
   }

@@ -517,11 +517,11 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   myGLCD.printNumI(R, db->cols[2], db->rows[r], 5, ' ');
   r = 6;
   if (bVALUESONLY == false) { myGLCD.print(F("FlowDown"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF(sq(BeanYflow_avg.mean()), db->cols[2], db->rows[r], 4, 1);
+  myGLCD_printNumF(BeanYflow_avg.mean(), db->cols[2], db->rows[r], 4, 1);
   r = 7;
   if (bVALUESONLY == false) { myGLCD.print(F("FAvg 0"), db->cols[0], db->rows[r]); }
   if (BeanOpticalFlowSensors[0].error == 0) {
-    myGLCD_printNumF(sq(BeanYflowX_avg[0].mean()), db->cols[2], db->rows[r], 4, 1);
+    myGLCD_printNumF(BeanYflowX_avg[0].mean(), db->cols[2], db->rows[r], 4, 1);
   } else {
     myGLCD.print(F("err"), db->cols[2], db->rows[r]);
   }
@@ -530,13 +530,13 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   if (bVALUESONLY == false) { myGLCD.print(F("FAvg 1"), db->cols[0], db->rows[r]); }
 
   if (BeanOpticalFlowSensors[1].error == 0) {
-    myGLCD_printNumF(sq(BeanYflowX_avg[1].mean()), db->cols[2], db->rows[r], 4, 1);
+    myGLCD_printNumF(BeanYflowX_avg[1].mean(), db->cols[2], db->rows[r], 4, 1);
   } else {
     myGLCD.print(F("err"), db->cols[2], db->rows[r]);
   }
   r = 9;
   if (bVALUESONLY == false) { myGLCD.print(F("FlowUp"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF(sq(BeanYflowup_avg.mean()), db->cols[2], db->rows[r], 4, 1);
+  myGLCD_printNumF(BeanYflowup_avg.mean(), db->cols[2], db->rows[r], 4, 1);
   r = 10;
   if (bVALUESONLY == false) { myGLCD.print(F("Err 0/1:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(BeanOpticalFlowSensors[0].YflowReadingskipped, db->cols[1], db->rows[r], 3, ' ');

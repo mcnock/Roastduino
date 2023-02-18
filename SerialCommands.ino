@@ -40,6 +40,8 @@ void processSerial(Stream &Serial) {
             Serial.println(BeanYflow_avg._sizemax);
             Serial.print(F("Sfxxx TimeReadThermoDuration:"));  //f
             Serial.println(TimeReadThermoDuration);
+            Serial.print(F("Sgxxx FlowSensorErrorUseSqrt (0,1):"));  //g
+            Serial.println(FlowSensorErrorUseSqrt);
             Serial.print(F("Shxxx TBeanAvgRoll._size:"));  //h
             Serial.print(TBeanAvgRoll._size);
             Serial.print(F(" of "));
@@ -101,11 +103,11 @@ void processSerial(Stream &Serial) {
                   }
                 case 103:  //g                   {
                   {
-                    //Serial.print(F("Set MaxPercentChangePerSecondFlow from"));
-                    //Serial.print(MaxPercentChangePerSecondFlow);  //Serial.println();
-                    //MaxPercentChangePerSecondFlow = n;
-                    //Serial.print(F(" to:"));
-                    //Serial.println(MaxPercentChangePerSecondFlow);  //Serial.println();
+                    Serial.print(F("Set FlowSensorErrorUseSqrt (0,1) from"));
+                    Serial.print(FlowSensorErrorUseSqrt);  //Serial.println();
+                    FlowSensorErrorUseSqrt = n;
+                    Serial.print(F(" to:"));
+                    Serial.println(FlowSensorErrorUseSqrt);  //Serial.println();
                     break;
                   }
                 case 104:  //h TBeanAvgRoll._size
@@ -156,7 +158,7 @@ void processSerial(Stream &Serial) {
               {
                 Serial.println(F("FLOWPIDINFO_10 - show flow pid information per pid calculation"));
                 Serial.println(F("FLOWSENSORDATARAW_11 - show flow data real time per reading"));
-                Serial.println(F("FLOWSENSORDATASQRT_12 - show sqrt data real time per reading"));
+                Serial.println(F("FLOWSENSORDATA_12 - show data real time per reading"));
                 Serial.println(F("DRAWBOXESINFO_20 - show box redrawing information during a move"));
                 Serial.println(F("TEMPPIDINFO_30 - show temp pid information per pid calculation"));
                 Serial.println(F("TEMPDATARAW_31 - show temp data real time per reading"));
