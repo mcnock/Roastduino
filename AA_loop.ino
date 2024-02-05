@@ -61,8 +61,9 @@ void theloop() {
   }
   if (ReadBeanOpticalFlowRateFlag == true) {
     BeanOpticalFlowReadsPerSecondCalcing++;
-    BeanYflow[0] = getCleanOpticaFlow(0);
-    BeanYflow[1] = getCleanOpticaFlow(1);
+    
+    getCleanOpticaFlow(0);
+    getCleanOpticaFlow(1);
 
     //double upflowdetected0 = false;
     float upraw = FLOWREADINGERROR;
@@ -76,28 +77,28 @@ void theloop() {
       case FLOWSENSORMODE_ALLPOSITIVE:
         {
           //use all downflow (positive) and upflow (negative) values from both sensors
-          if (BeanYflow[0] != FLOWREADINGERROR) {
-            if (BeanYflow[0] >= 0) {
+          if (BeanOpticalFlowSensors[0].error != FLOWREADINGERROR) {
+            if (BeanOpticalFlowSensors[0].BeanYflowCurrent >= 0) {
               BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
-              downraw = BeanYflow[0];
+              downraw = BeanOpticalFlowSensors[0].BeanYflowCurrent;
             } else {
-              upraw = BeanYflow[0];
+              upraw = BeanOpticalFlowSensors[0].BeanYflowCurrent;
             }
           }
-          if (BeanYflow[1] != FLOWREADINGERROR) {
-            if (BeanYflow[1] >= 0) {
+          if (BeanOpticalFlowSensors[1].error != FLOWREADINGERROR) {
+            if (BeanOpticalFlowSensors[1].BeanYflowCurrent >= 0) {
               BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
               if (downraw != FLOWREADINGERROR) {
-                downraw = downraw + BeanYflow[1];
+                downraw = downraw + BeanOpticalFlowSensors[1].BeanYflowCurrent;
               } else {
-                downraw = BeanYflow[1];
+                downraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
               }
 
             } else {
               if (upraw != FLOWREADINGERROR) {
-                upraw = upraw + BeanYflow[1];
+                upraw = upraw + BeanOpticalFlowSensors[1].BeanYflowCurrent;
               } else {
-                upraw = BeanYflow[1];
+                upraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
               }
             }
           }
@@ -106,36 +107,36 @@ void theloop() {
       case FLOWSENSORMODE_LARGESTPOSTIVE:
         {
           //use the greatest  downflow (positive) and upflow (negative) values from either sensor
-          if (BeanYflow[0] != FLOWREADINGERROR) {
-            if (BeanYflow[0] >= 0) {
+          if (BeanOpticalFlowSensors[0].error != FLOWREADINGERROR) {
+            if (BeanOpticalFlowSensors[0].BeanYflowCurrent >= 0) {
               BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
-              downraw = BeanYflow[0];
+              downraw = BeanOpticalFlowSensors[0].BeanYflowCurrent;
             } else {
-              upraw = upraw + BeanYflow[0];
+              upraw = upraw + BeanOpticalFlowSensors[0].BeanYflowCurrent;
             }
           }
 
-          if (BeanYflow[1] != FLOWREADINGERROR) {
-            if (BeanYflow[1] >= 0) {
+          if (BeanOpticalFlowSensors[1].error != FLOWREADINGERROR) {
+            if (BeanOpticalFlowSensors[1].BeanYflowCurrent >= 0) {
               if (downraw != FLOWREADINGERROR) {  // this means we have data from sensor 0 to compare against
-                if (BeanYflow[1] > downraw) {
-                  downraw = BeanYflow[1];
+                if (BeanOpticalFlowSensors[1].BeanYflowCurrent > downraw) {
+                  downraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
                   BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
                   BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc--;
                 }
                 //the else case is sensor 1 is a smaller downflow value that sensor 0 and will be ignored
               } else {
-                downraw = BeanYflow[1];
+                downraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
                 BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
               }
             } else {
               if (upraw != FLOWREADINGERROR) {
-                if (BeanYflow[1] < upraw) {
-                  upraw = BeanYflow[1];
+                if (BeanOpticalFlowSensors[1].BeanYflowCurrent < upraw) {
+                  upraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
                 }
                 //the else case means sensor 1 was a smaller upflow and will be ignored
               } else {
-                upraw = BeanYflow[1];
+                upraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
               }
             }
           }
@@ -144,17 +145,17 @@ void theloop() {
       case FLOWSENSORMODE_LARGESTAVG:
         {
           //use the value from the side with the largest downflow averge of the past _BeanYflowX_avg_sizemax (5) readings
-          if (BeanYflowX_avg[0].mean() > BeanYflowX_avg[1].mean()) {
+          if (BeanOpticalFlowSensors[0].Avg.mean() > BeanOpticalFlowSensors[1].Avg.mean()) {
             BeanOpticalFlowSensors[0].BeanReadingPerSensorCalc++;
-            downraw = BeanYflow[0];
-            if (BeanYflow[1] < 0) {
-              upraw = BeanYflow[1];
+            downraw = BeanOpticalFlowSensors[0].BeanYflowCurrent;
+            if (BeanOpticalFlowSensors[1].BeanYflowCurrent < 0) {
+              upraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
             }
           } else {
             BeanOpticalFlowSensors[1].BeanReadingPerSensorCalc++;
-            downraw = BeanYflow[1];
-            if (BeanYflow[0] < 0) {
-              upraw = BeanYflow[0];
+            downraw = BeanOpticalFlowSensors[1].BeanYflowCurrent;
+            if (BeanOpticalFlowSensors[0].BeanYflowCurrent < 0) {
+              upraw = BeanOpticalFlowSensors[0].BeanYflowCurrent;
             }
           }
           break;
@@ -184,10 +185,10 @@ void theloop() {
       SERIALPRINTLN_DB("");
     }
     if (Debugbyte == FLOWSENSORDATA_12) {
-      SERIALPRINT_DB(F("BeanYflow[0]:"));  //1
-      SERIALPRINT_DB(BeanYflow[0]);
-      SERIALPRINT_DB(F(",BeanYflow[1]:"));  //2
-      SERIALPRINT_DB(BeanYflow[1]);
+      SERIALPRINT_DB(F("BeanOpticalFlowSensors[0].BeanYflowCurrent:"));  //1
+      SERIALPRINT_DB(BeanOpticalFlowSensors[0].BeanYflowCurrent);
+      SERIALPRINT_DB(F(",BeanOpticalFlowSensors[1].BeanYflowCurrent:"));  //2
+      SERIALPRINT_DB(BeanOpticalFlowSensors[1].BeanYflowCurrent);
       SERIALPRINT_DB(F(",upsqrt:"));  //3
       SERIALPRINT_DB(upraw);
       SERIALPRINT_DB(F(",downsqrt:"));  //4
@@ -205,28 +206,49 @@ void theloop() {
   }
   if (ReadCurrents == true) {
     CurrentReadsPerSecondCalcing++;
-    int fcraw = analogRead(FANCURRENT_A0);
-    int fc = (fcraw * _AnalogReadRefVoltage) / 102.40 / _CurrentFan_MVPerAmp;
-    FanCurrentAvgRollx10.push(fc);
-    int ccraw = analogRead(COILCURRENT_A1);
-    double cc = ((ccraw - _Coil_0) * _AnalogReadRefVoltage) / 102.40 / _CurrentCoil_MVPerAmp;
-    CoilCurrentAvgRollx10.push((int)cc);
-    if (Debugbyte == CURRENTDATA_40) {
+    int fcx10 = -1;
+    int fcraw = analogRead(FAN712_INPUTp_A2);
+    if (bFanRelayOn == false){
+        FanCurrentZeroRaw.push(fcraw);
+    }
+    else
+    {
+        //fcx10 = (fcraw - FanCurrentZeroRaw.mean()) /102.40/ _CurrentFan_MVPerAmp;
+        fcx10 = (fcraw - FanCurrentZeroRaw.mean()) * .62 ; //
+        FanCurrentAvgRollx10.push(fcx10);  
+    }
+    
+    int ccraw = analogRead(COILCURRENT_A0);
+    int ccx10 = -1;
+    if (bFanRelayOn == false){
+        CoilCurrentZeroRaw.push(ccraw);
+    }
+    else
+    {
+        ccx10 = (ccraw - CoilCurrentZeroRaw.mean()) * .39;
+        CoilCurrentAvgRollx10.push(ccx10);  
+      
+    }
+    if (Debugbyte == CURRENTFANDATA_40) {
       SERIALPRINT_DB(F(",Fanraw:"));  //1
       SERIALPRINT_DB(fcraw);
+      SERIALPRINT_DB(F(",FanZero:"));  //1
+      SERIALPRINT_DB(FanCurrentZeroRaw.mean());
       SERIALPRINT_DB(F(",FanAmps:"));  //2
-      SERIALPRINT_DB((cc / 10));
-      SERIALPRINT_DB(F(",FanAvg"));  //3
-      SERIALPRINT_DB((FanCurrentAvgRollx10.mean() / 10));
+      SERIALPRINT_DB((fcx10 / 10.0));
+      SERIALPRINT_DB(F(",FanAmpsAvg"));  //3
+      SERIALPRINTLN_DB((FanCurrentAvgRollx10.mean() / 10));
+    }
+    if (Debugbyte == CURRENTCOILDATA_41) {
+    
       SERIALPRINT_DB(F(",Coilraw:"));  //4
       SERIALPRINT_DB(ccraw);
+      SERIALPRINT_DB(F(",Coilzero:"));  //4
+      SERIALPRINT_DB(CoilCurrentZeroRaw.mean());
       SERIALPRINT_DB(F(",CoilAmps:"));  //5
-      SERIALPRINT_DB(cc / 10);
-      SERIALPRINT_DB(F(",CoilAvg:"));  //6
+      SERIALPRINT_DB(ccx10 / 10.0 );
+      SERIALPRINT_DB(F(",CoilAmpsAvg:"));  //6
       SERIALPRINT_DB((CoilCurrentAvgRollx10.mean() / 10));
-      SERIALPRINT_DB(F(",RefVoltage:"));  //7
-      SERIALPRINT_DB(_AnalogReadRefVoltage);
-
       SERIALPRINTLN_DB();
     }
   }
@@ -393,6 +415,7 @@ void theloop() {
             SetFanOff();
             //digitalWrite(VIBRELAYp, RELAYOFF);
             RoastTime.stop();
+            digitalWrite(FANRELAYINp_2, LOW);
             DutyFan = 0;
           } else {
             SERIALPRINTLN_OP(F("Stopped Requested - but high temp detected - switching to StateCooling"));
@@ -423,7 +446,7 @@ void theloop() {
             //StartLinebyXAndY(FanGraphXStart, YforAFlow(FanSpeed254PWM), FANSPEEDLINEID);
             graphProfile();
             RoastTime.restart(0);
-            FlowCurrentSetpointSpan = -1;
+            FlowCurrentSpan = -1;
             IntegralSumFlowBySpan[0] = 0;
             IntegralSumFlowBySpan[1] = 0;
             IntegralSumFlowBySpan[2] = 0;
@@ -450,9 +473,8 @@ void theloop() {
           State = NewState;
           //reset fan pid values to correct starting values
           ErrIFlow = 0.0;
-
+          
           CalcStartingIntegralSumFlow();
-
           BeanYflow_avg.clear();
           BeanYflowup_avg.clear();
           SetFanFromOpticalSensorPID();

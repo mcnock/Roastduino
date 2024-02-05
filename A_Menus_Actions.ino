@@ -316,88 +316,44 @@ void ProcessAnAdjustment() {
     case ACTIONADJUSTSETPOINTFLOW:
       if ((ActiveAdjustment.ButtonWhenCalled >= 0) & (ActiveAdjustment.ButtonWhenCalled <= 4)) {
         spSelected = ActiveAdjustment.ButtonWhenCalled - 1;
-        if (State == STATEROASTING || State == STATEFANONLY || State == STATECOOLING) {  //if we are changing during an active run we need to also adjust the integral sum
-          //calculate how the setpoint will be changing
-          float BeanYflowsetpointBefore = CalcflowsetpointForATime(RoastMinutes);
-          FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
-          float BeanYflowsetpointAfter = CalcflowsetpointForATime(RoastMinutes);
-          float PercentChangeInSetpoint = (BeanYflowsetpointAfter - BeanYflowsetpointBefore)/BeanYflowsetpointBefore;
-
-          float IntegralSumFlowBySpanBefore = 0.0;
-          float IntegralSumFlowBySpanBefore2 = 0.0;
-          float ChangetoIntegralSum = 0.0;
-          float ChangetoIntegralSum2 = 0.0;
-          if (spSelected == (FlowCurrentSetpointSpan + 1)) {  //case we are ajusting current spans ending setpoint
-            //prorate the percent change with how far into span we are and divide by 2
-            ChangetoIntegralSum = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] * PercentChangeInSetpoint * FlowSetPointSpandProgressRatio / 2;
-            IntegralSumFlowBySpanBefore = IntegralSumFlowBySpan[FlowCurrentSetpointSpan];
-            IntegralSumFlowBySpan[FlowCurrentSetpointSpan] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] + ChangetoIntegralSum;
-          } else if (spSelected == (FlowCurrentSetpointSpan )) {  //case we are ajusting current spans starting setpoint
-            //same as above but prorate with (1 - the percent progress)
-            ChangetoIntegralSum = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] * (1 - PercentChangeInSetpoint) * FlowSetPointSpandProgressRatio/2;
-            IntegralSumFlowBySpanBefore = IntegralSumFlowBySpan[FlowCurrentSetpointSpan];
-            IntegralSumFlowBySpan[FlowCurrentSetpointSpan] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan] + ChangetoIntegralSum;
-            //also add in the change on the prior span this would imply
-            ChangetoIntegralSum2 = IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1] * PercentChangeInSetpoint / 2;
-            IntegralSumFlowBySpanBefore2 = IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1];
-            IntegralSumFlowBySpan[FlowCurrentSetpointSpan - 1] = IntegralSumFlowBySpan[FlowCurrentSetpointSpan -1] + ChangetoIntegralSum2;
-          }
-          //the change in closing setpoint value need to be prorated as to how far we are into the section
-          float IntegralSumFlowBefore = IntegralSumFlow;
-          IntegralSumFlow = IntegralSumFlow + ChangetoIntegralSum + ChangetoIntegralSum2 ;
-          float ChangeToDuty = (ChangetoIntegralSum + ChangetoIntegralSum2)/(GainFlow/IntegralFlow);
-          // Serial.print(F("Adjusting IntSumFlow RoastTime:"));
-          // Serial.print(RoastMinutes);
-          // Serial.print(",MoveAmount:");
-          // Serial.print(ActiveAdjustment.moveamount);
-          
-          // Serial.print(",spSelected:");
-          // Serial.print(spSelected);
-
-          // Serial.print(",CurrentSetpointSpan:");
-          // Serial.print(FlowCurrentSetpointSpan);
-
-          // Serial.print(",FlowSetPointSpandProgressRatio:");
-          // Serial.print(FlowSetPointSpandProgressRatio);
-
-          // Serial.print(",BeanYflowsetpointBefore:");
-          // Serial.print(BeanYflowsetpointBefore);
-
-          // Serial.print(",BeanYflowsetpointAfter");
-          // Serial.print(BeanYflowsetpointAfter);
-
-          // Serial.print(",PercentChangeInSetpoint:");
-          // Serial.print(PercentChangeInSetpoint);
-   
-          // Serial.print(",IntegralSumFlowBySpanBefore:");
-          // Serial.print(IntegralSumFlowBySpanBefore);
-
-
-          // Serial.print(",ChangetoIntegralSumForSection:");
-          // Serial.print(ChangetoIntegralSum);
-          
-          // Serial.print(",IntegralSumFlowBySpanBefore2:");
-          // Serial.print(IntegralSumFlowBySpanBefore2);
-
-
-          // Serial.print(",ChangetoIntegralSumForSection2:");
-          // Serial.print(ChangetoIntegralSum2);
-
-          // Serial.print(",IntegralSumFlowBefore:");
-          // Serial.print(IntegralSumFlowBefore);
-
-          // Serial.print(",IntegralSumFlowAfter:");
-          // Serial.print(IntegralSumFlow);
-          
-          // Serial.print(",ChangeToDuty:");
-          // Serial.print(ChangeToDuty);
-          
-          // Serial.println("");
-
-        } else {
-          FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
+        if (FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount < 0.1 )
+        { 
+            ActiveAdjustment.moveamount = FlowSetPoints[spSelected].flow - 0.1;
         }
-
+        if (State == STATEROASTING || State == STATEFANONLY || State == STATECOOLING) {  //if we are changing during an active run we need to also adjust the integral sum
+          if (spSelected <= FlowCurrentSpan) {
+              //calculate how the setpoint will affect current value
+            //float flowspbefore = FlowSetPoints[spSelected].flow; 
+            float beanYflowsetpointBefore = CalcflowsetpointForATime(RoastMinutes);
+            FlowSetPoints[spSelected].flow = FlowSetPoints[spSelected].flow + ActiveAdjustment.moveamount;
+            float beanYflowsetpointAfter = CalcflowsetpointForATime(RoastMinutes);
+            float percentChangeSetPointAtRoasttime = (beanYflowsetpointAfter - beanYflowsetpointBefore) / ((beanYflowsetpointBefore + beanYflowsetpointAfter)/2);
+            //float IntegralSumFlowBefore = IntegralSumFlow;
+            float changetoIntSumFlow = IntegralSumFlow * percentChangeSetPointAtRoasttime;
+            changetoIntSumFlow = (changetoIntSumFlow + (IntegralSumFlow * 2) )/2 * IntegralSumFlow;
+            IntegralSumFlow = IntegralSumFlow + changetoIntSumFlow;
+            if (Debugbyte == FLOWADJUSTDYNAMIC_13) {
+              float changeToDuty = (changetoIntSumFlow) / (GainFlow / IntegralFlow);   
+              Serial.print(F(";RoastTime_")); 
+              Serial.print(RoastMinutes);
+              Serial.print(";MoveAmount_");
+              Serial.print(ActiveAdjustment.moveamount);
+              Serial.print(";spIDBeingEdited_");
+              Serial.print(spSelected);
+              Serial.print(";CurrentSpanID_");
+              Serial.print(FlowCurrentSpan);
+              Serial.print(";SetpointPercentChange_");
+              Serial.print(percentChangeSetPointAtRoasttime);
+              Serial.print(";ChangetoIntSum_");
+              Serial.print(changetoIntSumFlow);
+              Serial.print(";EstimatedChangeToDuty_");
+              Serial.print(changeToDuty);
+              Serial.println("");
+            
+            }
+          }
+        }
+       
         EEPROM.put(Flowsetpoints_int_EP[spSelected], FlowSetPoints[spSelected]);
         if (ActiveAdjustment.moveamount > 0) {
           if (spSelected < 3) {

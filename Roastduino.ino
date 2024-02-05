@@ -6,8 +6,9 @@
 #include <Chrono.h>
 #include <Time.h>
 #include <TimeLib.h>
-#include "src/max6675.h"
-#include "PMW3901.h"
+#include <MAX6675.h>
+#include <Bitcraze_PMW3901.h>
+//#include "PMW3901.h"
 #include "Average.h"
 #include <EEPROM.h>
 #include <Wire.h>
@@ -61,43 +62,55 @@ byte Debugbyte = 0;
 #define FLOWPIDINFO_10 10
 #define FLOWSENSORDATARAW_11 11
 #define FLOWSENSORDATA_12 12
+#define FLOWADJUSTDYNAMIC_13 13
 #define DRAWBOXESINFO_20 20
 #define TEMPPIDINFO_30 30
 #define TEMPDATARAW_31 31
-#define CURRENTDATA_40 40
+#define CURRENTFANDATA_40 40
+#define CURRENTCOILDATA_41 41
 
 //AJN 5 TFT inch display shield does not use digital pins 30-34, 10 , 12,  13,  i2c pins 20,21, or miso pins 39 to 54
-#define FANRELAYVCCp_3 3
-#define FANRELAYp_2 2
+#define FANRELAYINp_2 2
+#define FANRELAYVCCp_4 4
+#define FANRELAYGp_3 3
+
+//#define p4 available
+#define SSRgr_p5 5
 #define SSR2_p6 6
 #define SSR1_p7 7
 //#define available 10
 //#define available 12
 //#define available 13
-#define SSRgr_14 14
+#define TC_CS1_p14 14
+#define TC_CS2_p15 15
+#define TC_CS3_p16 16
+
+#define FANOUTG_18 18    
+#define FANOUTVCC_19 19  
+
+
 //#define available 30
 //#define available 31
 //#define available 32
 //#define available 33
 //#define available 34
-#define BEAN_OPTICAL_FLOW_SPI_SSp48 48
+#define BEAN_OPTICAL_FLOW_SPI_SSp49 49
 #define BEAN_OPTICAL_FLOW2_SPI_SSp53 53
-#define FANCURRENT_A0 A0
-#define COILCURRENT_A1 A1
-#define FANOUTG_A2 A2    // can be replaced with wire to add-on CB
-#define FANOUTVCC_A3 A3  // can be replaced with wire to add-on CB
-//#define available A4
+#define COILCURRENT_A0 A0
+#define FAN712_Gp_A1 A1
+#define FAN712_INPUTp_A2 A2
+#define FAN712_5Vp_A3 A3
 //#define available A5
 //#define available A6
-#define TC_G_A7 A7
-#define TC_5v_A8 A8
-#define TC_SCK_A9 A9
-#define TC_SD1_A10 A10  //could share A8
-#define TC_CS1_A11 A11
-#define TC_SD2_A12 A12  //could share A8
-#define TC_CS2_A13 A13
-#define TC_SD3_A14 A14  //could share A8
-#define TC_CS3_A15 A15
+//#define TC_G_A7 A7  //output check if burned out //move to grnd add in 
+//#define TC_5v_A8 A8 //output check if burned out //move to +5 add in
+//#define TC_SCK_A9 A9 //output check if burned out //move to msck 52 add in
+//#define TC_SD1_A10 A10 //input check if burned out //move to miso 50 add in
+//#define TC_CS1_A11 A11 //output check if burned out  RELOCATE
+//#define TC_SD2_A12 A12 //input check if burned out //move to miso 50 add in
+//#define TC_CS2_A13 A13 //output check if burned out RELOCATE
+//#define TC_SD3_A14 A14 //input check if burned out //move to miso 50 add in
+//#define TC_CS3_A15 A15 //output check if burned out RELOCATE
 #define VBUT0 0
 #define VBUT1 1
 #define VBUT2 2
@@ -216,8 +229,6 @@ const char* StateName[] = {
   Sname10,
   Sname11
 };
-float BeanYflow[2];
-float BeanYflowsetpoint;
 
 const uint16_t LineColorforLineID[GRAPHLINECOUNT] = { WHITE, YELLOW, RED, RED, YELLOW, ORANGE };
 const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, true, false };
@@ -235,12 +246,12 @@ const boolean LineBoldforLineID[GRAPHLINECOUNT] = { false, false, false, false, 
 #define VALUES_D5_D1_D01 4
 #define VALUES_1_D5_D1 5
 const adjustmentlabels AdustmentValuesLabels[][3]{
-  { ".05", ".03", ".01" },
+  { "0.05", "0.03", "0.01" },
   { "5", "3", "1" },
   { "10", "5", "1" },
   { "20", "5", "1" },
-  { ".5", ".1", ".01" },
-  { "1.0", ".5", ".1" }
+  { "0.5", "0.1", "0.01" },
+  { "1.0", "0.5", "0.1" }
 };
 const float AdustmentValues[][3] = {
   { .05, .03, .01 },
@@ -405,9 +416,12 @@ boolean SerialOutPutStatusBySecond;
 const int ThermoCoil = 2;
 const int ThermoBean1 = 1;
 const int ThermoBean2 = 0;
-MAX6675 Thermocouple1(TC_SCK_A9, TC_CS1_A11, TC_SD1_A10);
-MAX6675 Thermocouple2(TC_SCK_A9, TC_CS2_A13, TC_SD2_A12);
-MAX6675 Thermocouple3(TC_SCK_A9, TC_CS3_A15, TC_SD3_A14);
+
+MAX6675 Thermocouple1(TC_CS1_p14);
+MAX6675 Thermocouple2(TC_CS2_p15);
+MAX6675 Thermocouple3(TC_CS3_p16);
+
+
 thermocouple thermocouples[] = { { Thermocouple1, 0 }, { Thermocouple2, 0 }, { Thermocouple3, 0 } };
 flowsetpoint FlowSetPoints[4];
 float FlowSetPointSpandProgressRatio;
@@ -448,7 +462,7 @@ double MaxPercentChangePerSecondFlow = _MaxPercentChangePerSecondFlow;
 long unsigned IntegralLastTimeFlow = 0;
 float IntegralSumFlow = 0;
 float IntegralSumFlowBySpan[4];
-byte  FlowCurrentSetpointSpan;
+byte  FlowCurrentSpan;
 #define FLOWSENSORMODE_ALLPOSITIVE 0
 #define FLOWSENSORMODE_LARGESTPOSTIVE 1
 #define FLOWSENSORMODE_LARGESTAVG 2
@@ -463,6 +477,7 @@ float ErrIFlow = 0;
 float ErrFlow = 0;
 double DutyFan = -99;
 double DutyFanCalced;
+bool bFanRelayOn = false;
 float Lastflowvalueforpid;
 unsigned int PIDIntegralUdateTimeValueFlow = _PIDIntegralUdateTimeValueFlow;
 unsigned int PIDWindowSizeFlow;
@@ -502,15 +517,26 @@ Chrono PIDIntegralUdateTimeTemp(Chrono::MILLIS);
 Chrono PIDIntegralUdateTimeFlow(Chrono::MILLIS);
 Chrono MeasureTempTimer(Chrono::MILLIS);
 
-Average<int> TBeanAvgRoll(_BeanYflow_avg_sizemax);
-Average<int> TCoilAvgRoll(_TCoilAvgRoll_sizemax);
-Average<int> CoilCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
-Average<int> FanCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
 
-Average<int> BeanYflow_avg(_BeanYflow_avg_sizemax);
-Average<int> BeanYflowup_avg(_BeanYflow_avg_sizemax);
+Average<int,int> TBeanAvgRoll(_BeanYflow_avg_sizemax);
+Average<int,int> TCoilAvgRoll(_TCoilAvgRoll_sizemax);
+Average<int,int> CoilCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
+Average<int,int> CoilCurrentZeroRaw(_CurrentsAvgRoll_sizemax);
+Average<int,int> FanCurrentAvgRollx10(_CurrentsAvgRoll_sizemax);
+Average<int,int> FanCurrentZeroRaw(_CurrentsAvgRoll_sizemax);
+//32,768 for int
 
-Average<float> BeanYflowX_avg[2] = {(_BeanYflowX_avg_sizemax),(_BeanYflowX_avg_sizemax)};
+ 
+
+Average<int,int> BeanYflow_avg(_BeanYflow_avg_sizemax);
+Average<int,int> BeanYflowup_avg(_BeanYflow_avg_sizemax);
+
+float BeanYflowsetpoint;
+
+Bitcraze_PMW3901 BeanOpticalFlow1(BEAN_OPTICAL_FLOW_SPI_SSp49);
+Bitcraze_PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp53);
+opticalflow BeanOpticalFlowSensors[] = { { BeanOpticalFlow1,_BeanYflow_avg_sizemax}, { BeanOpticalFlow2,_BeanYflow_avg_sizemax } };
+
 
 byte SSR1PWMLast;
 byte SSR2PWMLast;
@@ -554,10 +580,7 @@ float FanCoolingBoostPercent = _FanCoolingBoostPercent;
 bool FanManual = false;
 float FanNudge = 0.0;
 bool TimeManual = false;
- 
-PMW3901 BeanOpticalFlow1(BEAN_OPTICAL_FLOW_SPI_SSp48);
-PMW3901 BeanOpticalFlow2(BEAN_OPTICAL_FLOW2_SPI_SSp53);
-opticalflow BeanOpticalFlowSensors[] = { { BeanOpticalFlow1, 0 }, { BeanOpticalFlow2, 0 } };
+
 byte BeanOpticalFlowReadsPerSecond;
 byte BeanOpticalFlowReadsPerSecondCalcing;
 boolean ReadBeanFlowRate = false;
@@ -583,26 +606,39 @@ void setup() {
   TCCR4B = TCCR4B & B11111000 | B00000101;
   pinMode(SSR1_p7, OUTPUT);
   pinMode(SSR2_p6, OUTPUT);
-  pinMode(FANRELAYVCCp_3, OUTPUT);
-  pinMode(FANRELAYp_2, OUTPUT);
-  digitalWrite(FANRELAYVCCp_3, HIGH);  //5V
-  pinMode(SSRgr_14, OUTPUT);
-  digitalWrite(SSRgr_14, LOW);
-  pinMode(FANOUTVCC_A3, OUTPUT);
-  pinMode(FANOUTG_A2, OUTPUT);
-  digitalWrite(FANOUTVCC_A3, LOW);  //0V
-  digitalWrite(FANOUTG_A2, HIGH);   //5V
-  pinMode(TC_SD1_A10, INPUT_PULLUP);
-  pinMode(TC_SD2_A12, INPUT_PULLUP);
-  pinMode(TC_SD3_A14, INPUT_PULLUP);
-  pinMode(TC_CS1_A11, OUTPUT);
-  pinMode(TC_CS2_A13, OUTPUT);
-  pinMode(TC_CS3_A15, OUTPUT);
-  pinMode(TC_G_A7, OUTPUT);
-  digitalWrite(TC_G_A7, LOW);  //0V
-  pinMode(TC_5v_A8, OUTPUT);
-  digitalWrite(TC_5v_A8, HIGH);  //5V
-  pinMode(TC_SCK_A9, OUTPUT);
+  pinMode(FANRELAYVCCp_4, OUTPUT);
+  pinMode(FANRELAYINp_2, OUTPUT);
+  pinMode(FANRELAYGp_3, OUTPUT);
+  digitalWrite(FANRELAYVCCp_4, HIGH);  //5V
+  digitalWrite(FANRELAYGp_3, LOW);  //GR
+  digitalWrite(FANRELAYINp_2, LOW);
+
+  pinMode(FAN712_Gp_A1, OUTPUT);
+  pinMode(FAN712_INPUTp_A2, INPUT);
+  pinMode(FAN712_5Vp_A3, OUTPUT);
+  digitalWrite(FAN712_Gp_A1, LOW);  //GR
+  digitalWrite(FAN712_5Vp_A3, HIGH);  //5V
+  pinMode(COILCURRENT_A0, INPUT);
+  
+
+  pinMode(SSRgr_p5, OUTPUT);
+  digitalWrite(SSRgr_p5, LOW);
+  pinMode(FANOUTVCC_19, OUTPUT);
+  pinMode(FANOUTG_18, OUTPUT);
+  digitalWrite(FANOUTVCC_19, HIGH);  //5V
+  digitalWrite(FANOUTG_18, LOW);   //0V
+  
+  //pinMode(TC_SD1_A10, INPUT_PULLUP);
+  //pinMode(TC_SD2_A12, INPUT_PULLUP);
+  //pinMode(TC_SD3_A14, INPUT_PULLUP);
+  pinMode(TC_CS1_p14, OUTPUT);
+  pinMode(TC_CS2_p15, OUTPUT);
+  pinMode(TC_CS3_p16, OUTPUT);
+  //pinMode(TC_G_A7, OUTPUT);
+  //digitalWrite(TC_G_A7, LOW);  //0V
+  //pinMode(TC_5v_A8, OUTPUT);
+  //digitalWrite(TC_5v_A8, HIGH);  //5V
+  //pinMode(TC_SCK_A9, OUTPUT);
   //digitalWrite(FANRELAYp_2, RELAYOFF);
   //digitalWrite(VIBRELAYp, RELAYOFF);
   delay(1000);
@@ -714,32 +750,52 @@ void setup() {
   State = STATESTOPPED;
   Setpointschanged = true;
   SERIALPRINTLN_OP("Starting FlowSensor 0 initialization...");
-  if (!BeanOpticalFlowSensors[0].sensor.Initialize()) {
+  if (!BeanOpticalFlowSensors[0].sensor.begin()) {
     SERIALPRINTLN_OP("  Initialization of the flow sensor 0 failed delaying 1 second");
-    delay(1000);
-    if (!BeanOpticalFlowSensors[0].sensor.Initialize()) {
+    delay(2000);
+    if (!BeanOpticalFlowSensors[0].sensor.begin()) {
       SERIALPRINTLN_OP("  Initialization of the flow sensor 0 failed 2nd time");
+      
     } else {
       SERIALPRINTLN_OP("   FlowSensor 0 initialized successfully");
     }
 
-
   } else {
     SERIALPRINTLN_OP("  FlowSensor 0 initialized successfully");
+
   }
+  if (BeanOpticalFlowSensors[0].sensor.Initialized == true) {
+      BeanOpticalFlowSensors[0].sensor.setLed(true);
+  }
+  else
+  {
+      BeanOpticalFlowSensors[0].sensor.setLed(false);
+    
+  }
+  
   SERIALPRINTLN_OP("Starting FlowSensor 1 initialization...");
-  if (!BeanOpticalFlowSensors[1].sensor.Initialize()) {
+  if (!BeanOpticalFlowSensors[1].sensor.begin()) {
     SERIALPRINTLN_OP("  Initialization of the flow sensor 1 failed. Delaying 1 second");
-    delay(1000);
-    if (!BeanOpticalFlowSensors[1].sensor.Initialize()) {
+    delay(2000);
+    if (!BeanOpticalFlowSensors[1].sensor.begin()) {
       SERIALPRINTLN_OP("  Initialization of the flow sensor 1 failed 2nd time");
     } else {
+            
       SERIALPRINTLN_OP("   FlowSensor 1 initialized successfully");
     }
 
   } else {
+          
     SERIALPRINTLN_OP("FlowSensor 1 initialized successfully");
   }
+  if (BeanOpticalFlowSensors[1].sensor.Initialized == true) {
+      //BeanOpticalFlowSensors[1].sensor.setLed(true);
+  }
+  else
+  {
+     BeanOpticalFlowSensors[1].sensor.setLed(false);
+  }
+
   Wire.begin();
   SetFanOff();
   graphProfile();

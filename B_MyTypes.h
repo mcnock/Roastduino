@@ -24,11 +24,14 @@ typedef struct point {
 } point;
 
 typedef struct opticalflow {
-  PMW3901 sensor;
+  Bitcraze_PMW3901 sensor;
+  Average<int,int16_t> Avg;
   int YflowReadingskipped;
   int error;
   int BeanReadingPerSensor;
   int BeanReadingPerSensorCalc;
+  int YflowReadingstrimmed;
+  int BeanYflowCurrent;
 } opticalflow;
 
 typedef struct thermocouple {

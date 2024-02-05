@@ -460,7 +460,7 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   myGLCD.setFont(SmallFont);
   if (db->calcsdone == false) {
     //calcDisplayBox(db, 14, 7, 9, 11, 15);
-    calcDisplayBox(db, 10, 2, 2, 3);
+    calcDisplayBox(db, 10, 3, 3, 4);
 
     if (1 == 2) {
       SERIALPRINT_DB("Rect.x");
@@ -501,72 +501,74 @@ void UpdateOpDetailsDisplayArea(boolean bVALUESONLY) {
   if (bVALUESONLY == false) { myGLCD.print(F("Oper Detail"), db->cols[0], db->rows[r]); }
   myGLCD.setBackColor(BLACK);
   r = 1;
-  if (bVALUESONLY == false) { myGLCD.print(F("Tavg:"), db->cols[0], db->rows[r]); }
+  if (bVALUESONLY == false) { myGLCD.print(F("T avg B1B2:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(TBeanAvgRoll.mean(), db->cols[2], db->rows[r], 5);
   r = 2;
-  if (bVALUESONLY == false) { myGLCD.print(F("T 1/2"), db->cols[0], db->rows[r]); }
+  if (bVALUESONLY == false) { myGLCD.print(F("T B1 B2"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(TBean1, db->cols[1], db->rows[r], 3, ' ');
   myGLCD.printNumI(TBean2, db->cols[3], db->rows[r], 3, ' ');
   r = 3;
-  if (bVALUESONLY == false) { myGLCD.print(F("Coil/Av"), db->cols[0], db->rows[r]); }
+  if (bVALUESONLY == false) { myGLCD.print(F("T C/Avg"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(TCoil, db->cols[1], db->rows[r], 3, ' ');
   myGLCD.printNumI(TCoilAvgRoll.mean(), db->cols[3], db->rows[r], 3, ' ');
   r = 4;
-  if (bVALUESONLY == false) { myGLCD.print(F("Terrs:"), db->cols[0], db->rows[r]); }
-  int R = thermocouples[0].Readingskipped + thermocouples[1].Readingskipped + thermocouples[2].Readingskipped;
-  myGLCD.printNumI(R, db->cols[2], db->rows[r], 5, ' ');
-  r = 6;
-  if (bVALUESONLY == false) { myGLCD.print(F("FlowDown"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF(BeanYflow_avg.mean(), db->cols[2], db->rows[r], 4, 1);
-  r = 7;
-  if (bVALUESONLY == false) { myGLCD.print(F("FAvg 0"), db->cols[0], db->rows[r]); }
-  if (BeanOpticalFlowSensors[0].error == 0) {
-    myGLCD_printNumF(BeanYflowX_avg[0].mean(), db->cols[2], db->rows[r], 4, 1);
-  } else {
-    myGLCD.print(F("err"), db->cols[2], db->rows[r]);
-  }
+  if (bVALUESONLY == false) { myGLCD.print(F("Er C B1 B2"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(thermocouples[0].Readingskipped, db->cols[1], db->rows[r], 2, ' ');
+  myGLCD.printNumI(thermocouples[1].Readingskipped, db->cols[2], db->rows[r], 2, ' ');
+  myGLCD.printNumI(thermocouples[2].Readingskipped, db->cols[3], db->rows[r], 2, ' ');
+  r = 5;
   
-  r = 8;
-  if (bVALUESONLY == false) { myGLCD.print(F("FAvg 1"), db->cols[0], db->rows[r]); }
-
-  if (BeanOpticalFlowSensors[1].error == 0) {
-    myGLCD_printNumF(BeanYflowX_avg[1].mean(), db->cols[2], db->rows[r], 4, 1);
+  r = 6;
+  if (bVALUESONLY == false) { myGLCD.print(F("F Down/Up"), db->cols[0], db->rows[r]); }
+  myGLCD_printNumF(BeanYflow_avg.mean(), db->cols[1], db->rows[r], 4, 1);  
+ 
+  myGLCD_printNumF(BeanYflowup_avg.mean(), db->cols[3], db->rows[r], 4, 1);
+  r = 7;
+  if (bVALUESONLY == false) { myGLCD.print(F("F Avg 0/1"), db->cols[0], db->rows[r]); }
+  if (BeanOpticalFlowSensors[0].error == 0) {
+    myGLCD_printNumF(BeanOpticalFlowSensors[0].Avg.mean(), db->cols[1], db->rows[r], 4, 1);
   } else {
-    myGLCD.print(F("err"), db->cols[2], db->rows[r]);
+    myGLCD.print(F("err "), db->cols[1], db->rows[r]);
   }
+  if (BeanOpticalFlowSensors[1].error == 0) {
+    myGLCD_printNumF(BeanOpticalFlowSensors[1].Avg.mean(), db->cols[3], db->rows[r], 4, 1);
+  } else {
+    myGLCD.print(F("err"), db->cols[3], db->rows[r]);
+  }
+  r = 8;
+  if (bVALUESONLY == false) { myGLCD.print(F("F Trim 0/1:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(BeanOpticalFlowSensors[0].YflowReadingstrimmed, db->cols[1], db->rows[r], 3, ' ');
+  myGLCD.printNumI(BeanOpticalFlowSensors[1].YflowReadingstrimmed, db->cols[3], db->rows[r], 3, ' ');
+
   r = 9;
-  if (bVALUESONLY == false) { myGLCD.print(F("FlowUp"), db->cols[0], db->rows[r]); }
-  myGLCD_printNumF(BeanYflowup_avg.mean(), db->cols[2], db->rows[r], 4, 1);
-  r = 10;
-  if (bVALUESONLY == false) { myGLCD.print(F("Err 0/1:"), db->cols[0], db->rows[r]); }
+  if (bVALUESONLY == false) { myGLCD.print(F("F Err 0/1:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(BeanOpticalFlowSensors[0].YflowReadingskipped, db->cols[1], db->rows[r], 3, ' ');
   myGLCD.printNumI(BeanOpticalFlowSensors[1].YflowReadingskipped, db->cols[3], db->rows[r], 3, ' ');
-  r = 11;
-  if (bVALUESONLY == false) { myGLCD.print(F("Ct 0/1:"), db->cols[0], db->rows[r]); }
+  r = 10;
+  if (bVALUESONLY == false) { myGLCD.print(F("F r/s 0/1:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(BeanOpticalFlowSensors[0].BeanReadingPerSensor, db->cols[1], db->rows[r], 3, ' ');
   myGLCD.printNumI(BeanOpticalFlowSensors[1].BeanReadingPerSensor, db->cols[3], db->rows[r], 3, ' ');
 
 
-
-  r = 13;
-  if (bVALUESONLY == false) { myGLCD.print(F("FanAmps:"), db->cols[0], db->rows[r]); }
+  r = 12;
+  if (bVALUESONLY == false) { myGLCD.print(F("A FanAmps:"), db->cols[0], db->rows[r]); }
   myGLCD_printNumF((FanCurrentAvgRollx10.mean() / 10), db->cols[2], db->rows[r], 5, 1);
-  r = 14;
-  if (bVALUESONLY == false) { myGLCD.print(F("CoilAmps:"), db->cols[0], db->rows[r]); }
+  r = 13;
+  if (bVALUESONLY == false) { myGLCD.print(F("A CoilAmps:"), db->cols[0], db->rows[r]); }
   myGLCD_printNumF((CoilCurrentAvgRollx10.mean() / 10), db->cols[2], db->rows[r], 5, 1);
-  r = 15;
+  r = 14;
   if (bVALUESONLY == false) { myGLCD.print(F("lp/sec:"), db->cols[0], db->rows[r]); }
   myGLCD.printNumI(LoopsPerSecond, db->cols[2], db->rows[r], 5, ' ');
+  r = 15;
+  if (bVALUESONLY == false) { myGLCD.print(F("#/s T/F/A:"), db->cols[0], db->rows[r]); }
+  myGLCD.printNumI(TempSensorReadsPerSecond, db->cols[1], db->rows[r], 2, ' ');
+  myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, db->cols[2], db->rows[r], 2, ' ');
+  myGLCD.printNumI(CurrentReadsPerSecond, db->cols[3] , db->rows[r], 2, ' ');
   r = 16;
-  if (bVALUESONLY == false) { myGLCD.print(F("Cu Tm Fl/s:"), db->cols[0], db->rows[r]); }
-  myGLCD.printNumI(CurrentReadsPerSecond, db->cols[1] - myGLCD.getFontXsize(), db->rows[r], 2, ' ');
-  myGLCD.printNumI(TempSensorReadsPerSecond, db->cols[2], db->rows[r], 2, ' ');
-  myGLCD.printNumI(BeanOpticalFlowReadsPerSecond, db->cols[3] + myGLCD.getFontXsize(), db->rows[r], 2, ' ');
-  r = 17;
   if (bVALUESONLY == false) { myGLCD.print(F("SSRs"), db->cols[0], db->rows[r]); }
   myGLCD.print(SSRStatus[SSR1Status].status, db->cols[1], db->rows[r]);
   myGLCD.print(SSRStatus[SSR2Status].status, db->cols[3], db->rows[r]);
-  db->rowmax = 17;  //enter this value in DefaultValue.h so it is correct the first time it is drawn
+  db->rowmax = 16;  //enter this value in DefaultValue.h so it is correct the first time it is drawn
 }
 
 void calcDisplayBox(displaybox* db, byte Col0Chars, byte Col1Chars, byte Col2Chars, byte Col3Chars) {

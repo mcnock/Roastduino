@@ -18,16 +18,16 @@
 #define _TempCoilTooHot 1000
 
 //bean flow and flow pid related
-#define FanSetPoints_0_flow 2.1
-#define FanSetPoints_1_flow 3.1
-#define FanSetPoints_2_flow 4.9
-#define FanSetPoints_3_flow 4.9
+#define FanSetPoints_0_flow 1.7
+#define FanSetPoints_1_flow 2.5
+#define FanSetPoints_2_flow 3.2
+#define FanSetPoints_3_flow 3.2
 #define _UpFlowThreshold -5;
 #define _GainFlow 200
-#define _MixMax 200
-#define _IntegralFlow .20
-#define _DutyStartingFlow .8
-#define _MaxPercentChangePerSecondFlow .7   
+#define _MixMaxRaw 100
+#define _IntegralFlow .40
+#define _DutyStartingFlow .75
+#define _MaxPercentChangePerSecondFlow 0   
 #define _PIDIntegralUdateTimeValueFlow 1000
 #define _BeanYflowX_avg_size 5
 #define _BeanYflowX_avg_sizemax 5
@@ -41,19 +41,19 @@
 //False = 0 True = 1;
 
 //current related
-#define _CurrentsAvgRoll_size 3
-#define _CurrentsAvgRoll_sizemax 3
+#define _CurrentsAvgRoll_size 10
+#define _CurrentsAvgRoll_sizemax 10
 #define _CurrentFan_MVPerAmp 208.0
 #define _CurrentCoil_MVPerAmp 120.0
 #define _AnalogReadRefVoltage 5300.0
 #define _TimeReadCurrentsDuration 250
-#define _Coil_0 45
+#define _Coil_0 -0.8
 
 //display related
 #define _CoilTempOffSet -500
 #define _OpDetailDisplay_x 550
 #define _OpDetailDisplay_y 200
-#define _OpDetailDisplay_rowmax 17
+#define _OpDetailDisplay_rowmax 16
 #define _ConfigDisplay_x 300
 #define _ConfigDisplay_y 275
 #define _ConfigDisplay_rowmax 13

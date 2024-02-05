@@ -7,7 +7,6 @@
         "${projectRoot}..\\Roastduino",
         "${projectRoot}..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\EEPROM\\src",
         "${projectRoot}..\\ArduinoIDE\\libraries\\Chrono",
-        "${projectRoot}..\\ArduinoIDE\\libraries\\MAX6675",
         "${projectRoot}..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src",
         "${projectRoot}..\\..\\..\\..\\..\\Program Files (x86)\\Arduino\\hardware\\arduino\\avr\\libraries\\Wire\\src\\utility",
         "${projectRoot}..\\ArduinoIDE\\libraries\\UTFT",

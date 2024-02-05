@@ -44,7 +44,7 @@ inline static float sqr(float x) {
   return x * x;
 }
 
-template<class T> class Average {
+template<class T, class T2> class Average {
 private:
   // Private functions and variables here.  They can only be accessed
   // by functions within the class.
@@ -53,13 +53,13 @@ private:
   uint16_t _count;
   bool _meandirty;
   float _meancached;
-
+  T2 _sum;              // _sum variable for faster mean calculation. If count is high, it may need to be ifferent type than value.  Ie byte will need int, and int may need long
+  
 public:
   // Public functions and variables.  These can be accessed from
   // outside the class.
   uint16_t _sizemax;
   uint16_t _size;
-  T _sum;              // _sum variable for faster mean calculation
   Average(uint16_t size);
   ~Average();
   float rolling(T entry);
@@ -77,14 +77,14 @@ public:
   T predict(int x);
   T sum();
   void clear();
-  Average<T> &operator=(Average<T> &a);
+  Average<T,T2> &operator=(Average<T,T2> &a);
 };
 
-template<class T> int Average<T>::getCount() {
+template<class T,class T2> int Average<T,T2>::getCount() {
   return _count;
 }
 
-template<class T> Average<T>::Average(uint16_t size) {
+template<class T,class T2> Average<T,T2>::Average(uint16_t size) {
   _size = size;
   _sizemax = size;
   _count = 0;
@@ -96,11 +96,11 @@ template<class T> Average<T>::Average(uint16_t size) {
   }
 }
 
-template<class T> Average<T>::~Average() {
+template<class T, class T2> Average<T,T2>::~Average() {
   free(_store);
 }
 
-template<class T> void Average<T>::push(T entry) {
+template<class T, class T2> void Average<T,T2>::push(T entry) {
   if (_count < _size) {               // adding new values to array
     _count++;                         // count number of values in array
   } else {                            // overwriting old values
@@ -115,12 +115,12 @@ template<class T> void Average<T>::push(T entry) {
 }
 
 
-template<class T> float Average<T>::rolling(T entry) {
+template<class T, class T2> float Average<T,T2>::rolling(T entry) {
   push(entry);
   return mean();
 }
 
-template<class T> float Average<T>::mean() {
+template<class T, class T2> float Average<T,T2>::mean() {
   if (_count == 0) {
     return 0;
   }
@@ -132,7 +132,7 @@ template<class T> float Average<T>::mean() {
   return _meancached;  // mean calculation based on _sum
 }
 
-template<class T> T Average<T>::mode() {
+template<class T, class T2> T Average<T,T2>::mode() {
   uint32_t pos;
   uint32_t inner;
   T most;
@@ -169,11 +169,11 @@ template<class T> T Average<T>::mode() {
   return most;
 }
 
-template<class T> T Average<T>::minimum() {
+template<class T, class T2> T Average<T,T2>::minimum() {
   return minimum(NULL);
 }
 
-template<class T> T Average<T>::minimum(int *index) {
+template<class T, class T2> T Average<T,T2>::minimum(int *index) {
   T minval;
 
   if (index != NULL) {
@@ -197,11 +197,11 @@ template<class T> T Average<T>::minimum(int *index) {
   return minval;
 }
 
-template<class T> T Average<T>::maximum() {
+template<class T, class T2> T Average<T,T2>::maximum() {
   return maximum(NULL);
 }
 
-template<class T> T Average<T>::maximum(int *index) {
+template<class T, class T2> T Average<T,T2>::maximum(int *index) {
   T maxval;
 
   if (index != NULL) {
@@ -225,7 +225,7 @@ template<class T> T Average<T>::maximum(int *index) {
   return maxval;
 }
 
-template<class T> float Average<T>::stddev() {
+template<class T, class T2> float Average<T,T2>::stddev() {
   float square;
   float sum;
   float mu;
@@ -247,7 +247,7 @@ template<class T> float Average<T>::stddev() {
   return sqrt(sum / (float)_count);
 }
 
-template<class T> T Average<T>::get(uint32_t index) {
+template<class T, class T2> T Average<T,T2>::get(uint32_t index) {
   if (index >= _count) {
     return -1;
   }
@@ -259,7 +259,7 @@ template<class T> T Average<T>::get(uint32_t index) {
   return _store[cindex];
 }
 
-template<class T> void Average<T>::leastSquares(float &m, float &c, float &r) {
+template<class T, class T2> void Average<T,T2>::leastSquares(float &m, float &c, float &r) {
   float sumx = 0.0;  /* sum of x                      */
   float sumx2 = 0.0; /* sum of x**2                   */
   float sumxy = 0.0; /* sum of x * y                  */
@@ -288,7 +288,7 @@ template<class T> void Average<T>::leastSquares(float &m, float &c, float &r) {
   r = (sumxy - sumx * sumy / _count) / sqrt((sumx2 - sqr(sumx) / _count) * (sumy2 - sqr(sumy) / _count));
 }
 
-template<class T> T Average<T>::predict(int x) {
+template<class T, class T2> T Average<T,T2>::predict(int x) {
   float m, c, r;
   leastSquares(m, c, r);  // y = mx + c;
 
@@ -297,18 +297,18 @@ template<class T> T Average<T>::predict(int x) {
 }
 
 // Return the sum of all the array items
-template<class T> T Average<T>::sum() {
+template<class T, class T2> T Average<T,T2>::sum() {
   return _sum;
 }
 
-template<class T> void Average<T>::clear() {
+template<class T, class T2> void Average<T,T2>::clear() {
   _count = 0;
   _sum = 0;
   _position = 0;
   _meandirty = true;
 }
 
-template<class T> Average<T> &Average<T>::operator=(Average<T> &a) {
+template<class T, class T2> Average<T,T2> &Average<T,T2>::operator=(Average<T,T2> &a) {
   clear();
   for (int i = 0; i < _size; i++) {
     push(a.get(i));

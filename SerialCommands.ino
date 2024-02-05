@@ -49,7 +49,8 @@ void processSerial(Stream &Serial) {
             Serial.print(F("Sixxx Debugbyte (1 to 4):"));  //i
             Serial.println(Debugbyte);
             Serial.print(F("Sjxxx FlowSensorMode (0,1,2):"));  //j
-            Serial.println(FlowSensorMode);
+            Serial.print(FlowSensorMode);
+          
           } else {
             delay(100);
             if (Serial.available() > 0) {
@@ -159,19 +160,26 @@ void processSerial(Stream &Serial) {
                 Serial.println(F("FLOWPIDINFO_10 - show flow pid information per pid calculation"));
                 Serial.println(F("FLOWSENSORDATARAW_11 - show flow data real time per reading"));
                 Serial.println(F("FLOWSENSORDATA_12 - show data real time per reading"));
+                Serial.println(F("FLOWADJUSTDYNAMIC_13 - show per span int sum info when moving setpoints"));              
                 Serial.println(F("DRAWBOXESINFO_20 - show box redrawing information during a move"));
                 Serial.println(F("TEMPPIDINFO_30 - show temp pid information per pid calculation"));
                 Serial.println(F("TEMPDATARAW_31 - show temp data real time per reading"));
-                Serial.println(F("CURRENTDATA_40 - show amperage data real time per reading"));
+                Serial.println(F("CURRENTFANDATA_40 - show amperage data real time per reading"));
+                Serial.println(F("CURRENTCOILDATA_41 - show amperage data real time per reading"));
+                
+                
                 break;
               }
             case 10:
             case 11:
             case 12:
+            case 13:
+
             case 20:
             case 30:
             case 31:
             case 40:
+            case 41:
               {
                 if (Debugbyte != incomingByte2) {
                   Debugbyte = incomingByte2;
